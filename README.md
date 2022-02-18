@@ -57,6 +57,12 @@ However, we plan to add more transparent support for the internals of list, alth
 
 This is quite experimental, so other structures are expected to join these soon.
 
+## Interesting Projects
+
+This project can be used to manage cyclic data structures with memory safe.
+
+See https://github.com/hsutter/gcpp and its video from cppcon 2016
+
 ## License
 
 Free to use
