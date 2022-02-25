@@ -9,31 +9,31 @@
 // memory is self-managed
 
 template <typename T>
-class Node {
+class LNode {
 private:
   // TODO: variant
-  sptr<Node> next;
-  wptr<Node> _next;
+  sptr<LNode> next;
+  wptr<LNode> _next;
   //
   T value;
   //
 public:
-  Node(T value, sptr<Node> next)
+  LNode(T value, sptr<LNode> next)
       : value { value }
       , next { next }
   {
   }
 
   // get_next for traversal (maybe should remove this, to prevent ext. leakage)
-  sptr<Node> get_next() { return next ? next : _next.lock(); }
+  sptr<LNode> get_next() { return next ? next : _next.lock(); }
 
-  auto set_next(sptr<Node> nxt)
+  auto set_next(sptr<LNode> nxt)
   {
     next = nxt;
     _next.reset();
   }
   //
-  auto set_next_weak(wptr<Node> nxt)
+  auto set_next_weak(wptr<LNode> nxt)
   {
     next.reset();
     _next = nxt;
@@ -45,9 +45,9 @@ public:
 template <typename T>
 struct List {
   //
-  sptr<Node<T>> head; // owned reference
+  sptr<LNode<T>> head; // owned reference
   //
-  wptr<Node<T>> tail_node; // DAG behavior, but... non-owning
+  wptr<LNode<T>> tail_node; // DAG behavior, but... non-owning
 
   List()
   {
@@ -69,13 +69,13 @@ struct List {
   {
     // case n=0: initialize circular behavior (instead of nullptr)
     if (this->head == nullptr) {
-      this->head = sptr<Node<T>>(new Node<T>(v, this->head));
+      this->head = sptr<LNode<T>>(new LNode<T>(v, this->head));
       this->tail_node = this->head;
       this->tail_node.lock()->set_next_weak(this->head); // circular
       return;
     }
     // case n>=1: general
-    auto node = sptr<Node<T>>(new Node<T>(v, this->head));
+    auto node = sptr<LNode<T>>(new LNode<T>(v, this->head));
     this->head = node;
     this->tail_node.lock()->set_next_weak(this->head); // circular
   }
@@ -84,13 +84,13 @@ struct List {
   {
     // case n=0: initialize circular behavior (instead of nullptr)
     if (this->head == nullptr) {
-      this->head = sptr<Node<T>>(new Node<T>(v, this->head));
+      this->head = sptr<LNode<T>>(new LNode<T>(v, this->head));
       this->tail_node = this->head;
       this->tail_node.lock()->set_next_weak(this->head); // circular
       return;
     }
     // case n>=1: general
-    auto node = sptr<Node<T>>(new Node<T>(v, this->head));
+    auto node = sptr<LNode<T>>(new LNode<T>(v, this->head));
     node->set_next_weak(this->head); // circular
     this->tail_node.lock()->set_next(node); // chain
     // this->head = node;
@@ -116,7 +116,7 @@ struct List {
   //
   void print()
   {
-    sptr<Node<T>> p = head;
+    sptr<LNode<T>> p = head;
     int i = 0;
     std::cout << "list (empty=" << empty() << ") ";
     // check emptyness

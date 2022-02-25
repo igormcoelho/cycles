@@ -46,6 +46,93 @@ valgrind ./app_demo
 
 No leaks are ever expected.
 
+## Advanced Example with Graph
+
+Consider node structure:
+
+```
+template <typename X>
+class MyNode {
+public:
+  X val;
+  vector<cycle_ptr<MyNode>> neighbors;
+};
+
+template <typename X>
+class MyGraph {
+  using MyNodeX = MyNode<X>;
+
+private:
+  sptr<cycle_ctx<MyNodeX>> ctx;
+
+public:
+  auto my_ctx() -> wptr<cycle_ctx<MyNodeX>>
+  {
+    return this->ctx;
+  }
+
+  auto make_node(X v) -> cycle_ptr<MyNodeX>
+  {
+    return cycle_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v });
+  }
+
+  auto make_node_owned(X v, cycle_ptr<MyNodeX>& owner) -> cycle_ptr<MyNodeX>
+  {
+    return cycle_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v }, owner);
+  }
+
+  auto make_null_node() -> cycle_ptr<MyNodeX>
+  {
+    return cycle_ptr<MyNodeX>(this->ctx, nullptr);
+  }
+
+  // Example: graph with entry, similar to a root in trees... but may be cyclic.
+  cycle_ptr<MyNodeX> entry;
+
+  MyGraph()
+      : entry { make_null_node() }
+      , ctx { new cycle_ctx<MyNodeX> {} }
+  {
+  }
+
+  ~MyGraph()
+  {
+    ctx = nullptr;
+  }
+
+};
+```
+
+This DRAFT example shows that, even for a cyclic graph, no leaks happen!
+Graph stores a cycle_ctx while all cycle_ptr ensure that no real cycle dependencies exist.
+
+```
+  {
+    MyGraph<double> G;
+    G.my_ctx().lock()->print();
+    //
+    G.entry = G.make_node(-1.0);
+    G.print();
+    // make cycle
+    using MyNodeX = MyNode<double>;
+    cycle_ptr<MyNodeX> ptr1 = G.make_node_owned(1.0, G.entry);
+    cycle_ptr<MyNodeX> ptr2 = G.make_node_owned(2.0, ptr1);
+    cycle_ptr<MyNodeX> ptr3 = G.make_node_owned(3.0, ptr2);
+    // JUST ASSIGN OWNED TO head again... copy is not really necessary (TODO: create other method)
+    auto ptr_head = G.entry.copy_owned(ptr3);
+  }
+  // This will not leak! (even if a cycle exists)
+```
+
+Currently, we need to handle Tree merging, as expected, in order to deal with other examples.
+
+TODO:
+- Out of order insertions that create multiple Trees (requiring merges)
+- Removal of arcs (much harder), but with forseen strategies
+   * make bridge and no realtime remove (could be handled with callbacks, to allow realtime usage)
+   * immediate restructuring of trees and weak links (likely requires running through trees)
+      - we can try to improve this too! but at the moment, priority is to make it work
+
 ### Improvements
 
 The typical recursive behavior of destructors can limit the usage up to stack limit.

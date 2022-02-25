@@ -1,2 +1,2 @@
 all:
-	g++ demo.cpp -Isrc/ -std=c++17 -o app_demo
+	g++ demo.cpp -Isrc/ -Wfatal-errors -g -std=c++17 -o app_demo
