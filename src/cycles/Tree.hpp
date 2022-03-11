@@ -61,6 +61,25 @@ public:
   // weak pointer back to root of tree (for root node, this field is empty/.reset())
   wptr<TNode<T>> tree_root;
 
+  // recursive update on all owned nodes
+  void recupdate(wptr<TNode<T>> new_tree_root)
+  {
+    //
+    for (unsigned i = 0; i < children.size(); i++) {
+      if (children[i].node) {
+        // ???
+        assert(this->tree_root.lock() == children[i].node->tree_root.lock());
+        //
+        children[i].node->tree_root = new_tree_root;
+        children[i].node->recupdate(new_tree_root);
+      } else {
+        assert(false);
+      }
+    }
+    // finally, update my own tree root ref
+    this->tree_root = new_tree_root;
+  }
+
   // weak pointer back to parent (NOT necessary for now)
   //wptr<TNode<T>> parent;
 

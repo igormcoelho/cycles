@@ -77,7 +77,7 @@ public:
       : ctx { ctx }
       , ref { t }
   {
-    std::cout << "creating NEW cycle_ptr (this_new=" << this << " t=" << t << ") ";
+    std::cout << "creating NEW cycle_ptr (this_new=" << this << " to t*=" << t << ") ";
     if (ref)
       std::cout << "with ref -> " << *ref << std::endl;
     else
@@ -104,7 +104,7 @@ public:
       : ctx { ctx }
       , ref { t }
   {
-    std::cout << "creating NEW OWNED cycle_ptr (this_new=" << this << " t=" << t << ") "
+    std::cout << "creating NEW OWNED cycle_ptr (this_new=" << this << " to t*=" << t << ") "
               << " owner='" << owner.get() << "' ";
     if (ref)
       std::cout << "with ref -> " << *ref << std::endl;
@@ -146,7 +146,9 @@ public:
     //
   }
 
+  //
   // copy constructor (still good for vector... must be the meaning of a "copy")
+  //
   cycle_ptr(const cycle_ptr<T>& copy, const cycle_ptr<T>& owner)
       : ctx { copy.ctx }
       , ref { copy.ref }
@@ -155,6 +157,8 @@ public:
     // guarantee that context is the same
     //assert(copy.ctx == owner.ctx);
     //
+    std::cout << std::endl
+              << "cycle_ptr:: OWNED COPY CONSTRUCTOR" << std::endl;
     std::cout << "TODO: Must register relation of (this_new="
               << this << ") '" << (this->get())
               << "' owned_by (this_other="
@@ -168,16 +172,17 @@ public:
       std::cout << "ERROR2! cannot get root node" << std::endl;
       assert(false);
     }
-    // FIND TREE
+    // FIND TREE OF OWNER NODE
     auto tree_it = ctx.lock()->forest.find(lock_root_node);
     if (tree_it == ctx.lock()->forest.end()) {
       std::cout << "ERROR2! could not find Tree!" << std::endl;
       assert(false);
     } else {
-      std::cout << " ~~~> FOUND TREE" << std::endl;
+      std::cout << " ~~~> FOUND TREE OF OWNER" << std::endl;
       auto stree = tree_it->second;
       //
       // check that this does not have tree, or belong to same tree
+      //
       auto my_tree_root = this->remote_node.lock()->tree_root.lock();
       if (!my_tree_root) {
         std::cout << "THIS NODE HAS NO ROOT!" << std::endl;
@@ -195,9 +200,25 @@ public:
         std::cout << " ~~ SUCCESS! Tree is the same! MUST ADD Weak" << std::endl;
         owner.remote_node.lock()->add_weak(this->remote_node);
       } else {
-        std::cout << " ~~ ERROR2! Tree is NOT the same!" << std::endl;
-        std::cout << "this_tree = " << this_tree << std::endl;
-        std::cout << "stree = " << stree << std::endl;
+        std::cout << " ~~ WARNING! Tree is NOT the same!" << std::endl;
+        std::cout << "this_tree = " << this_tree << " \t tree_root: " << *this_tree->root->value.get() << std::endl;
+        std::cout << "stree = " << stree << " \t tree_root: " << *stree->root->value.get() << std::endl;
+
+        if (this->remote_node.lock() == this_tree->root) {
+          std::cout << "THIS NODE IS ALSO THE ROOT OF THIS TREE! MUST CUT THIS TREE..." << std::endl;
+          //
+          // give strong reference of this tree to the owner tree
+          //
+          owner.remote_node.lock()->add(this->remote_node.lock());
+          // update recursively new tree root (stree)
+          this->remote_node.lock()->recupdate(stree->root);
+          //
+        } else {
+          std::cout << "TODO: DONT KNOW! MAYBE A SIMPLE WEAK LINK OF THE OTHER TREE SHOULD POINT TO THIS ONE... DON'T KNOW..." << std::endl;
+          assert(false);
+        }
+
+        std::cout << "TODO: IMPLEMENT!" << std::endl;
         assert(false);
       }
       //

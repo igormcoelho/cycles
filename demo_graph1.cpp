@@ -2,6 +2,8 @@
 #include <map>
 
 #include "Graph.hpp"
+#include "XNode.hpp"
+//
 #include <cycles/List.hpp>
 #include <cycles/Tree.hpp>
 #include <cycles/cycle_ptr.hpp>
@@ -10,126 +12,9 @@
 
 using std::string, std::vector, std::map;
 
-struct XNode {
-  int content;
-  vector<sptr<XNode>> nodes;
-
-  XNode(int _content)
-      : content { _content }
-  {
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, const XNode& node)
-  {
-    os << "XNode(" << node.content << ")";
-    return os;
-  }
-};
-
-template <typename TNode>
-struct XEdge {
-  TNode to;
-  // has_next: DOES THIS XEdge also provides a step to next? Example, return to HEAD? (in case of last in list)
-  // example: HEAD=1   to=6   has_next=true, so, an implicit arc from 6 to 1 exists.
-  //
-  // note this does not have 'from', so it's implicit where this edge actually came from, from cyclic List
-  // TODO: maybe we need 'from' here... we need to analyse if this helps or not.. or even make it harder to deal with.
-  //
-  bool has_next = false;
-  //
-  XEdge(TNode _to, bool _has_next = false)
-      : to { _to }
-      , has_next { _has_next }
-  {
-  }
-  //
-  friend std::ostream& operator<<(std::ostream& os, const XEdge& e)
-  {
-    os << "[to=" << e.to << "; " << e.has_next << "]";
-    return os;
-  }
-};
-
 int main()
 {
-  std::cout << "sizeof(List1) = " << sizeof(List1) << std::endl;
-  std::cout << "sizeof(Node1) = " << sizeof(Node1) << std::endl;
-  //
-  std::cout << "sizeof(List<double>) = " << sizeof(List<double>) << std::endl;
-  std::cout << "sizeof(Node<double>) = " << sizeof(LNode<double>) << std::endl;
-  //
-  std::cout << "sizeof(Node2_Variant) = " << sizeof(Node2_Variant) << std::endl;
-  std::cout << "sizeof(Node3) = " << sizeof(Node3) << std::endl;
-  std::cout << "sizeof(Node4_Herb) = " << sizeof(Node4_Herb) << std::endl;
-
-  {
-    List<double> l;
-    l.print();
-    auto node1 = sptr<LNode<double>>(new LNode<double>(1, l.head));
-    l.head = node1;
-    auto node2 = sptr<LNode<double>>(new LNode<double>(2, l.head));
-    l.head = node2;
-    auto node3 = sptr<LNode<double>>(new LNode<double>(3, l.head));
-    l.head = node3;
-
-    // node1->set_next(node3); // loop and leak
-    node1->set_next_weak(node3); // loop but no leak
-
-    l.print();
-  }
-
-  {
-    List<double> l;
-    l.print();
-    l.push_front(5);
-    l.push_front(6);
-    l.push_front(7);
-    l.print();
-    std::cout << "will push_back" << std::endl;
-    l.push_back(8);
-    l.push_back(9);
-    l.print();
-  }
-
-  {
-    List<double> l;
-    l.print();
-    l.push_back(20);
-    l.push_back(21);
-    l.print();
-  }
-
-  {
-    List<double> l;
-    l.print();
-    l.push_front(9);
-    l.push_front(10);
-    l.push_front(11);
-    l.push_front(12);
-    l.print();
-    std::cout << "will push_back" << std::endl;
-    l.push_back(13);
-    l.push_back(14);
-    l.print();
-    while (!l.empty()) {
-      l.pop_front();
-      l.print();
-    }
-  }
-  {
-    List<double> l;
-    std::cout << "will create big list!" << std::endl;
-    for (unsigned i = 0; i < 30000; i++)
-      l.push_front(0.0);
-    std::cout << "will free big list!" << std::endl;
-    // Stackoverflow on Destructor with N=30000
-    /*
-    std::cout << "manual free to prevent stackoverflow" << std::endl;
-    while (!l.empty())
-      l.pop_front();
-    l.print();
-    */
-  }
+  // graph - part 1
   {
     Graph g;
     g.vertex.push_back(Vertice { .label = "1" });
@@ -350,51 +235,6 @@ int main()
     std::cout << "FINAL PRINT 2!" << std::endl;
     G.print();
   }
-
-  //std::cout << "Next example requires merging trees... aborting (FOR NOW!)" << std::endl;
-  //return 0;
-  //
-  {
-    std::cout << " -------- THIS PART CREATES MULTIPLES TREES -------- " << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "======== MyGraph ========" << std::endl;
-    std::cout << std::endl;
-
-    MyGraph<double> G;
-    std::cout << "CONTEXT SHOULD NOT HAVE CREATED Tree for nullptr node" << std::endl;
-    G.my_ctx().lock()->print();
-    //
-    G.print();
-    //G.entry = cycle_ptr<MyNode>(G.get_ctx(), new MyNode { .val = -1.0 });
-    std::cout << "WILL MAKE NODE -1" << std::endl;
-    G.entry = G.make_node(-1.0);
-    std::cout << "CONTEXT SHOULD HAVE CREATED Tree for -1 node" << std::endl;
-    //
-    std::cout << "FIRST PRINT!" << std::endl;
-    G.print();
-    // make cycle
-    auto ptr1 = G.make_node(1.0);
-    auto ptr2 = G.make_node(2.0);
-    auto ptr3 = G.make_node(3.0);
-    // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
-    //
-    //G.entry.get().neighbors.push_back(ptr1);
-    std::cout << "---> setup G.entry" << std::endl;
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
-    ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
-    //
-    auto lsptr = G.my_ctx().lock();
-    std::cout << "lsptr -> " << lsptr << std::endl;
-    if (lsptr)
-      lsptr->collect();
-    //G.my_ctx().lock()->collect();
-    std::cout << "FINAL PRINT!" << std::endl;
-    G.print();
-    std::cout << "forest size = " << G.my_ctx().lock()->forest.size() << std::endl;
-  } // WILL LEAK
 
   std::cout << "FINISHED!" << std::endl;
   return 0;
