@@ -16,6 +16,9 @@ int main()
 {
   // graph - part 1
   {
+    std::cout << std::endl;
+    std::cout << " -------- DEMO GRAPH1: SIMPLE GRAPH TESTING -------- " << std::endl;
+    std::cout << std::endl;
     Graph g;
     g.vertex.push_back(Vertice { .label = "1" });
     g.vertex.push_back(Vertice { .label = "2" });
@@ -121,119 +124,6 @@ int main()
     l_E.print();
     std::cout << "E: " << l_E.head.get() << std::endl;
     //
-  }
-
-  //=========
-  //
-  {
-    std::cout << std::endl;
-    std::cout << "========= " << std::endl;
-
-    using NodeDouble = sptr<TNode<double>>; ///typename TNode<double>::TNodeType;
-
-    map<NodeDouble, sptr<Tree<double>>> mp;
-
-    auto node1 = NodeDouble(new TNode<double> { 2.0 });
-    auto node2 = NodeDouble(new TNode<double> { 3.0 });
-
-    auto t1 = sptr<Tree<double>>(new Tree<double> {});
-    t1->root = node1;
-    std::cout << "t1.root = " << *t1->root << std::endl;
-    //Tree<double> t2;
-    auto t2 = sptr<Tree<double>>(new Tree<double> {});
-    t2->root = node2;
-    std::cout << "t2.root = " << *t2->root << std::endl;
-
-    mp[node1] = t1;
-    mp[node2] = t2;
-
-    mp[node1]->print();
-    mp[node2]->print();
-
-    sptr<double> data1 = mp[node1]->get_root_data();
-    sptr<double> data2 = mp[node2]->get_root_data();
-    std::cout << "data1 = " << (data1 ? *data1 : -9999) << std::endl;
-    std::cout << "data2 = " << (data2 ? *data2 : -9999) << std::endl;
-    std::cout << "DROP Tree => ";
-    t1->print();
-    //
-    t1 = nullptr;
-    mp[node1] = nullptr;
-    std::cout << "data1 = " << (data1 ? *data1 : -9999) << std::endl;
-    std::cout << "data2 = " << (data2 ? *data2 : -9999) << std::endl;
-  }
-  //
-  {
-    std::cout << std::endl;
-    std::cout << "========= " << std::endl;
-
-    using NodeDouble = sptr<TNode<sptr<double>>>;
-    using TreeDouble = sptr<Tree<sptr<double>>>;
-
-    map<NodeDouble, TreeDouble> mp;
-
-    auto node1 = NodeDouble(new TNode<sptr<double>> { std::make_shared<double>(2.0) });
-    auto node2 = NodeDouble(new TNode<sptr<double>> { std::make_shared<double>(3.0) });
-
-    auto t1 = TreeDouble(new Tree<sptr<double>> {});
-    t1->root = node1;
-    std::cout << "t1.root = " << *t1->root->get_value() << std::endl;
-    //Tree<double> t2;
-    auto t2 = TreeDouble(new Tree<sptr<double>> {});
-    t2->root = node2;
-    std::cout << "t2.root = " << *t2->root->get_value() << std::endl;
-
-    mp[node1] = t1;
-    mp[node2] = t2;
-
-    mp[node1]->print();
-    mp[node2]->print();
-  }
-  //
-  //
-  {
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "======== MyGraph 2 ========" << std::endl;
-    std::cout << "THIS IS A REAL EXAMPLE!" << std::endl;
-    std::cout << std::endl;
-
-    MyGraph<double> G;
-    std::cout << "CONTEXT2 SHOULD NOT HAVE CREATED Tree for nullptr node" << std::endl;
-    G.my_ctx().lock()->print();
-    //
-    G.print();
-    //G.entry = cycle_ptr<MyNode>(G.get_ctx(), new MyNode { .val = -1.0 });
-    std::cout << "WILL MAKE NODE -1" << std::endl;
-    G.entry = G.make_node(-1.0);
-    std::cout << "CONTEXT SHOULD HAVE CREATED Tree for -1 node" << std::endl;
-    //
-    std::cout << "FIRST PRINT2!" << std::endl;
-    G.print();
-    // make cycle
-    auto ptr1 = G.make_node_owned(1.0, G.entry);
-    auto ptr2 = G.make_node_owned(2.0, ptr1);
-    auto ptr3 = G.make_node_owned(3.0, ptr2);
-    // JUST ASSIGN OWNED TO Head again... copy is not really necessary
-    G.entry = G.entry.copy_owned(ptr3);
-    //
-
-    // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
-    //
-    //G.entry.get().neighbors.push_back(ptr1);
-    //G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
-    //ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
-    //ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
-    //ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
-    //
-    auto lsptr = G.my_ctx().lock();
-    std::cout << "lsptr2 -> " << lsptr << std::endl;
-    if (lsptr)
-      lsptr->collect();
-    //G.my_ctx().lock()->collect();
-    std::cout << std::endl;
-    std::cout << "FINAL PRINT 2!" << std::endl;
-    G.print();
   }
 
   std::cout << "FINISHED!" << std::endl;

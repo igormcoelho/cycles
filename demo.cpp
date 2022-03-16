@@ -8,6 +8,8 @@
 #include <cycles/nodes_exp.hpp>
 #include <cycles/utils.hpp>
 
+#include <cycles/MyGraph.hpp>
+
 using std::string, std::vector, std::map;
 
 struct XNode {

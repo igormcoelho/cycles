@@ -33,6 +33,7 @@ struct Graph {
 
   void print()
   {
+    std::cout << " ====> WILL PRINT GRAPH" << std::endl;
     std::cout << "Graph (|V|=" << vertex.size() << "):" << std::endl;
     for (unsigned i = 0; i < vertex.size(); i++) {
       std::cout << "v: " << i << " -> " << vertex[i].label << std::endl;
