@@ -72,7 +72,7 @@ private:
   wptr<cycle_ctx<T>> ctx;
   //
   // TODO: should be an element/vertex on tree
-  sptr<T> ref; // TODO: remove this direct ref!
+  //sptr<T> ref; // TODO: remove this direct ref!
   //
   wptr<TNode<sptr<T>>> remote_node;
 
@@ -83,17 +83,18 @@ public:
   // 3. will create a new Tree and point
   cycle_ptr(wptr<cycle_ctx<T>> ctx, T* t)
       : ctx { ctx }
-      , ref { t }
+  //, ref { t }
   //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { this->ref }) }
   {
+    sptr<T> ref { t }; // LOCAL!
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr... this 'remote_node' is weak!
-    auto sptr_remote_node = !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { this->ref });
+    auto sptr_remote_node = !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
     //
     std::cout << "C1 pointer constructor: creating NEW cycle_ptr (this_new=" << this << " to t*=" << t << ") ";
     if (ref)
-      std::cout << "with ref -> " << *this->ref << std::endl;
+      std::cout << "with ref -> " << *ref << std::endl;
     else
       std::cout << "with ref -> nullptr" << std::endl;
     //
@@ -131,11 +132,12 @@ public:
   // 3. will create a new Tree and point
   cycle_ptr(wptr<cycle_ctx<T>> ctx, T* t, cycle_ptr<T>& owner)
       : ctx { ctx }
-      , ref { t }
+  //, ref { t }
   //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { this->ref }) }
   {
+    sptr<T> ref { t };
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr... this 'remote_node' is weak!
-    auto sptr_remote_node = !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { this->ref });
+    auto sptr_remote_node = !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
     //
@@ -199,7 +201,7 @@ public:
   // simply copy smart pointer to all elements: ctx, ref and remote_node
   cycle_ptr(const cycle_ptr<T>& copy)
       : ctx { copy.ctx }
-      , ref { copy.ref }
+      //, ref { copy.ref }
       , remote_node { copy.remote_node }
   {
     if (this == &copy) {
@@ -219,7 +221,7 @@ public:
   //
   cycle_ptr(const cycle_ptr<T>& copy, const cycle_ptr<T>& owner)
       : ctx { copy.ctx }
-      , ref { copy.ref }
+      //, ref { copy.ref }
       , remote_node { copy.remote_node }
   {
     if (this == &copy) {
@@ -239,8 +241,14 @@ public:
 
   ~cycle_ptr()
   {
-    std::cout << "~cycle_ptr: ref_use_count=" << this->ref.use_count() << " {" << *this->ref << "}" << std::endl;
-    this->ref = nullptr;
+    std::cout << "~cycle_ptr: ref_use_count=" << this->get_sptr().use_count();
+    if (!has_get())
+      std::cout << "{NULL}";
+    else
+      std::cout << " {" << this->get() << "}";
+    std::cout << std::endl;
+    //this->ref = nullptr;
+    this->remote_node = wptr<TNode<sptr<T>>>(); // clear
   }
 
   // =============================
@@ -466,22 +474,35 @@ public:
     // do not comparing null pointers as 'true' (why?)... just feels like right now. (thinking more of refs than pointers)
     //(this->has_get() && other.has_get()) &&
     // TODO: think more.
-    return (this->has_get() == other.has_get()) && (ctx.lock() == other.ctx.lock()) && (ref == other.ref);
+    return (this->has_get() == other.has_get()) && (ctx.lock() == other.ctx.lock()) && (get_ptr() && other.get_ptr()); //&& (ref == other.ref);
   }
 
   bool has_get() const
   {
-    return (bool)ref;
+    return (bool)get_ptr();
+  }
+
+  sptr<T> get_sptr() const
+  {
+    auto sremote_node = this->remote_node.lock();
+    if (!sremote_node)
+      return nullptr;
+    return sremote_node->value;
+  }
+
+  T* get_ptr() const
+  {
+    return get_sptr().get();
   }
 
   T& get()
   {
-    return *ref;
+    return *get_ptr();
   }
 
   const T& get() const
   {
-    return *ref;
+    return *get_ptr();
   }
 
   /*

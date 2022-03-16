@@ -54,7 +54,7 @@ public:
   {
     std::cout << "~TNode(" << value << ")" << std::endl;
     tnode_count--;
-    std::cout << "TNode tnode_count = " << tnode_count << std::endl;
+    std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
   }
 
   // weak pointer back to root of tree (for root node, this field is empty/.reset())
