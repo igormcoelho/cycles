@@ -3,6 +3,14 @@ Data Structures in C++ with Cycles
 
 The cyclic List works as expected (for teaching purposes), but can be considered experimental (for production).
 
+This is alpha software, still in early phases.
+
+## Initial Testing (alpha)
+
+`bazel build ...`
+
+`valgrind ./bazel-bin/demo0_cycles_test`
+
 ## 'cyclic' List
 
 The first structure tested here is a cyclic List, made by `std::shared_ptr` and `std::weak_ptr`.

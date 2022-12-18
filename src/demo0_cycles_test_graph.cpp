@@ -104,17 +104,18 @@ class MyGraph {
     return cycle_ptr<Node>(this->ctx, nullptr);
   }
   // TODO(igormcoelho): can't this be defaulted somehow?
-  MyGraph() : root{make_null_node()}, ctx{new cycle_ctx<Node>{}} {}
+  MyGraph() : ctx{new cycle_ctx<Node>{}}, root{make_null_node()} {}
 
  private:
-  cycle_ptr<Node> root;
   sptr<cycle_ctx<Node>> ctx;
+  cycle_ptr<Node> root;
 };
 
 // ----------------------------------------------------------------------------
 //*/
 
 bool TestCase1() {
+  std::cout << "Initialize graph" << std::endl;
   MyGraph g;
   std::cout << std::endl << "TestCase1: MyGraph created!" << std::endl;
   {
