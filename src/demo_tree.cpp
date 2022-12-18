@@ -12,26 +12,28 @@
 
 using std::string, std::vector, std::map;
 
-int main()
-{
+using namespace cycles;
+
+int main() {
   // tree
   //
   {
     std::cout << std::endl;
     std::cout << "========= " << std::endl;
 
-    using NodeDouble = sptr<TNode<double>>; ///typename TNode<double>::TNodeType;
+    using NodeDouble =
+        sptr<TNode<double>>;  /// typename TNode<double>::TNodeType;
 
     map<NodeDouble, sptr<Tree<double>>> mp;
 
-    auto node1 = NodeDouble(new TNode<double> { 2.0 });
-    auto node2 = NodeDouble(new TNode<double> { 3.0 });
+    auto node1 = NodeDouble(new TNode<double>{2.0});
+    auto node2 = NodeDouble(new TNode<double>{3.0});
 
-    auto t1 = sptr<Tree<double>>(new Tree<double> {});
+    auto t1 = sptr<Tree<double>>(new Tree<double>{});
     t1->root = node1;
     std::cout << "t1.root = " << *t1->root << std::endl;
-    //Tree<double> t2;
-    auto t2 = sptr<Tree<double>>(new Tree<double> {});
+    // Tree<double> t2;
+    auto t2 = sptr<Tree<double>>(new Tree<double>{});
     t2->root = node2;
     std::cout << "t2.root = " << *t2->root << std::endl;
 
@@ -63,14 +65,16 @@ int main()
 
     map<NodeDouble, TreeDouble> mp;
 
-    auto node1 = NodeDouble(new TNode<sptr<double>> { std::make_shared<double>(2.0) });
-    auto node2 = NodeDouble(new TNode<sptr<double>> { std::make_shared<double>(3.0) });
+    auto node1 =
+        NodeDouble(new TNode<sptr<double>>{std::make_shared<double>(2.0)});
+    auto node2 =
+        NodeDouble(new TNode<sptr<double>>{std::make_shared<double>(3.0)});
 
-    auto t1 = TreeDouble(new Tree<sptr<double>> {});
+    auto t1 = TreeDouble(new Tree<sptr<double>>{});
     t1->root = node1;
     std::cout << "t1.root = " << *t1->root->get_value() << std::endl;
-    //Tree<double> t2;
-    auto t2 = TreeDouble(new Tree<sptr<double>> {});
+    // Tree<double> t2;
+    auto t2 = TreeDouble(new Tree<sptr<double>>{});
     t2->root = node2;
     std::cout << "t2.root = " << *t2->root->get_value() << std::endl;
 
