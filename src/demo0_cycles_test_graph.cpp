@@ -129,7 +129,13 @@ bool TestCase1() {
     a->RemoveChild(b);
   }
   g.ShrinkToFit();
-  return Counter::count() == 1;
+  if (Counter::count() == 1) {
+    return true;
+  } else {
+    std::cout << "Counter::count = " << Counter::count() << " (should be 1)"
+              << std::endl;
+    return false;
+  }
 }
 
 bool TestCase2() {
@@ -148,7 +154,13 @@ bool TestCase2() {
     a->RemoveChild(b);
   }
   g.ShrinkToFit();
-  return Counter::count() == 1;
+  if (Counter::count() == 1) {
+    return true;
+  } else {
+    std::cout << "Counter::count = " << Counter::count() << " (should be 1)"
+              << std::endl;
+    return false;
+  }
 }
 
 bool TestCase3() {
@@ -166,7 +178,13 @@ bool TestCase3() {
     d->AddChild(b);
   }
   g.ShrinkToFit();
-  return Counter::count() == 4;
+  if (Counter::count() == 4) {
+    return true;
+  } else {
+    std::cout << "Counter::count = " << Counter::count() << " (should be 4)"
+              << std::endl;
+    return false;
+  }
 }
 
 bool TestCase4() {
@@ -185,23 +203,33 @@ bool TestCase4() {
     d->RemoveChild(b);
   }
   g.ShrinkToFit();
-  return Counter::count() == 4;
+  if (Counter::count() == 4) {
+    return true;
+  } else {
+    std::cout << "Counter::count = " << Counter::count() << " (should be 1)"
+              << std::endl;
+    return false;
+  }
 }
 
 int main() {
   cout.setf(ios::boolalpha);
 
   bool passed1 = TestCase1();
-  cout << passed1 << endl;
+  cout << "test1:" << passed1 << endl;
+  if (!passed1) return -1;
 
   bool passed2 = TestCase2();
-  cout << passed2 << endl;
+  cout << "test2:" << passed2 << endl;
+  if (!passed2) return -1;
 
   bool passed3 = TestCase3();
-  cout << passed3 << endl;
+  cout << "test3:" << passed3 << endl;
+  if (!passed3) return -1;
 
   bool passed4 = TestCase4();
-  cout << passed4 << endl;
+  cout << "test4:" << passed4 << endl;
+  if (!passed4) return -1;
 
   return 0;
 }
