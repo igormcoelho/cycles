@@ -248,7 +248,7 @@ class cycle_ptr {
   }
 
   // check if this pointer is root (in tree/forest universe)
-  bool is_root() const { return (!this->remote_node.lock()->parent.lock()); }
+  bool is_root() const { return (!this->remote_node.lock()->has_parent()); }
 
   // the unsafe method will not check if it's already owner...
   // this strongly reduces computational cost (NOT inspecting child list)

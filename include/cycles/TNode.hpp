@@ -69,6 +69,8 @@ class TNode {
   //
   wptr<TNode<T>> parent;
 
+  bool has_parent() const { return (bool)parent.lock(); }
+
   // recursive update on all owned nodes
   void recupdate(wptr<TNode<T>> new_tree_root) {
     //
