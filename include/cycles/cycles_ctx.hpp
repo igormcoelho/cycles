@@ -31,6 +31,8 @@ class cycles_ctx {
   // collect strategy parameters
   bool auto_collect{true};
 
+  bool debug{false};
+
   // Forest management system comes here
   // using NodeType = sptr<TNode<T>>;
   // using TreeType = sptr<Tree<T>>;
@@ -42,16 +44,21 @@ class cycles_ctx {
   map<NodeType, TreeType> forest;
 
  public:
-  cycles_ctx() { std::cout << "cycles_ctx created!" << std::endl; }
+  cycles_ctx() {
+    if (debug) std::cout << "cycles_ctx created!" << std::endl;
+  }
 
   ~cycles_ctx() {
-    std::cout << "~cycles_ctx() forest_size =" << forest.size() << std::endl;
+    if (debug)
+      std::cout << "~cycles_ctx() forest_size =" << forest.size() << std::endl;
     for (auto p : forest) {
-      std::cout << " clearing root of ~> " << p.first << "'" << (*p.first)
-                << "' -> " << p.second << " TREE" << std::endl;
+      if (debug)
+        std::cout << " clearing root of ~> " << p.first << "'" << (*p.first)
+                  << "' -> " << p.second << " TREE" << std::endl;
       assert(p.second->root);  // root must never be nullptr
-      std::cout << "   root.|children|=" << p.second->root->children.size()
-                << std::endl;
+      if (debug)
+        std::cout << "   root.|children|=" << p.second->root->children.size()
+                  << std::endl;
       p.second->root->children.clear();  // clear children. IS THIS NECESSARY???
       p.second->root = nullptr;          // clear root
     }

@@ -7,7 +7,7 @@
         "-log=verbose",
         "-pretty",
         "--background-index",
-        "--compile-commands-dir=${workspaceFolder}/",
+        "--compile-commands-dir=/workspaces/cycles/",
     ],
     "C_Cpp.intelliSenseEngine": "Disabled",
     "testMate.cpp.test.advancedExecutables": [
