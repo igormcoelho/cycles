@@ -180,16 +180,7 @@ class cycles_ptr {
   //
   // ======= C3 copy constructor =======
   // simply copy smart pointer to all elements: ctx, ref and remote_node
-  cycles_ptr(const cycles_ptr<T>& copy)
-      : ctx{copy.ctx}  //, ref { copy.ref }
-        ,
-        remote_node{copy.remote_node} {
-    if (this == &copy) {
-      // TODO: self assignment breaks nothing here, in this case...
-      // ... but let's avoid it, for now
-      assert(false);
-    }
-  }
+  cycles_ptr(const cycles_ptr<T>& copy) = delete;
 
  public:
   // ======= M1 move constructor =======
