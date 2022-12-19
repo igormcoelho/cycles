@@ -179,7 +179,6 @@ class cycles_ptr {
   // NO COPY CONSTRUCTOR
   //
   // ======= C3 copy constructor =======
-  // simply copy smart pointer to all elements: ctx, ref and remote_node
   cycles_ptr(const cycles_ptr<T>& copy) = delete;
 
  public:
@@ -219,8 +218,10 @@ class cycles_ptr {
     this->set_owned_by(owner);
   }
 
+  int get_ref_use_count() const { return this->get_sptr().use_count(); }
+
   void destroy() {
-    std::cout << "destroy: ref_use_count=" << this->get_sptr().use_count();
+    std::cout << "destroy: ref_use_count=" << this->get_ref_use_count();
     if (!has_get())
       std::cout << "{NULL}";
     else

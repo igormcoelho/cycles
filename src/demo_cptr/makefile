@@ -1,4 +1,4 @@
-all:  app_demo_sizeof app_demo_list app_demo_tree app_demo_graph1 app_demo
+all:  app_demo_sizeof app_demo_list app_demo_tree app_demo_graph1 app_demo app_demo0_cycles_test_graph
 
 app_demo: demo.cpp
 	g++ demo.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo
@@ -14,6 +14,10 @@ app_demo_tree: demo_tree.cpp
 
 app_demo_sizeof: demo_sizeof.cpp
 	g++ demo_sizeof.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo_sizeof
+
+app_demo0_cycles_test_graph: demo0_cycles_test_graph.cpp
+	g++ demo0_cycles_test_graph.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++20 -o ../../build/app_demo0_cycles_test_graph
+
 
 graph1: app_demo_graph1
 	@echo "."

@@ -22,21 +22,22 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     G.entry = G.make_node(-1.0);
     // forest size is 1
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
-    // ref_use_count=2 {MyNode(-1)}
+    REQUIRE(G.entry.get_ref_use_count() == 2);
+    //
     // make cycle
     auto ptr1 = G.make_node(1.0);
-    // MyNode mynode_count=2
-    // TNode tnode_count = 2
+    REQUIRE(mynode_count == 2);
+    REQUIRE(tnode_count == 2);
     REQUIRE(G.my_ctx().lock()->forest.size() == 2);
     //
     auto ptr2 = G.make_node(2.0);
-    // MyNode mynode_count=3
-    // TNode tnode_count = 3
+    REQUIRE(mynode_count == 3);
+    REQUIRE(tnode_count == 3);
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     //
     auto ptr3 = G.make_node(3.0);
-    // MyNode mynode_count=4
-    // TNode tnode_count = 4
+    REQUIRE(mynode_count == 4);
+    REQUIRE(tnode_count == 4);
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
     //
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
@@ -62,9 +63,7 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     //
     REQUIRE(G.my_ctx().lock()->forest.size() == 2);  // NO COLLECTION??
     //
-  }  // SHOULD NOT LEAK
+  }
+  // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);
-  // ~MyNode mynode_count=0
-  // ~cycles_ptr: ref_use_count=0{NULL}
-  // ~cycles_ptr: ref_use_count=0{NULL}
 }
