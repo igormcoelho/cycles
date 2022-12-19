@@ -65,6 +65,6 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
   }  // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);
   // ~MyNode mynode_count=0
-  // ~cycle_ptr: ref_use_count=0{NULL}
-  // ~cycle_ptr: ref_use_count=0{NULL}
+  // ~cycles_ptr: ref_use_count=0{NULL}
+  // ~cycles_ptr: ref_use_count=0{NULL}
 }

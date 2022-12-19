@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 // lib
-#include <cycles/cycle_ptr.hpp>
+#include <cycles/cycles_ptr.hpp>
 
 using namespace cycles;  // NOLINT
 using namespace std;     // NOLINT
@@ -63,16 +63,16 @@ private:
 class MyGraphGCPP {
  public:
   class Node : public Counter {
-    vector<cycle_ptr<Node>> children;  // {heap};
+    vector<cycles_ptr<Node>> children;  // {heap};
 
     char c;
 
    public:
     explicit Node(char _c) : c{_c} {}
 
-    void AddChild(const cycle_ptr<Node>& node) { children.push_back(node); }
+    void AddChild(const cycles_ptr<Node>& node) { children.push_back(node); }
 
-    void RemoveChild(const cycle_ptr<Node>& node) {
+    void RemoveChild(const cycles_ptr<Node>& node) {
       auto it = find(children.begin(), children.end(), node);
       assert(it != children.end());  // NOLINT
       // children.erase(it);
@@ -80,8 +80,8 @@ class MyGraphGCPP {
       *it = make_null_node_helper(node.get_ctx());
     }
 
-    auto make_null_node_helper(auto ctx) -> cycle_ptr<Node> {
-      return cycle_ptr<Node>(ctx, nullptr);
+    auto make_null_node_helper(auto ctx) -> cycles_ptr<Node> {
+      return cycles_ptr<Node>(ctx, nullptr);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Node& me) {
@@ -90,31 +90,31 @@ class MyGraphGCPP {
     }
   };
 
-  void SetRoot(const cycle_ptr<Node>& node) { root = node; }
+  void SetRoot(const cycles_ptr<Node>& node) { root = node; }
 
   // void ShrinkToFit() { heap.collect(); }
   void ShrinkToFit() {}  // TODO(igormcoelho): allow collection here ???
 
   // static auto MakeNode() { return heap.make<MyGraph::Node>(); }
 
-  auto MakeNode(char c) -> cycle_ptr<Node> {
+  auto MakeNode(char c) -> cycles_ptr<Node> {
     auto* ptr = new Node(c);  // NOLINT
     // TODO(igormcoelho): create ctx->make<...> and type erase ctx
-    return cycle_ptr<Node>(this->ctx, ptr);
+    return cycles_ptr<Node>(this->ctx, ptr);
   }
 
   // TODO(igormcoelho): remove this helper for null node
-  auto make_null_node() -> cycle_ptr<Node> {
-    return cycle_ptr<Node>(this->ctx, nullptr);
+  auto make_null_node() -> cycles_ptr<Node> {
+    return cycles_ptr<Node>(this->ctx, nullptr);
   }
   // TODO(igormcoelho): can't this be defaulted somehow?
-  MyGraphGCPP() : ctx{new cycle_ctx<Node>{}}, root{make_null_node()} {}
+  MyGraphGCPP() : ctx{new cycles_ctx<Node>{}}, root{make_null_node()} {}
 
  public:
-  sptr<cycle_ctx<Node>> ctx;
+  sptr<cycles_ctx<Node>> ctx;
 
  private:
-  cycle_ptr<Node> root;
+  cycles_ptr<Node> root;
 };
 
 // ----------------------------------------------------------------------------

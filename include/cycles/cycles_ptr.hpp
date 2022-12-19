@@ -1,8 +1,8 @@
 // SPDX-License-Identifier:  MIT
 // Copyright (C) 2021-2022 - Cycles - https://github.com/igormcoelho/cycles
 
-#ifndef CYCLES_CYCLE_PTR_HPP_  // NOLINT
-#define CYCLES_CYCLE_PTR_HPP_  // NOLINT
+#ifndef CYCLES_cycles_ptr_HPP_  // NOLINT
+#define CYCLES_cycles_ptr_HPP_  // NOLINT
 
 // C++
 #include <iostream>
@@ -11,13 +11,13 @@
 
 //
 #include <cycles/Tree.hpp>
-#include <cycles/cycle_ctx.hpp>
+#include <cycles/cycles_ctx.hpp>
 #include <cycles/utils.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
 // ========================
-// cycle_ptr and cycle_ctx
+// cycles_ptr and cycles_ctx
 // ========================
 // smart pointer suitable for cycles
 // memory is self-managed
@@ -27,9 +27,9 @@ namespace cycles {
 
 template <typename T>
 // NOLINTNEXTLINE
-class cycle_ptr {
+class cycles_ptr {
  private:
-  wptr<cycle_ctx<T>> ctx;
+  wptr<cycles_ctx<T>> ctx;
   //
   // TODO: should be an element/vertex on tree
   // sptr<T> ref; // TODO: remove this direct ref!
@@ -43,7 +43,7 @@ class cycle_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  cycle_ptr(wptr<cycle_ctx<T>> ctx, T* t)
+  cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t)
       : ctx{ctx}  //, ref { t }
                   //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new
                   // TNode<sptr<T>> { this->ref }) }
@@ -56,7 +56,7 @@ class cycle_ptr {
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
     //
-    std::cout << "C1 pointer constructor: creating NEW cycle_ptr (this_new="
+    std::cout << "C1 pointer constructor: creating NEW cycles_ptr (this_new="
               << this << " to t*=" << t << ") ";
     if (ref)
       std::cout << "with ref -> " << *ref << std::endl;
@@ -97,7 +97,7 @@ class cycle_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  cycle_ptr(wptr<cycle_ctx<T>> ctx, T* t, cycle_ptr<T>& owner)
+  cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t, cycles_ptr<T>& owner)
       : ctx{ctx}  //, ref { t }
                   //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new
                   // TNode<sptr<T>> { this->ref }) }
@@ -111,7 +111,7 @@ class cycle_ptr {
     this->remote_node = sptr_remote_node;
     //
     std::cout
-        << "C2 pointer constructor: creating NEW OWNED cycle_ptr (this_new="
+        << "C2 pointer constructor: creating NEW OWNED cycles_ptr (this_new="
         << this << " to t*=" << t << ") "
         << " owner='" << owner.get() << "' ";
     if (ref)
@@ -172,7 +172,7 @@ class cycle_ptr {
 
   // ======= C3 copy constructor =======
   // simply copy smart pointer to all elements: ctx, ref and remote_node
-  cycle_ptr(const cycle_ptr<T>& copy)
+  cycles_ptr(const cycles_ptr<T>& copy)
       : ctx{copy.ctx}  //, ref { copy.ref }
         ,
         remote_node{copy.remote_node} {
@@ -186,13 +186,13 @@ class cycle_ptr {
   // ======= C4 copy constructor WITH owner =======
   // copy constructor (still good for vector... must be the meaning of a "copy")
   // proposed operation is:
-  // cptr1 = cycle_ptr<T>(cptr0, cptr2); // (cptr0 and cptr2 exists already)
+  // cptr1 = cycles_ptr<T>(cptr0, cptr2); // (cptr0 and cptr2 exists already)
   // it could also follow this logic:
-  // 1. cptr1 = cycle_ptr<T>{cptr0}; // copy cptr0 into cptr1
+  // 1. cptr1 = cycles_ptr<T>{cptr0}; // copy cptr0 into cptr1
   // 2. cptr1.set_owned_by(cptr2);   // makes cptr1 (and also cptr0) owned by
   // cptr2
   //
-  cycle_ptr(const cycle_ptr<T>& copy, const cycle_ptr<T>& owner)
+  cycles_ptr(const cycles_ptr<T>& copy, const cycles_ptr<T>& owner)
       : ctx{copy.ctx}  //, ref { copy.ref }
         ,
         remote_node{copy.remote_node} {
@@ -211,8 +211,8 @@ class cycle_ptr {
     this->set_owned_by(owner);
   }
 
-  ~cycle_ptr() {
-    std::cout << "~cycle_ptr: ref_use_count=" << this->get_sptr().use_count();
+  ~cycles_ptr() {
+    std::cout << "~cycles_ptr: ref_use_count=" << this->get_sptr().use_count();
     if (!has_get())
       std::cout << "{NULL}";
     else
@@ -226,7 +226,7 @@ class cycle_ptr {
   // this will be owned by 'owner'
   // =============================
 
-  void set_owned_by(const cycle_ptr<T>& owner) {
+  void set_owned_by(const cycles_ptr<T>& owner) {
     if (this == &owner) {
       // TODO: this is strange...
       // ... so let's avoid it, for now
@@ -252,9 +252,9 @@ class cycle_ptr {
 
   // the unsafe method will not check if it's already owner...
   // this strongly reduces computational cost (NOT inspecting child list)
-  void unsafe_set_owned_by(const cycle_ptr<T>& owner) {
+  void unsafe_set_owned_by(const cycles_ptr<T>& owner) {
     //
-    std::cout << std::endl << "cycle_ptr:: unsafe_set_owned_by" << std::endl;
+    std::cout << std::endl << "cycles_ptr:: unsafe_set_owned_by" << std::endl;
     std::cout << "TODO: Must register relation of:" << std::endl;
     std::cout << "\tthis=" << this
               << " this->remote_node=" << this->remote_node.lock() << ") '"
@@ -411,33 +411,33 @@ class cycle_ptr {
   // created (so as "c owns a",  c->a)
   // - maybe this is a good thing, because we can keep copy constructor
   // - maybe not, but I don't imagine why at this moment...
-  auto copy_owned(const cycle_ptr<T>& owner) {
-    return cycle_ptr<T>(*this, owner);
+  auto copy_owned(const cycles_ptr<T>& owner) {
+    return cycles_ptr<T>(*this, owner);
   }
 
   // maybe we need an 'owns' method, that does the opposite
   // example: a.owns(b);  will create relationship a->b
-  void owns(const cycle_ptr<T>& owned) { assert(false); }
+  void owns(const cycles_ptr<T>& owned) { assert(false); }
 
   // maybe we need an 'removed_owned' method
   // MAYBE NOT! maybe this is just a ctx thing, or maybe we just let variables
   // expire to handle this... I don't really know. example: a.remove_owned(b);
   // will remove relationship a->b (if it exists, it returns true) what to do
   // with opposite relationship? do we let ctx handle all this?
-  bool remove_owned(const cycle_ptr<T>& owned) { assert(false); }
+  bool remove_owned(const cycles_ptr<T>& owned) { assert(false); }
 
   /*
-  cycle_ptr(const cycle_ptr<T>& other)
+  cycles_ptr(const cycles_ptr<T>& other)
       : ctx { other.ctx }
       , ref { other.ref }
   {
-    std::cout << "copy cycle_ptr" << std::endl;
+    std::cout << "copy cycles_ptr" << std::endl;
     std::cout << "Must register relation of (this) " << this << (this->get()) <<
   " weakly_owns-> " << &other << (other.get()) << std::endl;
   }
   */
 
-  //~cycle_ptr()
+  //~cycles_ptr()
   //{
   // do_reset();
   //}
@@ -450,9 +450,9 @@ class cycle_ptr {
   }
 */
 
-  auto get_ctx() -> wptr<cycle_ctx<T>> { return ctx; }
+  auto get_ctx() -> wptr<cycles_ctx<T>> { return ctx; }
 
-  bool operator==(const cycle_ptr<T>& other) const {
+  bool operator==(const cycles_ptr<T>& other) const {
     // do not comparing null pointers as 'true' (why?)... just feels like right
     // now. (thinking more of refs than pointers)
     //(this->has_get() && other.has_get()) &&
@@ -482,4 +482,4 @@ class cycle_ptr {
 
 }  // namespace cycles
 
-#endif  // CYCLES_CYCLE_PTR_HPP_ // NOLINT
+#endif  // CYCLES_cycles_ptr_HPP_ // NOLINT

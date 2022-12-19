@@ -1,17 +1,16 @@
 
+#include <cycles/List.hpp>
+#include <cycles/Tree.hpp>
+#include <cycles/cycles_ptr.hpp>
+#include <cycles/nodes_exp.hpp>
+#include <cycles/utils.hpp>
 #include <map>
 
 #include "Graph.hpp"
-#include <cycles/List.hpp>
-#include <cycles/Tree.hpp>
-#include <cycles/cycle_ptr.hpp>
-#include <cycles/nodes_exp.hpp>
-#include <cycles/utils.hpp>
 
 using std::string, std::vector, std::map;
 
-int main()
-{
+int main() {
   //
   // demos for cyclic List types
   //
@@ -26,7 +25,7 @@ int main()
     l.head = node3;
 
     // node1->set_next(node3); // loop and leak
-    node1->set_next_weak(node3); // loop but no leak
+    node1->set_next_weak(node3);  // loop but no leak
 
     l.print();
   }
@@ -72,8 +71,7 @@ int main()
   {
     List<double> l;
     std::cout << "will create big list!" << std::endl;
-    for (unsigned i = 0; i < 30000; i++)
-      l.push_front(0.0);
+    for (unsigned i = 0; i < 30000; i++) l.push_front(0.0);
     std::cout << "will free big list!" << std::endl;
     // Stackoverflow on Destructor with N=30000
     /*

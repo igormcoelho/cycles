@@ -9,7 +9,7 @@
 #include <cycles/List.hpp>
 #include <cycles/MyGraph.hpp>
 #include <cycles/Tree.hpp>
-#include <cycles/cycle_ptr.hpp>
+#include <cycles/cycles_ptr.hpp>
 #include <cycles/nodes_exp.hpp>
 #include <cycles/utils.hpp>
 
@@ -35,7 +35,7 @@ int main() {
     G.my_ctx().lock()->print();
     //
     G.print();
-    // G.entry = cycle_ptr<MyNode>(G.get_ctx(), new MyNode { .val = -1.0 });
+    // G.entry = cycles_ptr<MyNode>(G.get_ctx(), new MyNode { .val = -1.0 });
     std::cout << "WILL MAKE NODE -1" << std::endl;
     G.entry = G.make_node(-1.0);
     std::cout << "CONTEXT SHOULD HAVE CREATED Tree for -1 node" << std::endl;

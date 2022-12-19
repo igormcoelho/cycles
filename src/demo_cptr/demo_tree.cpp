@@ -6,7 +6,7 @@
 //
 #include <cycles/List.hpp>
 #include <cycles/Tree.hpp>
-#include <cycles/cycle_ptr.hpp>
+#include <cycles/cycles_ptr.hpp>
 #include <cycles/nodes_exp.hpp>
 #include <cycles/utils.hpp>
 

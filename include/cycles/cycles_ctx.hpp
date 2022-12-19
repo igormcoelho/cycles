@@ -1,8 +1,8 @@
 // SPDX-License-Identifier:  MIT
 // Copyright (C) 2021-2022 - Cycles - https://github.com/igormcoelho/cycles
 
-#ifndef CYCLES_CYCLE_CTX_HPP_  // NOLINT
-#define CYCLES_CYCLE_CTX_HPP_  // NOLINT
+#ifndef CYCLES_cycles_ctx_HPP_  // NOLINT
+#define CYCLES_cycles_ctx_HPP_  // NOLINT
 
 // C++
 #include <iostream>
@@ -16,7 +16,7 @@
 using std::vector, std::ostream, std::map;  // NOLINT
 
 // ========================
-// cycle_ptr and cycle_ctx
+// cycles_ptr and cycles_ctx
 // ========================
 // smart pointer suitable for cycles
 // memory is self-managed
@@ -26,7 +26,7 @@ namespace cycles {
 
 template <typename T>
 // NOLINTNEXTLINE
-class cycle_ctx {
+class cycles_ctx {
  public:
   // collect strategy parameters
   bool auto_collect{true};
@@ -42,10 +42,10 @@ class cycle_ctx {
   map<NodeType, TreeType> forest;
 
  public:
-  cycle_ctx() { std::cout << "cycle_ctx created!" << std::endl; }
+  cycles_ctx() { std::cout << "cycles_ctx created!" << std::endl; }
 
-  ~cycle_ctx() {
-    std::cout << "~cycle_ctx() forest_size =" << forest.size() << std::endl;
+  ~cycles_ctx() {
+    std::cout << "~cycles_ctx() forest_size =" << forest.size() << std::endl;
     for (auto p : forest) {
       std::cout << " clearing root of ~> " << p.first << "'" << (*p.first)
                 << "' -> " << p.second << " TREE" << std::endl;
@@ -78,4 +78,4 @@ class cycle_ctx {
 
 }  // namespace cycles
 
-#endif  // CYCLES_CYCLE_CTX_HPP_ // NOLINT
+#endif  // CYCLES_cycles_ctx_HPP_ // NOLINT

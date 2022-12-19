@@ -1,17 +1,16 @@
 
+#include <cycles/List.hpp>
+#include <cycles/Tree.hpp>
+#include <cycles/cycles_ptr.hpp>
+#include <cycles/nodes_exp.hpp>
+#include <cycles/utils.hpp>
 #include <map>
 
 #include "Graph.hpp"
-#include <cycles/List.hpp>
-#include <cycles/Tree.hpp>
-#include <cycles/cycle_ptr.hpp>
-#include <cycles/nodes_exp.hpp>
-#include <cycles/utils.hpp>
 
 using std::string, std::vector, std::map;
 
-int main()
-{
+int main() {
   std::cout << "sizeof(List1) = " << sizeof(List1) << std::endl;
   std::cout << "sizeof(Node1) = " << sizeof(Node1) << std::endl;
   //

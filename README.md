@@ -63,7 +63,7 @@ template <typename X>
 class MyNode {
 public:
   X val;
-  vector<cycle_ptr<MyNode>> neighbors;
+  vector<cycles_ptr<MyNode>> neighbors;
 };
 
 template <typename X>
@@ -71,35 +71,35 @@ class MyGraph {
   using MyNodeX = MyNode<X>;
 
 private:
-  sptr<cycle_ctx<MyNodeX>> ctx;
+  sptr<cycles_ctx<MyNodeX>> ctx;
 
 public:
-  auto my_ctx() -> wptr<cycle_ctx<MyNodeX>>
+  auto my_ctx() -> wptr<cycles_ctx<MyNodeX>>
   {
     return this->ctx;
   }
 
-  auto make_node(X v) -> cycle_ptr<MyNodeX>
+  auto make_node(X v) -> cycles_ptr<MyNodeX>
   {
-    return cycle_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v });
+    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v });
   }
 
-  auto make_node_owned(X v, cycle_ptr<MyNodeX>& owner) -> cycle_ptr<MyNodeX>
+  auto make_node_owned(X v, cycles_ptr<MyNodeX>& owner) -> cycles_ptr<MyNodeX>
   {
-    return cycle_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v }, owner);
+    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v }, owner);
   }
 
-  auto make_null_node() -> cycle_ptr<MyNodeX>
+  auto make_null_node() -> cycles_ptr<MyNodeX>
   {
-    return cycle_ptr<MyNodeX>(this->ctx, nullptr);
+    return cycles_ptr<MyNodeX>(this->ctx, nullptr);
   }
 
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  cycle_ptr<MyNodeX> entry;
+  cycles_ptr<MyNodeX> entry;
 
   MyGraph()
       : entry { make_null_node() }
-      , ctx { new cycle_ctx<MyNodeX> {} }
+      , ctx { new cycles_ctx<MyNodeX> {} }
   {
   }
 
@@ -112,7 +112,7 @@ public:
 ```
 
 This DRAFT example shows that, even for a cyclic graph, no leaks happen!
-Graph stores a cycle_ctx while all cycle_ptr ensure that no real cycle dependencies exist.
+Graph stores a cycle_ctx while all cycles_ptr ensure that no real cycle dependencies exist.
 
 ```
   {
@@ -123,9 +123,9 @@ Graph stores a cycle_ctx while all cycle_ptr ensure that no real cycle dependenc
     G.print();
     // make cycle
     using MyNodeX = MyNode<double>;
-    cycle_ptr<MyNodeX> ptr1 = G.make_node_owned(1.0, G.entry);
-    cycle_ptr<MyNodeX> ptr2 = G.make_node_owned(2.0, ptr1);
-    cycle_ptr<MyNodeX> ptr3 = G.make_node_owned(3.0, ptr2);
+    cycles_ptr<MyNodeX> ptr1 = G.make_node_owned(1.0, G.entry);
+    cycles_ptr<MyNodeX> ptr2 = G.make_node_owned(2.0, ptr1);
+    cycles_ptr<MyNodeX> ptr3 = G.make_node_owned(3.0, ptr2);
     // JUST ASSIGN OWNED TO head again... copy is not really necessary (TODO: create other method)
     auto ptr_head = G.entry.copy_owned(ptr3);
   }

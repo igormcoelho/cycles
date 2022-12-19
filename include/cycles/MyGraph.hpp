@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cycle_ptr.hpp"
+#include "cycles_ptr.hpp"
 // ================== EXAMPLE ================
 
 using namespace cycles;  // NOLINT
@@ -22,7 +22,7 @@ class MyNode {
 
   X val;
 
-  vector<cycle_ptr<MyNode>> neighbors;
+  vector<cycles_ptr<MyNode>> neighbors;
   //
   friend ostream& operator<<(ostream& os, const MyNode& node) {
     os << "MyNode(" << node.val << ")";
@@ -37,28 +37,28 @@ class MyGraph {
   using MyNodeX = MyNode<X>;
 
  private:
-  sptr<cycle_ctx<MyNodeX>> ctx;
+  sptr<cycles_ctx<MyNodeX>> ctx;
 
  public:
-  auto my_ctx() -> wptr<cycle_ctx<MyNodeX>> { return this->ctx; }
+  auto my_ctx() -> wptr<cycles_ctx<MyNodeX>> { return this->ctx; }
 
-  auto make_node(X v) -> cycle_ptr<MyNodeX> {
+  auto make_node(X v) -> cycles_ptr<MyNodeX> {
     auto* ptr = new MyNodeX(v);
-    return cycle_ptr<MyNodeX>(this->ctx, ptr);
+    return cycles_ptr<MyNodeX>(this->ctx, ptr);
   }
 
-  auto make_node_owned(X v, cycle_ptr<MyNodeX>& owner) -> cycle_ptr<MyNodeX> {
-    return cycle_ptr<MyNodeX>(this->ctx, new MyNodeX(v), owner);
+  auto make_node_owned(X v, cycles_ptr<MyNodeX>& owner) -> cycles_ptr<MyNodeX> {
+    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v), owner);
   }
 
-  auto make_null_node() -> cycle_ptr<MyNodeX> {
-    return cycle_ptr<MyNodeX>(this->ctx, nullptr);
+  auto make_null_node() -> cycles_ptr<MyNodeX> {
+    return cycles_ptr<MyNodeX>(this->ctx, nullptr);
   }
 
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  cycle_ptr<MyNodeX> entry;
+  cycles_ptr<MyNodeX> entry;
 
-  MyGraph() : ctx{new cycle_ctx<MyNodeX>{}}, entry{make_null_node()} {}
+  MyGraph() : ctx{new cycles_ctx<MyNodeX>{}}, entry{make_null_node()} {}
 
   ~MyGraph() {
     std::cout << "~MyGraph" << std::endl;
@@ -78,7 +78,7 @@ class MyGraph {
     std::cout << std::endl;
   }
 
-  void printFrom(cycle_ptr<MyNodeX> node) {
+  void printFrom(cycles_ptr<MyNodeX> node) {
     if (node.has_get()) {
       std::cout << "node=" << node.get()
                 << " |neighbors|=" << node.get().neighbors.size() << std::endl;
