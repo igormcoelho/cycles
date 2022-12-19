@@ -15,6 +15,13 @@ cc_test(
      ":catch2_thirdparty"],
 )
 
+cc_binary(
+    name = "test_demo_graph2",
+    srcs = ["demo_graph2.cpp"],
+    deps=["//include/cycles:cycles_hpp", 
+    "//src/demo_cptr:all_hpp"]
+)
+
 
 cc_library(
     name = "catch2_thirdparty",

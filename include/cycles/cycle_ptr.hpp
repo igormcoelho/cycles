@@ -255,10 +255,12 @@ class cycle_ptr {
   void unsafe_set_owned_by(const cycle_ptr<T>& owner) {
     //
     std::cout << std::endl << "cycle_ptr:: unsafe_set_owned_by" << std::endl;
-    std::cout << "TODO: Must register relation of (this=" << this
+    std::cout << "TODO: Must register relation of:" << std::endl;
+    std::cout << "\tthis=" << this
               << " this->remote_node=" << this->remote_node.lock() << ") '"
-              << (this->get()) << "' owned_by (&owner=" << &owner << ") '"
-              << (owner.get()) << "'" << std::endl;
+              << (this->get()) << "' owned_by:" << std::endl;
+    std::cout << "\t&owner=" << &owner << " '" << (owner.get())
+              << "'  owner.is_root()=" << owner.is_root() << std::endl;
     //
     // TREE OF OWNER MUST EXIST... BUT... WE CANNOT CHECK IT ANYMORE (removed
     // 'tree_root') WRONG!!!! CASE 1) IF... this is root (no parent), then

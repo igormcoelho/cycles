@@ -1,8 +1,10 @@
 
+// C++
 #include <map>
+//
+#include <demo_cptr/Graph.hpp>
+#include <demo_cptr/XNode.hpp>
 
-#include "Graph.hpp"
-#include "XNode.hpp"
 //
 #include <cycles/List.hpp>
 #include <cycles/MyGraph.hpp>
