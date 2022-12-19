@@ -58,7 +58,7 @@ class MyGraph {
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
   cycle_ptr<MyNodeX> entry;
 
-  MyGraph() : entry{make_null_node()}, ctx{new cycle_ctx<MyNodeX>{}} {}
+  MyGraph() : ctx{new cycle_ctx<MyNodeX>{}}, entry{make_null_node()} {}
 
   ~MyGraph() {
     std::cout << "~MyGraph" << std::endl;

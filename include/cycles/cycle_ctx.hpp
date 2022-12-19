@@ -65,13 +65,14 @@ class cycle_ctx {
   }
 
   void print() {
-    std::cout << "print ctx: (forest size=" << forest.size() << ")"
+    std::cout << "print ctx: (forest size=" << forest.size() << ") ["
               << std::endl;
     for (auto p : forest) {
-      std::cout << " ~> " << p.first << "'" << (*p.first) << "' -> " << p.second
-                << " TREE" << std::endl;
+      std::cout << " ~> ROOT_NODE " << p.first << " as '" << (*p.first)
+                << "' -> TREE " << p.second << ": ";
       p.second->print();
     }
+    std::cout << "]" << std::endl;
   }
 };
 

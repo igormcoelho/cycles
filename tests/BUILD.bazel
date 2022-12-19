@@ -1,0 +1,32 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+
+cc_test(
+    name = "MyGraph-test",
+    srcs = glob([
+        "MyGraph.Test.cpp",
+        #"List-test/**/*.hpp",
+        #"List-test/**/*.h",
+    ]),
+    defines = ["CATCH_CONFIG_MAIN"],
+    deps = ["//include/cycles:cycles_hpp", 
+     ":catch2_thirdparty"],
+)
+
+
+cc_library(
+    name = "catch2_thirdparty",
+    hdrs = ["thirdparty/catch2/catch_amalgamated.hpp"],
+    srcs = ["thirdparty/catch2/catch_amalgamated.cpp"],
+    strip_include_prefix="thirdparty/",
+    #include_prefix = "catch2/"
+)
+
+test_suite(
+    name = "all-tests",
+    tests = [
+        "MyGraph-test"
+    ]
+)

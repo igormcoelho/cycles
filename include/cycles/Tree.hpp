@@ -96,10 +96,12 @@ struct Tree {
     if (node) {
       std::cout << "node TNode<T>: {" << *node
                 << "} |children|=" << node->children.size() << std::endl;
-      std::cout << "  => children: ";
-      for (unsigned i = 0; i < node->children.size(); i++)
-        std::cout << "{" << *node->get_child(i) << "}";
-      std::cout << std::endl;
+      if (node->children.size() > 0) {
+        std::cout << "  => children: ";
+        for (unsigned i = 0; i < node->children.size(); i++)
+          std::cout << "{" << *node->get_child(i) << "}";
+        std::cout << std::endl;
+      }
       for (unsigned i = 0; i < node->children.size(); i++) {
         if (node->get_child(i) == this->root) {
           std::cout << "WARNING: cyclic graph! stop printing..." << std::endl;

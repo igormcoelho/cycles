@@ -247,14 +247,17 @@ class cycle_ptr {
     unsafe_set_owned_by(owner);
   }
 
+  // check if this pointer is root (in tree/forest universe)
+  bool is_root() const { return (!this->remote_node.lock()->parent.lock()); }
+
   // the unsafe method will not check if it's already owner...
   // this strongly reduces computational cost (NOT inspecting child list)
   void unsafe_set_owned_by(const cycle_ptr<T>& owner) {
     //
-    std::cout << std::endl << "cycle_ptr:: set_owned_by" << std::endl;
-    std::cout << "TODO: Must register relation of (this_new=" << this
-              << " this->remote_node=" << this->remote_node.lock() << " {"
-              << (this->get()) << "}) owned_by (this_other=" << &owner << ") '"
+    std::cout << std::endl << "cycle_ptr:: unsafe_set_owned_by" << std::endl;
+    std::cout << "TODO: Must register relation of (this=" << this
+              << " this->remote_node=" << this->remote_node.lock() << ") '"
+              << (this->get()) << "' owned_by (&owner=" << &owner << ") '"
               << (owner.get()) << "'" << std::endl;
     //
     // TREE OF OWNER MUST EXIST... BUT... WE CANNOT CHECK IT ANYMORE (removed
@@ -269,7 +272,8 @@ class cycle_ptr {
     // removed; otherwise, I'm just removed from children list. CASE 2)
     // otherwise, just add a weak link from 'owner' to this node.
     // =========== CASE 1 ===========
-    if (!owner.remote_node.lock()->parent.lock()) {
+    // if (!owner.remote_node.lock()->parent.lock()) {
+    if (owner.is_root()) {
       std::cout
           << "CASE 1: owner is root of some tree! Solution: OWNER will take it!"
           << std::endl;
@@ -402,7 +406,7 @@ class cycle_ptr {
   // - if you copy pointer again (with regular copy constructor),
   // ownership relationship will be kept on ctx
   // example: b = a.copy_owned(c); // b is a copy of a, and relationship c->b is
-  // created (so as c->a)
+  // created (so as "c owns a",  c->a)
   // - maybe this is a good thing, because we can keep copy constructor
   // - maybe not, but I don't imagine why at this moment...
   auto copy_owned(const cycle_ptr<T>& owner) {
