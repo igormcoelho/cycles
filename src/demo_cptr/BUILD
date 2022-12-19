@@ -10,6 +10,13 @@ cc_binary(
     deps=["//include/cycles:cycles_hpp"]
 )
 
+cc_binary(
+    name = "demo",
+    srcs = ["demo.cpp"],
+    deps=["//include/cycles:cycles_hpp",
+    ":all_hpp"]
+)
+
 cc_library(
     name = "all_hpp",
     hdrs = glob([

@@ -1,21 +1,24 @@
 #pragma once
 
+// C++
+#include <map>
+#include <vector>
+//
 #include <cycles/List.hpp>
 #include <cycles/Tree.hpp>
 #include <cycles/cycles_ptr.hpp>
 #include <cycles/nodes_exp.hpp>
 #include <cycles/utils.hpp>
-#include <map>
+//
+#include <demo_cptr/Graph.hpp>
 
-#include "Graph.hpp"
-
-using std::string, std::vector, std::map;
+using std::string, std::vector, std::map;  // NOLINT
 
 struct XNode {
   int content;
   vector<sptr<XNode>> nodes;
 
-  XNode(int _content) : content{_content} {}
+  explicit XNode(int _content) : content{_content} {}
 
   friend std::ostream& operator<<(std::ostream& os, const XNode& node) {
     os << "XNode(" << node.content << ")";
