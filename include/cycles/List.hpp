@@ -10,31 +10,26 @@
 
 template <typename T>
 class LNode {
-private:
-  // TODO: variant
-  sptr<LNode> next;
-  wptr<LNode> _next;
+ private:
   //
   T value;
   //
-public:
-  LNode(T value, sptr<LNode> next)
-      : value { value }
-      , next { next }
-  {
-  }
+  // TODO(igormcoelho): variant
+  sptr<LNode> next;
+  wptr<LNode> _next;
+  //
+ public:
+  LNode(T value, sptr<LNode> next) : value{value}, next{next} {}
 
   // get_next for traversal (maybe should remove this, to prevent ext. leakage)
   sptr<LNode> get_next() { return next ? next : _next.lock(); }
 
-  auto set_next(sptr<LNode> nxt)
-  {
+  auto set_next(sptr<LNode> nxt) {
     next = nxt;
     _next.reset();
   }
   //
-  auto set_next_weak(wptr<LNode> nxt)
-  {
+  auto set_next_weak(wptr<LNode> nxt) {
     next.reset();
     _next = nxt;
   }
@@ -45,60 +40,54 @@ public:
 template <typename T>
 struct List {
   //
-  sptr<LNode<T>> head; // owned reference
+  sptr<LNode<T>> head;  // owned reference
   //
-  wptr<LNode<T>> tail_node; // DAG behavior, but... non-owning
+  wptr<LNode<T>> tail_node;  // DAG behavior, but... non-owning
 
-  List()
-  {
+  List() {
     this->head = nullptr;
     this->tail_node.reset();
   }
 
-  ~List()
-  {
+  ~List() {
     // prevents stackoverflow on recursive destructor...
-    while (!empty())
-      pop_front();
+    while (!empty()) pop_front();
   }
 
   bool empty() { return !head; }
 
   //
-  void push_front(T v)
-  {
+  void push_front(T v) {
     // case n=0: initialize circular behavior (instead of nullptr)
     if (this->head == nullptr) {
       this->head = sptr<LNode<T>>(new LNode<T>(v, this->head));
       this->tail_node = this->head;
-      this->tail_node.lock()->set_next_weak(this->head); // circular
+      this->tail_node.lock()->set_next_weak(this->head);  // circular
       return;
     }
     // case n>=1: general
     auto node = sptr<LNode<T>>(new LNode<T>(v, this->head));
     this->head = node;
-    this->tail_node.lock()->set_next_weak(this->head); // circular
+    this->tail_node.lock()->set_next_weak(this->head);  // circular
   }
   //
-  void push_back(T v)
-  {
+  void push_back(T v) {
     // case n=0: initialize circular behavior (instead of nullptr)
     if (this->head == nullptr) {
       this->head = sptr<LNode<T>>(new LNode<T>(v, this->head));
       this->tail_node = this->head;
-      this->tail_node.lock()->set_next_weak(this->head); // circular
+      this->tail_node.lock()->set_next_weak(this->head);  // circular
       return;
     }
     // case n>=1: general
     auto node = sptr<LNode<T>>(new LNode<T>(v, this->head));
-    node->set_next_weak(this->head); // circular
-    this->tail_node.lock()->set_next(node); // chain
+    node->set_next_weak(this->head);         // circular
+    this->tail_node.lock()->set_next(node);  // chain
     // this->head = node;
     this->tail_node = node;
   }
   //
-  T pop_front()
-  {
+  T pop_front() {
     // assert: n > 0
     assert(this->head);
     // n == 1 (clean back to nullptr state)
@@ -114,8 +103,7 @@ struct List {
     return v;
   }
   //
-  void print()
-  {
+  void print() {
     sptr<LNode<T>> p = head;
     int i = 0;
     std::cout << "list (empty=" << empty() << ") ";
@@ -125,8 +113,7 @@ struct List {
       std::cout << p->get_value() << " ";
       p = p->get_next();
       // check circularity
-      if (p == head)
-        break;
+      if (p == head) break;
     }
     std::cout << std::endl;
   }

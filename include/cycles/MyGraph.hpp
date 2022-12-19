@@ -78,7 +78,7 @@ class MyGraph {
     std::cout << std::endl;
   }
 
-  void printFrom(cycles_ptr<MyNodeX> node) {
+  void printFrom(const cycles_ptr<MyNodeX>& node) {
     if (node.has_get()) {
       std::cout << "node=" << node.get()
                 << " |neighbors|=" << node.get().neighbors.size() << std::endl;

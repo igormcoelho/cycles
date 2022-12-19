@@ -70,7 +70,10 @@ class MyGraphGCPP {
    public:
     explicit Node(char _c) : c{_c} {}
 
-    void AddChild(const cycles_ptr<Node>& node) { children.push_back(node); }
+    // no copy here: const cycles_ptr<Node>& node
+    void AddChild(cycles_ptr<Node>&& node) {
+      children.push_back(std::move(node));
+    }
 
     void RemoveChild(const cycles_ptr<Node>& node) {
       auto it = find(children.begin(), children.end(), node);
@@ -90,7 +93,8 @@ class MyGraphGCPP {
     }
   };
 
-  void SetRoot(const cycles_ptr<Node>& node) { root = node; }
+  // no copy here: const cycles_ptr<Node>& node
+  void SetRoot(cycles_ptr<Node>&& node) { root = std::move(node); }
 
   // void ShrinkToFit() { heap.collect(); }
   void ShrinkToFit() {}  // TODO(igormcoelho): allow collection here ???
@@ -113,6 +117,8 @@ class MyGraphGCPP {
  public:
   sptr<cycles_ctx<Node>> ctx;
 
+  cycles_ptr<Node>& getRoot() { return root; }
+
  private:
   cycles_ptr<Node> root;
 };
@@ -129,17 +135,20 @@ bool TestCase1() {
     std::cout << std::endl << "A" << std::endl;
     auto a = g.MakeNode('a');
     std::cout << std::endl << "B" << std::endl;
-    g.SetRoot(a);
+    // MUST MOVE, CANNOT COPY! DO IT NOW, OR LATER?
+    g.SetRoot(std::move(a));
     std::cout << std::endl << "C" << std::endl;
     auto b = g.MakeNode('b');
     std::cout << std::endl << "D" << std::endl;
-    a->AddChild(b.copy_owned(a));
+    // a IS MOVED! replacing by g.getRoot()
+    g.getRoot()->AddChild(b.copy_owned(g.getRoot()));
     std::cout << std::endl << "E" << std::endl;
     auto c = g.MakeNode('c');
     std::cout << std::endl << "F" << std::endl;
     b->AddChild(c.copy_owned(b));
     std::cout << std::endl << "G" << std::endl;
-    a->RemoveChild(b);
+    // a IS MOVED! replacing by g.getRoot()
+    g.getRoot()->RemoveChild(b);
     std::cout << std::endl << "H" << std::endl;
   }
   g.ShrinkToFit();

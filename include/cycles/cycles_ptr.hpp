@@ -7,6 +7,7 @@
 // C++
 #include <iostream>
 #include <map>
+#include <utility>
 #include <vector>
 
 //
@@ -93,6 +94,9 @@ class cycles_ptr {
     std::cout << " -> finished C1 pointer constructor" << std::endl;
   }
 
+  // private:
+  // ALLOW THIS, FOR NOW!
+  //
   // ======= C2 pointer constructor WITH owner =======
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
@@ -170,6 +174,10 @@ class cycles_ptr {
     //
   }
 
+ private:
+  //
+  // NO COPY CONSTRUCTOR
+  //
   // ======= C3 copy constructor =======
   // simply copy smart pointer to all elements: ctx, ref and remote_node
   cycles_ptr(const cycles_ptr<T>& copy)
@@ -183,6 +191,15 @@ class cycles_ptr {
     }
   }
 
+ public:
+  // ======= M1 move constructor =======
+  // simply move smart pointer to all elements: ctx, ref and remote_node
+  cycles_ptr(cycles_ptr<T>&& corpse) noexcept
+      : ctx{corpse.ctx}, remote_node{std::move(corpse.remote_node)} {
+    corpse.remote_node.reset();
+  }
+
+ public:
   // ======= C4 copy constructor WITH owner =======
   // copy constructor (still good for vector... must be the meaning of a "copy")
   // proposed operation is:
@@ -211,8 +228,8 @@ class cycles_ptr {
     this->set_owned_by(owner);
   }
 
-  ~cycles_ptr() {
-    std::cout << "~cycles_ptr: ref_use_count=" << this->get_sptr().use_count();
+  void destroy() {
+    std::cout << "destroy: ref_use_count=" << this->get_sptr().use_count();
     if (!has_get())
       std::cout << "{NULL}";
     else
@@ -220,6 +237,12 @@ class cycles_ptr {
     std::cout << std::endl;
     // this->ref = nullptr;
     this->remote_node = wptr<TNode<sptr<T>>>();  // clear
+  }
+
+  ~cycles_ptr() {
+    std::cout << "begin ~cycles_ptr" << std::endl;
+    destroy();
+    std::cout << "end ~cycles_ptr" << std::endl;
   }
 
   // =============================
@@ -401,6 +424,22 @@ class cycles_ptr {
     ctx.lock()->print();
     //
   }
+
+  // no copy assignment
+  cycles_ptr& operator=(const cycles_ptr& other) = delete;
+
+  cycles_ptr& operator=(cycles_ptr&& corpse) noexcept {
+    std::cout << "begin operator==(&&)" << std::endl;
+    destroy();
+    std::cout << "will move assign" << std::endl;
+    this->ctx = std::move(corpse.ctx);
+    this->remote_node = std::move(corpse.remote_node);
+    std::cout << "end operator==(&&)" << std::endl;
+
+    return *this;
+  }
+
+  // =============== BASE OPERATIONS ===============
 
   // returns a self-copy and setup ownership relationship to 'owner'
   //
