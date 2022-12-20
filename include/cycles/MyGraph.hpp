@@ -1,6 +1,10 @@
 #pragma once
 
-#include "cycles_ptr.hpp"
+// C++
+#include <vector>
+//
+#include <cycles/cycles_ptr.hpp>
+//
 // ================== EXAMPLE ================
 
 using namespace cycles;  // NOLINT
@@ -10,17 +14,21 @@ static int mynode_count = 0;
 template <typename X>
 class MyNode {
  public:
-  MyNode(X _val) : val{_val} {
+  X val;
+  bool debug_flag{false};
+
+  explicit MyNode(X _val, bool _debug_flag = false)
+      : val{_val}, debug_flag{_debug_flag} {
     mynode_count++;
-    std::cout << "MyNode mynode_count=" << mynode_count << std::endl;
+    if (debug_flag)
+      std::cout << "MyNode mynode_count=" << mynode_count << std::endl;
   }
 
   ~MyNode() {
     mynode_count--;
-    std::cout << "~MyNode mynode_count=" << mynode_count << std::endl;
+    if (debug_flag)
+      std::cout << "~MyNode mynode_count=" << mynode_count << std::endl;
   }
-
-  X val;
 
   vector<cycles_ptr<MyNode>> neighbors;
   //
@@ -35,35 +43,36 @@ class MyNode {
 template <typename X>
 class MyGraph {
   using MyNodeX = MyNode<X>;
+  bool debug_flag{false};
 
  private:
   sptr<cycles_ctx<MyNodeX>> ctx;
 
  public:
-  auto my_ctx() -> wptr<cycles_ctx<MyNodeX>> { return this->ctx; }
-
-  auto make_node(X v) -> cycles_ptr<MyNodeX> {
-    auto* ptr = new MyNodeX(v);
-    return cycles_ptr<MyNodeX>(this->ctx, ptr);
-  }
-
-  auto make_node_owned(X v, cycles_ptr<MyNodeX>& owner) -> cycles_ptr<MyNodeX> {
-    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v), owner);
-  }
-
-  auto make_null_node() -> cycles_ptr<MyNodeX> {
-    return cycles_ptr<MyNodeX>(this->ctx, nullptr);
-  }
-
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
   cycles_ptr<MyNodeX> entry;
 
   MyGraph() : ctx{new cycles_ctx<MyNodeX>{}}, entry{make_null_node()} {}
 
   ~MyGraph() {
-    std::cout << "~MyGraph" << std::endl;
+    if (debug_flag) std::cout << "~MyGraph" << std::endl;
     ctx = nullptr;
     // entry.do_reset();
+  }
+  //
+  auto my_ctx() -> wptr<cycles_ctx<MyNodeX>> { return this->ctx; }
+
+  auto make_node(X v) -> cycles_ptr<MyNodeX> {
+    auto* ptr = new MyNodeX(v, debug_flag);  // NOLINT
+    return cycles_ptr<MyNodeX>(this->ctx, ptr);
+  }
+
+  auto make_node_owned(X v, cycles_ptr<MyNodeX>& owner) -> cycles_ptr<MyNodeX> {
+    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag), owner);
+  }
+
+  auto make_null_node() -> cycles_ptr<MyNodeX> {
+    return cycles_ptr<MyNodeX>(this->ctx, nullptr);
   }
 
   void print() {
@@ -86,8 +95,9 @@ class MyGraph {
       for (unsigned i = 0; i < node.get().neighbors.size(); i++) {
         if (node.get().neighbors[i] == entry) {
           std::cout << "WARNING: cyclic graph! stop printing..." << std::endl;
-        } else
+        } else {
           printFrom(node.get().neighbors[i]);
+        }
       }
     }
   }

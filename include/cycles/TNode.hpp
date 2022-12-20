@@ -49,26 +49,38 @@ class TNode {
   //
   T value;
   //
-  explicit TNode(T value, wptr<TNode<T>> _parent = wptr<TNode<T>>())
-      : value{value},
-        parent{_parent}  //, tree_root { _root }
-  {
-    tnode_count++;
-    std::cout << "TNode tnode_count = " << tnode_count << std::endl;
-  }
-
-  virtual ~TNode() {
-    std::cout << "~TNode(" << value << ")" << std::endl;
-    tnode_count--;
-    std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
-  }
-
+  bool debug_flag{false};
   // weak pointer back to root of tree (for root node, this field is
   // empty/.reset())
   // wptr<TNode<T>> tree_root;
   //
   wptr<TNode<T>> parent;
+  //
+  // weak pointer back to parent (NOT necessary for now)
+  // wptr<TNode<T>> parent;
 
+  // strong or weak pointer in children (mostly strong)
+  vector<VarTNode> children;
+  //
+  explicit TNode(T value, bool _debug_flag = false,
+                 wptr<TNode<T>> _parent = wptr<TNode<T>>())
+      : value{value},
+        debug_flag{_debug_flag},
+        parent{_parent}  //, tree_root { _root }
+  {
+    tnode_count++;
+    if (debug_flag)
+      std::cout << "TNode tnode_count = " << tnode_count << std::endl;
+  }
+
+  virtual ~TNode() {
+    if (debug_flag) std::cout << "~TNode(" << value << ")" << std::endl;
+    tnode_count--;
+    if (debug_flag)
+      std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
+  }
+
+  // NOLINTNEXTLINE
   bool has_parent() const { return (bool)parent.lock(); }
 
   // recursive update on all owned nodes
@@ -88,12 +100,6 @@ class TNode {
     // finally, update my own tree root ref
     this->tree_root = new_tree_root;
   }
-
-  // weak pointer back to parent (NOT necessary for now)
-  // wptr<TNode<T>> parent;
-
-  // strong or weak pointer in children (mostly strong)
-  vector<VarTNode> children;
 
   // get_child for traversal (maybe should remove this, to prevent ext. leakage)
   sptr<TNode> get_child(int i) {

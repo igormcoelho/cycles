@@ -36,7 +36,7 @@ class cycles_ptr {
   // sptr<T> ref; // TODO: remove this direct ref!
   //
   wptr<TNode<sptr<T>>> remote_node;
-  bool debug_flag;
+  bool debug_flag{false};
 
  public:
   auto get_ctx() const { return ctx; }
@@ -76,10 +76,11 @@ class cycles_ptr {
       return;
     }
     //
-    if (debug())
+    if (debug()) {
       std::cout << "=> C1 pointer constructor: Registering this in new Tree on "
                    "Context!"
                 << std::endl;
+    }
     // auto node_new = sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
     // this->remote_node = node_new;
     //
@@ -350,8 +351,7 @@ class cycles_ptr {
       }
       owner.remote_node.lock()->add_child_weak(this->remote_node);
     }
-
-    ctx.lock()->print();
+    if (debug()) ctx.lock()->print();
     //
   }
 

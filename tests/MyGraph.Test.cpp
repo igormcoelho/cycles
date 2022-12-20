@@ -13,18 +13,23 @@ using namespace cycles;  // NOLINT
 // =======================
 
 TEST_CASE("CyclesTestGraph: MyGraph2") {
-  // open context
+  // create context
   {
     MyGraph<double> G;
+    REQUIRE(!G.my_ctx().lock()->debug);
+
     // context should not have created Tree for nullptr node
     REQUIRE(G.my_ctx().lock()->forest.size() == 0);
     // creating -1 node
+
     G.entry = G.make_node(-1.0);
+
     // forest size is 1
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
     REQUIRE(G.entry.get_ref_use_count() == 2);
     //
     // make cycle
+
     auto ptr1 = G.make_node(1.0);
     REQUIRE(mynode_count == 2);
     REQUIRE(tnode_count == 2);
@@ -39,6 +44,7 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     REQUIRE(mynode_count == 4);
     REQUIRE(tnode_count == 4);
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+
     //
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
@@ -55,6 +61,7 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     //
     ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
     REQUIRE(G.my_ctx().lock()->forest.size() == 2);  // CASE 2
+
     //
     // manually invoke collection
     //

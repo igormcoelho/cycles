@@ -21,18 +21,19 @@ template <typename T>
 struct Tree {
   //
   sptr<TNode<T>> root;  // owned reference
+  bool debug_flag{false};
   //
   // wptr<TNode<T>> tail_node; // DAG behavior, but... non-owning
 
-  Tree() {
-    this->root = nullptr;
+  explicit Tree(bool _debug_flag = false)
+      : root{nullptr}, debug_flag{_debug_flag} {
     // this->tail_node.reset();
   }
 
   void set_root(sptr<TNode<T>> _root) {
     this->root = _root;
     _root->parent = wptr<TNode<T>>();  // no parent on root node
-    ////_root->tree_root = _root; // self-reference
+    // //_root->tree_root = _root; // self-reference
   }
 
   // I Think... THIS WILL EXTEND the lifecycle of Data T, beyond limits of Tree
@@ -46,11 +47,13 @@ struct Tree {
   }
 
   ~Tree() {
-    std::cout << "~Tree() => ";
-    if (!this->root)
-      std::cout << "nullptr" << std::endl;
-    else
-      std::cout << *this->root << std::endl;
+    if (debug_flag) {
+      std::cout << "~Tree() => ";
+      if (!this->root)
+        std::cout << "nullptr" << std::endl;
+      else
+        std::cout << *this->root << std::endl;
+    }
 
     // prevents stackoverflow on recursive destructor...
     // while (!empty())
