@@ -36,6 +36,9 @@ class cycles_ptr {
   // sptr<T> ref; // TODO: remove this direct ref!
   //
   wptr<TNode<sptr<T>>> remote_node;
+  //
+  wptr<TNode<sptr<T>>> owned_by_node;
+  //
   bool debug_flag{false};
 
  public:
@@ -102,65 +105,68 @@ class cycles_ptr {
       std::cout << " -> finished C1 pointer constructor" << std::endl;
   }
 
-  // private:
-  // ALLOW THIS, FOR NOW!
-  //
-  // ======= C2 pointer constructor WITH owner =======
-  // 1. will store T* t owned by new local shared_ptr 'ref'
-  // 2. will create a new TNode , also carrying shared_ptr 'ref'
-  // 3. will create a new Tree and point
-  cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t, cycles_ptr<T>& owner)
-      : ctx{ctx}  //, ref { t }
-                  //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new
-                  // TNode<sptr<T>> { this->ref }) }
-  {
-    sptr<T> ref{t};
-    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
-    // this 'remote_node' is weak!
-    auto sptr_remote_node =
-        !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>>{ref});
-    // we only hold weak reference here
-    this->remote_node = sptr_remote_node;
-    this->debug_flag = get_ctx().lock()->debug;
+  /*
+    // private:
+    // ALLOW THIS, FOR NOW!
     //
-    if (debug()) {
-      std::cout
-          << "C2 pointer constructor: creating NEW OWNED cycles_ptr (this_new="
-          << this << " to t*=" << t << ") "
-          << " owner='" << owner.get() << "' ";
-      if (ref)
-        std::cout << "with ref -> " << *ref << std::endl;
-      else
-        std::cout << "with ref -> nullptr" << std::endl;
+    // ======= C2 pointer constructor WITH owner =======
+    // 1. will store T* t owned by new local shared_ptr 'ref'
+    // 2. will create a new TNode , also carrying shared_ptr 'ref'
+    // 3. will create a new Tree and point
+    cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t, cycles_ptr<T>& owner)
+        : ctx{ctx}  //, ref { t }
+                    //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new
+                    // TNode<sptr<T>> { this->ref }) }
+    {
+      sptr<T> ref{t};
+      // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
+      // this 'remote_node' is weak!
+      auto sptr_remote_node =
+          !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>>{ref});
+      // we only hold weak reference here
+      this->remote_node = sptr_remote_node;
+      this->debug_flag = get_ctx().lock()->debug;
+      //
+      if (debug()) {
+        std::cout
+            << "C2 pointer constructor: creating NEW OWNED cycles_ptr
+    (this_new="
+            << this << " to t*=" << t << ") "
+            << " owner='" << owner.get() << "' ";
+        if (ref)
+          std::cout << "with ref -> " << *ref << std::endl;
+        else
+          std::cout << "with ref -> nullptr" << std::endl;
+      }
+      //
+      if (!ref) {
+        // THIS IS A STRANGE SITUATION... CHECK IF IT'S REALLY USEFUL!
+        assert(false);
+        return;  // SHOULD NOT CREATE A NEW TREE OR A NEW RELATION
+      }
+      //
+      if (debug()) {
+        std::cout
+            << "=> C2 pointer constructor: Registering this in EXISTING Tree "
+               "context!"
+            << std::endl;
+      }
+      //
+      // auto node_new = sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
+      // remote_node = node_new;
+      assert(sptr_remote_node);
+      //
+      // IMPORTANT! TREE OF OWNER MUST EXIST... BUT...
+      // ... WE CANNOT LOCATE IT ANYMORE (removed field 'tree_root')
+      //
+      // so, just check context and...
+      assert(this->ctx.lock() == owner.ctx.lock());
+      // ... and STRONG point from owner node to new node
+      owner.remote_node.lock()->add_child_strong(sptr_remote_node);
+      if (debug()) ctx.lock()->print();
+      //
     }
-    //
-    if (!ref) {
-      // THIS IS A STRANGE SITUATION... CHECK IF IT'S REALLY USEFUL!
-      assert(false);
-      return;  // SHOULD NOT CREATE A NEW TREE OR A NEW RELATION
-    }
-    //
-    if (debug()) {
-      std::cout
-          << "=> C2 pointer constructor: Registering this in EXISTING Tree "
-             "context!"
-          << std::endl;
-    }
-    //
-    // auto node_new = sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
-    // remote_node = node_new;
-    assert(sptr_remote_node);
-    //
-    // IMPORTANT! TREE OF OWNER MUST EXIST... BUT...
-    // ... WE CANNOT LOCATE IT ANYMORE (removed field 'tree_root')
-    //
-    // so, just check context and...
-    assert(this->ctx.lock() == owner.ctx.lock());
-    // ... and STRONG point from owner node to new node
-    owner.remote_node.lock()->add_child_strong(sptr_remote_node);
-    if (debug()) ctx.lock()->print();
-    //
-  }
+  */
 
  private:
   //
@@ -202,13 +208,18 @@ class cycles_ptr {
       assert(false);
     }
     //
-    // register ownership
+    // register ownership in tree
     this->set_owned_by(owner);
+    // remember ownership (for future deletion?)
+    this->owned_by_node = owner.remote_node;
   }
 
   int get_ref_use_count() const { return this->get_sptr().use_count(); }
 
   void destroy() {
+    // TODO: how to manage "delegated sptr" pointers here?
+    // Maybe just consider some "unique_ptr forest" for now?
+    //
     if (debug()) {
       std::cout << "destroy: ref_use_count=" << this->get_ref_use_count();
       if (!has_get())
@@ -217,6 +228,74 @@ class cycles_ptr {
         std::cout << " {" << this->get() << "}";
       std::cout << std::endl;
     }
+    // BEGIN complex logic
+    // where is nullptr here? TODO: fix
+    assert(is_nullptr() || is_root() || is_owned());
+    //
+    if (is_nullptr()) {
+      return;  // nothing to destroy
+               // (MUST KEEP else below, otherwise it may break(?))
+    } else if (is_root()) {
+      // this node is root in tree!
+      // must find someone to replace me, otherwise the whole tree will die!
+      // First: find someone in my 'owned_by' list
+      auto sptr_mynode = this->remote_node.lock();
+      if (sptr_mynode->owned_by.size() > 0) {
+        auto myNewParent = sptr_mynode->owned_by[0].lock();
+        // new parent must exist
+        assert(myNewParent);
+        // add myself as myNewParent child
+        sptr_mynode->parent = myNewParent;
+        myNewParent->add_child_strong(sptr_mynode);
+        // delete myself from owned_by (now I'm child)
+        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + 0);
+      } else {
+        // MOVE TO GARBAGE?
+      }
+      // CLEAR!
+      // find my tree
+      auto tree_it = ctx.lock()->forest.find(sptr_mynode);
+      if (tree_it == ctx.lock()->forest.end()) {
+        assert(false);
+      } else {
+        if (debug()) {
+          std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
+        }
+        // clear tree
+        ctx.lock()->forest.erase(tree_it);
+      }
+      //
+      // end-if is_root (MUST KEEP else below, otherwise it may break)
+    } else {
+      // owned by 'owned_by_node', but not root...
+      auto owner_node = this->owned_by_node.lock();
+      // owner must exist
+      assert(owner_node);
+      // just remove this link!
+      // MAYBE... check if it's my parent? could it be? or not?
+      // I THINK IT's TWO CASES... A) Parent; B) just some weak link to me.
+      auto sptr_mynode = this->remote_node.lock();
+      auto sptr_myparent = sptr_mynode->parent.lock();
+      bool removed = false;
+      if (sptr_myparent == owner_node) {
+        // this will collapse my whole tree...
+        // move to garbage??
+        sptr_myparent->remove_child(sptr_mynode.get());
+        // I guess I'm dead next...
+        removed = true;
+      } else {
+        // find a weak link that supports me...
+        for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)
+          if (sptr_mynode->owned_by[i].lock() == owner_node) {
+            // I will not die because of this... just a weak link.
+            sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + i);
+            removed = true;
+          }
+      }
+
+      assert(removed);
+    }
+    //
     // this->ref = nullptr;
     this->remote_node = wptr<TNode<sptr<T>>>();  // clear
   }
@@ -247,6 +326,8 @@ class cycles_ptr {
         std::cout << "set_owned_by WARNING! prevented double linking child... "
                      "ALREADY owner!"
                   << std::endl;
+        std::cout << "TODO: maybe need to allow double linking here..."
+                  << std::endl;
       }
       return;
     }
@@ -254,12 +335,66 @@ class cycles_ptr {
     unsafe_set_owned_by(owner);
   }
 
+  // ========== TWO FUNDAMENTAL PROPERTIES ===========
+  // A) is_nullptr
+  // B) is_root
+  // C) is_owned
+  // Node should respect: is_nullptr() || is_root() || is_owned()
+  //
+
+  // check if this pointer is nullptr
+  bool is_nullptr() const { return (!this->remote_node.lock()); }
+
   // check if this pointer is root (in tree/forest universe)
   bool is_root() const { return (!this->remote_node.lock()->has_parent()); }
 
+  // check if this pointer is already owned by someone
+  bool is_owned() const {
+    // NOLINTNEXTLINE
+    return (bool)(this->owned_by_node.lock());
+  }
+
+  // =========================
+
+  // new logic here
+  void unsafe_set_owned_by(const cycles_ptr<T>& owner) {
+    //
+    if (debug()) {
+      std::cout << std::endl << "cycles_ptr:: unsafe_set_owned_by" << std::endl;
+      std::cout << "TODO: Must register relation of:" << std::endl;
+      std::cout << "\tthis=" << this
+                << " this->remote_node=" << this->remote_node.lock() << ") '"
+                << (this->get()) << "' owned_by:" << std::endl;
+      std::cout << "\t&owner=" << &owner << " '" << (owner.get())
+                << "'  owner.is_root()=" << owner.is_root() << std::endl;
+    }
+    // I think previous DEPRECATED logic is messed up... trying again!
+    //
+    // Properties:
+    // X0: Owner and I are different! (no self arc here)
+    // X1: this never creates strong links (only destruction/deletion does
+    // that)
+    //     Note that the Strong maintainance of the forest is kept by parent
+    //     and child nodes, thus all extra connections are weak links.
+    //
+    // It seems that only one case must exist here
+    //   => SOLUTION: Owner will add a weak link to Me.
+
+    // TODO: Maybe... check if it's not yet child?
+
+    this->remote_node.lock()->add_weak_link_owned(owner.remote_node);
+    //
+    if (debug())
+      std::cout << "owner |children|="
+                << this->remote_node.lock()->children.size() << std::endl;
+    //
+    if (debug()) ctx.lock()->print();
+    //
+  }
+
   // the unsafe method will not check if it's already owner...
   // this strongly reduces computational cost (NOT inspecting child list)
-  void unsafe_set_owned_by(const cycles_ptr<T>& owner) {
+  void unsafe_set_owned_by_DEPRECATED(const cycles_ptr<T>& owner) {
     //
     if (debug()) {
       std::cout << std::endl << "cycles_ptr:: unsafe_set_owned_by" << std::endl;
@@ -319,9 +454,9 @@ class cycles_ptr {
           assert(false);
         } else {
           if (debug()) {
-            std::cout
-                << " ~~~> CASE 1.1 OK FOUND MY TREE. How to properly clear it?"
-                << std::endl;
+            std::cout << " ~~~> CASE 1.1 OK FOUND MY TREE. How to properly "
+                         "clear it?"
+                      << std::endl;
             std::cout << "First try, just drop it, and let all nodes die "
                          "automatically"
                       << std::endl;
@@ -376,11 +511,12 @@ class cycles_ptr {
   // important: (this is an idea)
   // - if you copy pointer again (with regular copy constructor),
   // ownership relationship will be kept on ctx
-  // example: b = a.copy_owned(c); // b is a copy of a, and relationship c->b is
-  // created (so as "c owns a",  c->a)
+  // example: b = a.copy_owned(c); // b is a copy of a, and relationship c->b
+  // is created (so as "c owns a",  c->a)
   // - maybe this is a good thing, because we can keep copy constructor
   // - maybe not, but I don't imagine why at this moment...
   auto copy_owned(const cycles_ptr<T>& owner) {
+    // C4 constructor
     return cycles_ptr<T>(*this, owner);
   }
 
@@ -398,9 +534,9 @@ class cycles_ptr {
   auto get_ctx() -> wptr<cycles_ctx<T>> { return ctx; }
 
   bool operator==(const cycles_ptr<T>& other) const {
-    // do not comparing null pointers as 'true' (why?)... just feels like right
-    // now. (thinking more of refs than pointers)
-    // (this->has_get() && other.has_get()) &&
+    // do not comparing null pointers as 'true' (why?)... just feels like
+    // right now. (thinking more of refs than pointers) (this->has_get() &&
+    // other.has_get()) &&
     // TODO: think more.
     return (this->has_get() == other.has_get()) &&
            (ctx.lock() == other.ctx.lock()) &&
