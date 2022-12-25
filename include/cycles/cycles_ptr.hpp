@@ -38,13 +38,15 @@ class cycles_ptr {
   wptr<TNode<sptr<T>>> remote_node;
   //
   wptr<TNode<sptr<T>>> owned_by_node;
+
+ public:
   //
-  bool debug_flag{false};
+  bool debug_flag_ptr{false};
 
  public:
   auto get_ctx() const { return ctx; }
 
-  bool debug() const { return debug_flag; }
+  bool debug() const { return debug_flag_ptr; }
 
   // ======= C1 - spointer constructor =======
   // 1. will store T* t owned by new local shared_ptr 'ref'
@@ -59,7 +61,7 @@ class cycles_ptr {
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
     //
-    this->debug_flag = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug;
     //
     if (debug()) {
       std::cout << "C1 pointer constructor: creating NEW cycles_ptr (this_new="
@@ -179,9 +181,12 @@ class cycles_ptr {
   // ======= M1 move constructor =======
   // simply move smart pointer to all elements: ctx, ref and remote_node
   cycles_ptr(cycles_ptr<T>&& corpse) noexcept
-      : ctx{corpse.ctx}, remote_node{std::move(corpse.remote_node)} {
+      : ctx{corpse.ctx},
+        remote_node{std::move(corpse.remote_node)},
+        owned_by_node{std::move(corpse.owned_by_node)} {
     corpse.remote_node.reset();
-    this->debug_flag = get_ctx().lock()->debug;
+    corpse.owned_by_node.reset();
+    this->debug_flag_ptr = get_ctx().lock()->debug;
   }
 
  public:
@@ -196,7 +201,8 @@ class cycles_ptr {
   //
   cycles_ptr(const cycles_ptr<T>& copy, const cycles_ptr<T>& owner)
       : ctx{copy.ctx}, remote_node{copy.remote_node} {
-    this->debug_flag = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug;
+    if (debug()) std::cout << "c4 constructor for copy_owned" << std::endl;
     if (this == &copy) {
       // TODO: self assignment breaks nothing here, in this case...
       // ... but let's avoid it, for now
@@ -212,6 +218,9 @@ class cycles_ptr {
     this->set_owned_by(owner);
     // remember ownership (for future deletion?)
     this->owned_by_node = owner.remote_node;
+    assert(this->owned_by_node.lock());
+    if (debug())
+      std::cout << "finish c4: stored owner in owned_by_node" << std::endl;
   }
 
   int get_ref_use_count() const { return this->get_sptr().use_count(); }
@@ -242,6 +251,9 @@ class cycles_ptr {
       auto sptr_mynode = this->remote_node.lock();
       if (sptr_mynode->owned_by.size() > 0) {
         auto myNewParent = sptr_mynode->owned_by[0].lock();
+        if (!myNewParent) {
+          std::cout << "ERROR! no new parent! how??" << std::endl;
+        }
         // new parent must exist
         assert(myNewParent);
         // add myself as myNewParent child
@@ -297,8 +309,11 @@ class cycles_ptr {
     }
     //
     // this->ref = nullptr;
-    this->remote_node = wptr<TNode<sptr<T>>>();  // clear
+    this->remote_node = wptr<TNode<sptr<T>>>();    // clear
+    this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
   }
+
+  void reset() { destroy(); }
 
   ~cycles_ptr() {
     if (debug()) std::cout << "begin ~cycles_ptr" << std::endl;
@@ -354,6 +369,11 @@ class cycles_ptr {
     return (bool)(this->owned_by_node.lock());
   }
 
+  int count_owned_by() const {
+    auto node_ptr = this->remote_node.lock();
+    assert(node_ptr);
+    return node_ptr->owned_by.size();
+  }
   // =========================
 
   // new logic here
@@ -498,7 +518,9 @@ class cycles_ptr {
     destroy();
     if (debug()) std::cout << "will move assign" << std::endl;
     this->ctx = std::move(corpse.ctx);
+    this->debug_flag_ptr = corpse.debug_flag_ptr;
     this->remote_node = std::move(corpse.remote_node);
+    this->owned_by_node = std::move(corpse.owned_by_node);
     if (debug()) std::cout << "end operator==(&&)" << std::endl;
 
     return *this;

@@ -13,6 +13,7 @@ cc_test(
     defines = ["CATCH_CONFIG_MAIN"],
     deps = ["//include/cycles:cycles_hpp", 
      ":catch2_thirdparty"],
+    #copts=['-g']
 )
 
 cc_binary(

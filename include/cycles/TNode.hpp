@@ -106,6 +106,7 @@ class TNode {
         return true;
       }
     }
+    return false;
   }
 
   auto add_weak_link_owned(wptr<TNode> nxt) {

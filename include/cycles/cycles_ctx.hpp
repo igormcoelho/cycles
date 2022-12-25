@@ -57,11 +57,14 @@ class cycles_ctx {
                   << "' -> " << p.second << " TREE" << std::endl;
       assert(p.second->root);  // root must never be nullptr
       if (debug)
-        std::cout << "   root.|children|=" << p.second->root->children.size()
-                  << std::endl;
+        std::cout << " clearing children:  root.|children|="
+                  << p.second->root->children.size() << std::endl;
       p.second->root->children.clear();  // clear children. IS THIS NECESSARY???
-      p.second->root = nullptr;          // clear root
+      if (debug)
+        std::cout << " clearing root with root = nullptr " << std::endl;
+      p.second->root = nullptr;  // clear root
     }
+    if (debug) std::cout << "~cycles_ctx: final clear forest" << std::endl;
     forest.clear();  // is it necessary??
   }
 

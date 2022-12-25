@@ -1,8 +1,8 @@
 
 // #define CATCH_CONFIG_MAIN // This tells Catch to provide a main()
+#include <iostream>
+//
 #include <catch2/catch_amalgamated.hpp>
-
-// good
 #include <cycles/MyGraph.hpp>
 
 using namespace std;     // NOLINT
@@ -27,6 +27,7 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     // forest size is 1
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
     REQUIRE(G.entry.get_ref_use_count() == 2);
+    REQUIRE(G.entry.is_root());
     //
     // make cycle
 
@@ -34,42 +35,102 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     REQUIRE(mynode_count == 2);
     REQUIRE(tnode_count == 2);
     REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(ptr1.is_root());
     //
     auto ptr2 = G.make_node(2.0);
     REQUIRE(mynode_count == 3);
     REQUIRE(tnode_count == 3);
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    REQUIRE(ptr2.is_root());
     //
     auto ptr3 = G.make_node(3.0);
     REQUIRE(mynode_count == 4);
     REQUIRE(tnode_count == 4);
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(ptr3.is_root());
 
     //
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
-    // CASE 1: owner is root of some tree! Solution: OWNER will take it!
-    // => CASE 1.1A - I'm also root, should remove this Tree from forest...
+    // copy of ptr1 will add weak link to owner (aka, G.entry), in owned_by
+    // field
+    // G.my_ctx().lock()->debug = true;
     G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 3);  // CASE 1.1A
+    REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(ptr1.is_root());
+    REQUIRE(G.entry.get().neighbors[0].is_owned());
+
     //
     ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 3);  // CASE 2
+    REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.get().neighbors[0].is_owned());
+    // will destroy ptr1 from this context...
+    // it still exists as G.entry.get().neighbors[0]
+    ptr1.reset();
+    REQUIRE(ptr1.is_nullptr());
+    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    REQUIRE(G.entry.get().neighbors[0].is_owned());
     //
     ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);  // CASE 1.1A
+    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     //
     ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);  // CASE 2
-
+    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    //
+    // will clean all from this context
+    //
+    ptr2.reset();
+    REQUIRE(ptr2.is_nullptr());
+    ptr3.reset();
+    REQUIRE(ptr3.is_nullptr());
+    //
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    //
+    REQUIRE(G.entry.get().val == -1);
+    REQUIRE(G.entry.count_owned_by() == 1);
+    //
+    REQUIRE(G.entry->neighbors[0].get().val == 1);
+    REQUIRE(G.entry->neighbors[0].count_owned_by() == 0);
+    REQUIRE(G.entry->neighbors[0].get().neighbors.size() == 1);
+    //
+    REQUIRE(G.entry->neighbors[0]->neighbors[0]->val == 2);
+    REQUIRE(G.entry->neighbors[0]->neighbors[0].count_owned_by() == 0);
+    //
+    REQUIRE(G.entry->neighbors[0]->neighbors[0]->neighbors[0]->val == 3);
+    REQUIRE(
+        G.entry->neighbors[0]->neighbors[0]->neighbors[0].count_owned_by() ==
+        0);
+    //
+    // full cycle: -1 -> 1 -> 2 -> 3 -> -1
+    REQUIRE(
+        G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0]->val ==
+        -1);
+    REQUIRE(G.entry->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                .count_owned_by() == 1);
+    // full cycle: -1 -> 1 -> 2 -> 3 -> -1 -> 1
+    REQUIRE(G.entry->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                ->val == 1);
+    //
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
     //
     // manually invoke collection
     //
     auto lsptr = G.my_ctx().lock();
     if (lsptr) lsptr->collect();
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);  // NO COLLECTION??
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);  // NO COLLECTION??
     //
+    G.my_ctx().lock()->debug = true;
+    G.entry.debug_flag_ptr = true;
+    REQUIRE(true);
   }
   // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);

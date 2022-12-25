@@ -67,8 +67,11 @@ class MyGraph {
     return cycles_ptr<MyNodeX>(this->ctx, ptr);
   }
 
-  auto make_node_owned(X v, cycles_ptr<MyNodeX>& owner) -> cycles_ptr<MyNodeX> {
-    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag), owner);
+  auto make_node_owned(X v, const cycles_ptr<MyNodeX>& owner)
+      -> cycles_ptr<MyNodeX> {
+    auto ptr1 = cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag));
+    return ptr1.copy_owned(owner);
+    // return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag), owner);
   }
 
   auto make_null_node() -> cycles_ptr<MyNodeX> {
