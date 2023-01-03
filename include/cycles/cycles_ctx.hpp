@@ -57,7 +57,7 @@ class cycles_ctx {
                   << "' -> " << p.second << " TREE" << std::endl;
       assert(p.second->root);  // root must never be nullptr
       if (debug)
-        std::cout << " clearing children:  root.|children|="
+        std::cout << " clearing children of Tree node:  root.|children|="
                   << p.second->root->children.size() << std::endl;
       p.second->root->children.clear();  // clear children. IS THIS NECESSARY???
       if (debug)

@@ -46,7 +46,7 @@ class TNode {
   }
 
   virtual ~TNode() {
-    if (debug_flag) std::cout << "~TNode(" << value << ")" << std::endl;
+    if (debug_flag) std::cout << "~TNode(" << *value << ")" << std::endl;
     tnode_count--;
     if (debug_flag)
       std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;

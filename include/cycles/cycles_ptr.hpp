@@ -38,10 +38,15 @@ class cycles_ptr {
   wptr<TNode<sptr<T>>> remote_node;
   //
   wptr<TNode<sptr<T>>> owned_by_node;
-
- public:
   //
   bool debug_flag_ptr{false};
+
+ public:
+  void setDebug(bool b) {
+    debug_flag_ptr = b;
+    auto node = remote_node.lock();
+    if (node) node->debug_flag = b;
+  }
 
  public:
   auto get_ctx() const { return ctx; }
@@ -316,9 +321,9 @@ class cycles_ptr {
   void reset() { destroy(); }
 
   ~cycles_ptr() {
-    if (debug()) std::cout << "begin ~cycles_ptr" << std::endl;
+    if (debug()) std::cout << "begin ~cycles_ptr()" << std::endl;
     destroy();
-    if (debug()) std::cout << "end ~cycles_ptr" << std::endl;
+    if (debug()) std::cout << "end ~cycles_ptr()" << std::endl;
   }
 
   // =============================
@@ -373,6 +378,12 @@ class cycles_ptr {
     auto node_ptr = this->remote_node.lock();
     assert(node_ptr);
     return node_ptr->owned_by.size();
+  }
+
+  auto getOwnedBy(int idx) const {
+    auto node_ptr = this->remote_node.lock();
+    assert(node_ptr);
+    return node_ptr->owned_by[idx].lock();
   }
   // =========================
 

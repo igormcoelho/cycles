@@ -111,6 +111,12 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
                 ->neighbors[0]
                 ->neighbors[0]
                 .count_owned_by() == 1);
+    // try to take lock on owner
+    REQUIRE((bool)G.entry->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                .getOwnedBy(0));
     // full cycle: -1 -> 1 -> 2 -> 3 -> -1 -> 1
     REQUIRE(G.entry->neighbors[0]
                 ->neighbors[0]
@@ -120,6 +126,12 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
                 ->val == 1);
     //
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    // make everyone verbose
+    G.entry->neighbors[0].setDebug(true);                              // -1
+    G.entry->neighbors[0]->neighbors[0].setDebug(true);                // 1
+    G.entry->neighbors[0]->neighbors[0]->neighbors[0].setDebug(true);  // 2
+    G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0].setDebug(
+        true);  // 3
     //
     // manually invoke collection
     //
@@ -129,7 +141,7 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);  // NO COLLECTION??
     //
     G.my_ctx().lock()->debug = true;
-    G.entry.debug_flag_ptr = true;
+    G.entry.setDebug(true);
     REQUIRE(true);
   }
   // SHOULD NOT LEAK
