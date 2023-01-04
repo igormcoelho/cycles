@@ -54,8 +54,9 @@ class TNode {
   }
 
   virtual ~TNode() {
-    if (debug_flag) std::cout << "~TNode(" << *value << ")" << std::endl;
+    if (debug_flag) std::cout << "BEGIN ~TNode(" << *value << ")" << std::endl;
     tnode_count--;
+    std::cout << "DEBUG: Part I will check" << std::endl;
     //
     // clear 'owns' list
     //
@@ -68,28 +69,37 @@ class TNode {
         assert(s_owned_ptr);
         std::cout << "OWNS i=" << i << " => " << (*s_owned_ptr->value)
                   << std::endl;
-        std::cout << " i is owned by count: " << s_owned_ptr->owned_by.size()
+        std::cout << " i has owned_by count: " << s_owned_ptr->owned_by.size()
                   << std::endl;
+        // ==================
         assert(s_owned_ptr->owned_by.size() > 0);
+        bool removed = false;
         for (int j = 0; j < s_owned_ptr->owned_by.size(); j++) {
           auto s_owner = s_owned_ptr->owned_by[j].lock();
-          if (!s_owner)
-            std::cout << "ERROR! TODO FIX! THIS IS NOT REAL ERROR! owner j="
-                      << j << "does not exist anymore!" << std::endl;
-          assert(s_owner);
-          if (this == s_owner.get()) {
+          if (!s_owner || (s_owner && (this == s_owner.get()))) {
+            // IMPORTANT: THIS IS MY DESTRUCTOR.. SHARED POINTERS SHOULD NOT
+            // HOLD REFERENCES TO ME AT THIS POINT!
+            // IF USING RAW POINTER WITH UNIQUE_PTR, EQUALITY WITH this SHOULD
+            // STILL WORK... BUT WITH WEAK PTR, WE JUST ASSUME EMPTY IS ME.
+            //
             s_owned_ptr->owned_by.erase(s_owned_ptr->owned_by.begin() + j);
-            std::cout << "PART I: REMOVED! j=" << j << std::endl;
+            removed = true;
+            if (debug_flag)
+              std::cout << "PART I: REMOVED! j=" << j << std::endl;
             break;  // single time only (TODO: investigate...)
           }
         }  // for j
-      }    // for i
-      assert(owns.size() == 0);
+        assert(removed);
+      }  // for i
+      owns.clear();
+      std::cout << "DEBUG: Part I finished cleanup owns list" << std::endl;
     }  // if owns exists
+    std::cout << "DEBUG: Part II will check" << std::endl;
     //
     // clear 'owned_by' list
     //
     if (owned_by.size() > 0) {
+      std::cout << "PASSED IF... owned_by > 0" << std::endl;
       if (debug_flag) {
         std::cout
             << "WARNING! PART II: must clean 'owned_by' list... not empty!"
@@ -124,9 +134,16 @@ class TNode {
         assert(removed);
       }  // for i
       owned_by.clear();
+      std::cout << "DEBUG: Part I finished cleanup owned_by list" << std::endl;
     }  // if owned_by exists
     if (debug_flag)
       std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
+    if (debug_flag) std::cout << "FINISH ~TNode(" << *value << ")" << std::endl;
+    if (debug_flag)
+      std::cout << "FINISH ~TNode Will destroy value: " << *value << std::endl;
+    // ONLY FOR SHARED POINTERS!
+    value = nullptr;
+    if (debug_flag) std::cout << "FINISH REAL ~TNode(nullptr)" << std::endl;
   }
 
   // ============ FUNDAMENTAL PROPERTIES ============

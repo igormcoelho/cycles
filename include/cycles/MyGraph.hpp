@@ -15,6 +15,7 @@ template <typename X>
 class MyNode {
  public:
   X val;
+  vector<cycles_ptr<MyNode>> neighbors;
   bool debug_flag{false};
 
   explicit MyNode(X _val, bool _debug_flag = false)
@@ -26,11 +27,20 @@ class MyNode {
 
   ~MyNode() {
     mynode_count--;
-    if (debug_flag)
-      std::cout << "~MyNode mynode_count=" << mynode_count << std::endl;
+    if (debug_flag) {
+      std::cout << "~MyNode(" << val << ") mynode_count=" << mynode_count
+                << std::endl;
+      std::cout << "~MyNode: |neighbors|=" << neighbors.size() << std::endl;
+      if (neighbors.size() > 0) {
+        std::cout << "~MyNode: WILL CLEAR MY NEIGHBORS!" << std::endl;
+        for (unsigned i = 0; i < neighbors.size(); i++)
+          std::cout << "  MyNode neighbor i=" << i
+                    << " => type: " << neighbors[i].getType() << std::endl;
+        neighbors.clear();
+      }
+      std::cout << "~MyNode: FINISHED!" << std::endl;
+    }
   }
-
-  vector<cycles_ptr<MyNode>> neighbors;
   //
   friend ostream& operator<<(ostream& os, const MyNode& node) {
     os << "MyNode(" << node.val << ")";
@@ -43,6 +53,8 @@ class MyNode {
 template <typename X>
 class MyGraph {
   using MyNodeX = MyNode<X>;
+
+ public:
   bool debug_flag{false};
 
  private:
@@ -79,15 +91,15 @@ class MyGraph {
   }
 
   void print() {
-    std::cout << std::endl
+    std::cout << "============================ " << std::endl
               << "MyGraph::print() => root.has_get() = "
               << (entry.has_get() ? "true" : "false") << std::endl;
-    std::cout << "MyGraph::ctx (pointer) ~> " << ctx << std::endl;
-    if (ctx) ctx->print();
-    std::cout << "MyGraph::finished ctx print" << std::endl;
+    // std::cout << "MyGraph::ctx (pointer) ~> " << ctx << std::endl;
+    // if (ctx) ctx->print();
+    // std::cout << "MyGraph::finished ctx print" << std::endl;
     if (entry.has_get()) printFrom(entry);
     std::cout << "MyGraph::finished PRINT" << std::endl;
-    std::cout << std::endl;
+    std::cout << "============================ " << std::endl;
   }
 
   void printFrom(const cycles_ptr<MyNodeX>& node) {

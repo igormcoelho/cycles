@@ -12,6 +12,96 @@ using namespace cycles;  // NOLINT
 // memory management tests
 // =======================
 
+/*
+TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
+  std::cout << "begin MyGraph A just-entry" << std::endl;
+  // create context
+  {
+    MyGraph<double> G;
+    G.debug_flag = true;
+    // REQUIRE(!G.my_ctx().lock()->debug);
+    G.my_ctx().lock()->debug = true;
+
+    // STEP (A)
+    // creating -1 node
+    G.entry = G.make_node(-1.0);
+    REQUIRE(G.entry.is_root());
+
+    if (true) {
+      G.entry.setDebug(true);  // -1
+    }
+
+    auto ptr1 = G.make_node(1.0);
+    REQUIRE(ptr1.is_root());
+    //
+    // CHECKS (B) - node 1 is owned by -1
+    //
+    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
+    REQUIRE(G.entry.get().neighbors[0].is_owned());
+
+    //
+    auto ptr2 = G.make_node(2.0);
+    REQUIRE(ptr2.is_root());
+
+    auto ptr3 = G.make_node(3.0);
+    REQUIRE(ptr3.is_root());
+
+    //
+    G.print();
+    std::cout << "WILL RESET ptr1" << std::endl;
+
+    // CHECKS (C') - ptr1 is deleted (but no ownership is given to ptr2)
+    ptr1.reset();
+
+    //
+    // CHECKS (D') - ptr2 and ptr3 are added as owners
+    //
+    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+
+    REQUIRE(ptr2.is_root());
+    REQUIRE(ptr3.is_root());
+    REQUIRE(ptr2.get().neighbors[0].is_owned());
+    REQUIRE(ptr3.get().neighbors[0].is_owned());
+
+    REQUIRE(!G.entry.is_nullptr());
+    //
+    G.print();
+    //
+    std::cout << "PRINT ptr2 details:" << ptr2.get() << std::endl;
+    for (unsigned i = 0; i < ptr2.get().neighbors.size(); i++)
+      std::cout << "  ptr2 MyNode neighbor i=" << i
+                << " => type: " << ptr2.get().neighbors[i].getType()
+                << std::endl;
+    // CHECKS (E') - ptr2 and ptr3 are removed
+    std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
+    ptr2.reset();
+    REQUIRE(G.entry.is_root());
+    REQUIRE(ptr3.is_root());
+    REQUIRE(ptr3.get().neighbors[0].is_owned());
+    std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
+    ptr3.reset();
+    std::cout << "WARN: HERE 3" << std::endl;
+
+    //
+    // FINALIZATION
+    //
+    REQUIRE(!G.entry.is_nullptr());
+    REQUIRE(G.entry.is_root());
+    REQUIRE(G.entry.get().val == -1);
+    REQUIRE(G.entry->neighbors.size() == 1);
+
+    //
+    // debug
+    if (false) {
+      G.entry.setDebug(true);  // -1
+    }
+  }
+  // SHOULD NOT LEAK
+  REQUIRE(mynode_count == 0);
+}
+*/
+
 TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Simple") {
   std::cout << "begin MyGraph A-B-C-D-E Simple" << std::endl;
   // create context

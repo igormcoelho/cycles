@@ -7,6 +7,7 @@
 // C++
 #include <iostream>
 #include <map>
+#include <string>  // ONLY FOR getType HELPER??
 #include <utility>
 #include <vector>
 
@@ -36,7 +37,12 @@ class cycles_ptr {
   //
   wptr<TNode<sptr<T>>> remote_node;
   //
+  // NOTE THAT is_owned_by_node MAY BE TRUE, WHILE owned_by_node
+  // BECOMES UNREACHABLE... THIS HAPPENS IF OWNER DIES BEFORE THIS POINTER.
+  // THE RELATION SHOULD BE IMMUTABLE, IT MEANS THAT ONCE "OWNED", ALWAYS
+  // "OWNED".
   wptr<TNode<sptr<T>>> owned_by_node;
+  bool is_owned_by_node{false};
   //
   bool debug_flag_ptr{false};
 
@@ -187,18 +193,19 @@ class cycles_ptr {
   cycles_ptr(cycles_ptr<T>&& corpse) noexcept
       : ctx{corpse.ctx},
         remote_node{std::move(corpse.remote_node)},
-        owned_by_node{std::move(corpse.owned_by_node)} {
+        owned_by_node{std::move(corpse.owned_by_node)},
+        is_owned_by_node{std::move(corpse.is_owned_by_node)} {
     corpse.remote_node.reset();
     corpse.owned_by_node.reset();
+    corpse.is_owned_by_node = false;
     this->debug_flag_ptr = get_ctx().lock()->debug;
   }
 
  public:
   // ======= C4 copy constructor WITH owner =======
-  // copy constructor (still good for vector... must be the meaning of a "copy")
-  // proposed operation is:
-  // cptr1 = cycles_ptr<T>(cptr0, cptr2); // (cptr0 and cptr2 exists already)
-  // it could also follow this logic:
+  // copy constructor (still good for vector... must be the meaning of a
+  // "copy") proposed operation is: cptr1 = cycles_ptr<T>(cptr0, cptr2); //
+  // (cptr0 and cptr2 exists already) it could also follow this logic:
   // 1. cptr1 = cycles_ptr<T>{cptr0}; // copy cptr0 into cptr1
   // 2. cptr1.set_owned_by(cptr2);   // makes cptr1 (and also cptr0) owned by
   // cptr2
@@ -222,6 +229,8 @@ class cycles_ptr {
     this->set_owned_by(owner);
     // remember ownership (for future deletion?)
     this->owned_by_node = owner.remote_node;
+    this->is_owned_by_node = true;
+    // OWNER MUST EXIST... AT LEAST NOW!
     assert(this->owned_by_node.lock());
     if (debug())
       std::cout << "finish c4: stored owner in owned_by_node" << std::endl;
@@ -230,15 +239,16 @@ class cycles_ptr {
   int get_ref_use_count() const { return this->get_sptr().use_count(); }
 
   void destroy() {
+    if (debug()) std::cout << "destroy: BEGIN" << std::endl;
     // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
     // Maybe just consider some "unique_ptr forest" for now?
     //
     if (debug()) {
       std::cout << "destroy: ref_use_count=" << this->get_ref_use_count();
       if (!has_get())
-        std::cout << "{NULL}";
+        std::cout << " get(): NULL";
       else
-        std::cout << " {" << this->get() << "}";
+        std::cout << " get(): (" << this->get() << ")";
       std::cout << std::endl;
     }
     // BEGIN complex logic
@@ -246,9 +256,11 @@ class cycles_ptr {
     assert(is_nullptr() || is_root() || is_owned());
     //
     if (is_nullptr()) {
+      if (debug()) std::cout << "destroy: is_nullptr()" << std::endl;
       return;  // nothing to destroy
                // (MUST KEEP else below, otherwise it may break(?))
     } else if (is_root()) {
+      if (debug()) std::cout << "destroy: is_root()" << std::endl;
       // this node is root in tree!
       // must find someone to strongly own me, otherwise the whole tree will
       // die! First: find someone in my 'owned_by' list
@@ -276,24 +288,42 @@ class cycles_ptr {
         // delete myself from owned_by (now I'm child)
         sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + 0);
       } else {
+        if (debug()) std::cout << "destroy: MOVE TO GARBAGE????" << std::endl;
         // MOVE TO GARBAGE?
+        // assert(false);
       }
       // CLEAR!
-      // find my tree
-      auto tree_it = ctx.lock()->forest.find(sptr_mynode);
-      if (tree_it == ctx.lock()->forest.end()) {
-        assert(false);
-      } else {
-        if (debug()) {
-          std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
+      {  // scope for tree_it deletion
+        if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
+        // find my tree
+        auto tree_it = ctx.lock()->forest.find(sptr_mynode);
+        if (tree_it == ctx.lock()->forest.end()) {
+          // ????
+          std::cout << "ERROR! COULD NOT FIND MY TREE!" << std::endl;
+          assert(false);
+        } else {
+          if (debug()) {
+            std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
+          }
+          // clear tree
+          ctx.lock()->forest.erase(tree_it);
+
+          if (debug()) {
+            std::cout << " ~~~> OK DELETED MY TREE." << std::endl;
+          }
         }
-        // clear tree
-        ctx.lock()->forest.erase(tree_it);
-      }
+      }  // scope for tree_it deletion
+      //
+      std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
+      if (debug()) sptr_mynode->debug_flag = true;
+      // manual/explicit deletion
+      sptr_mynode = nullptr;
+      std::cout << "destroy: destroyed 'sptr_mynode'" << std::endl;
       //
       // end-if is_root (MUST KEEP else below, otherwise it may break)
     } else {
       // owned by 'owned_by_node', but not root...
+      assert(is_owned_by_node);
       auto owner_node = this->owned_by_node.lock();
       // owner must exist
       assert(owner_node);
@@ -320,17 +350,35 @@ class cycles_ptr {
       }
 
       assert(removed);
-    }
+    }  // end 'else' (owned_by_node)
+    if (debug()) std::cout << "destroy: last cleanups" << std::endl;
     //
     // this->ref = nullptr;
     this->remote_node = wptr<TNode<sptr<T>>>();    // clear
     this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
+    this->is_owned_by_node = false;
+    if (debug()) std::cout << "destroy: END" << std::endl;
   }
 
-  void reset() { destroy(); }
+  void reset() {
+    if (debug()) std::cout << "cycles_ptr::reset() BEGIN" << std::endl;
+    destroy();
+    if (debug()) std::cout << "cycles_ptr::reset() END" << std::endl;
+  }
+
+  // HELPER: is_nullptr, is_root, is_owned
+  std::string getType() {
+    if (is_nullptr())
+      return "is_nullptr";
+    else if (is_root())
+      return "is_root";
+    else
+      return "is_owned";
+  }
 
   ~cycles_ptr() {
-    if (debug()) std::cout << "begin ~cycles_ptr()" << std::endl;
+    if (debug())
+      std::cout << "begin ~cycles_ptr() getType=" << getType() << std::endl;
     destroy();
     if (debug()) std::cout << "end ~cycles_ptr()" << std::endl;
   }
@@ -375,12 +423,24 @@ class cycles_ptr {
   bool is_nullptr() const { return (!this->remote_node.lock()); }
 
   // check if this pointer is root (in tree/forest universe)
-  bool is_root() const { return (!this->remote_node.lock()->has_parent()); }
+  bool is_root() const {
+    // IMPORTANT! DO NOT REMOVE is_owned() check from here!!
+    if (is_nullptr() || is_owned())
+      return false;
+    else
+      return (!this->remote_node.lock()->has_parent());
+  }
 
   // check if this pointer is already owned by someone
   bool is_owned() const {
+    bool b1 = is_owned_by_node;
     // NOLINTNEXTLINE
-    return (bool)(this->owned_by_node.lock());
+    bool b2 = (bool)(this->owned_by_node.lock());
+    if (b1 && !b2)
+      std::cout << "cycle_ptr is_owned() WARNING: is_owned_by_node but owner "
+                   "does not exist!"
+                << std::endl;
+    return b1;
   }
 
   int count_owned_by() const {
@@ -544,6 +604,7 @@ class cycles_ptr {
     this->debug_flag_ptr = corpse.debug_flag_ptr;
     this->remote_node = std::move(corpse.remote_node);
     this->owned_by_node = std::move(corpse.owned_by_node);
+    this->is_owned_by_node = std::move(corpse.is_owned_by_node);
     if (debug()) std::cout << "end operator==(&&)" << std::endl;
 
     return *this;
@@ -585,7 +646,7 @@ class cycles_ptr {
     // TODO: think more.
     return (this->has_get() == other.has_get()) &&
            (ctx.lock() == other.ctx.lock()) &&
-           (get_ptr() && other.get_ptr());  //&& (ref == other.ref);
+           (get_ptr() == other.get_ptr());  //&& (ref == other.ref);
   }
 
   bool has_get() const {
