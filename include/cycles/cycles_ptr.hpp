@@ -29,11 +29,10 @@ namespace cycles {
 template <typename T>
 // NOLINTNEXTLINE
 class cycles_ptr {
- private:
-  wptr<cycles_ctx<T>> ctx;
+  // TODO(igormcoelho): make private!
+ public:
   //
-  // TODO: should be an element/vertex on tree
-  // sptr<T> ref; // TODO: remove this direct ref!
+  wptr<cycles_ctx<T>> ctx;
   //
   wptr<TNode<sptr<T>>> remote_node;
   //
@@ -231,7 +230,7 @@ class cycles_ptr {
   int get_ref_use_count() const { return this->get_sptr().use_count(); }
 
   void destroy() {
-    // TODO: how to manage "delegated sptr" pointers here?
+    // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
     // Maybe just consider some "unique_ptr forest" for now?
     //
     if (debug()) {
@@ -251,8 +250,8 @@ class cycles_ptr {
                // (MUST KEEP else below, otherwise it may break(?))
     } else if (is_root()) {
       // this node is root in tree!
-      // must find someone to replace me, otherwise the whole tree will die!
-      // First: find someone in my 'owned_by' list
+      // must find someone to strongly own me, otherwise the whole tree will
+      // die! First: find someone in my 'owned_by' list
       auto sptr_mynode = this->remote_node.lock();
       if (sptr_mynode->owned_by.size() > 0) {
         auto myNewParent = sptr_mynode->owned_by[0].lock();
@@ -261,6 +260,16 @@ class cycles_ptr {
         }
         // new parent must exist
         assert(myNewParent);
+        // remove me from the 'owns' list of my owner
+        assert(myNewParent->owns.size() > 0);
+        bool removed = false;
+        for (unsigned i = 0; i < myNewParent->owns.size(); i++)
+          if (myNewParent->owns[i].lock().get() == sptr_mynode.get()) {
+            myNewParent->owns.erase(myNewParent->owns.begin() + i);
+            removed = true;
+            break;
+          }
+        assert(removed);
         // add myself as myNewParent child
         sptr_mynode->parent = myNewParent;
         myNewParent->add_child_strong(sptr_mynode);
@@ -411,9 +420,12 @@ class cycles_ptr {
     // It seems that only one case must exist here
     //   => SOLUTION: Owner will add a weak link to Me.
 
-    // TODO: Maybe... check if it's not yet child?
-
-    this->remote_node.lock()->add_weak_link_owned(owner.remote_node);
+    // TODO(igormcoelho): Maybe... check if it's not yet child?
+    // OLD:
+    // this->remote_node.lock()->add_weak_link_owned(owner.remote_node);
+    // NEW:
+    TNode<sptr<T>>::add_weak_link_owned(this->remote_node.lock(),
+                                        owner.remote_node.lock());
     //
     if (debug())
       std::cout << "owner |children|="

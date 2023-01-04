@@ -12,7 +12,8 @@ using namespace cycles;  // NOLINT
 // memory management tests
 // =======================
 
-TEST_CASE("CyclesTestGraph: MyGraph2") {
+// NOLINTNEXTLINE
+TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E") {
   // create context
   {
     MyGraph<double> G;
@@ -23,6 +24,13 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     // creating -1 node
 
     G.entry = G.make_node(-1.0);
+
+    // check few things on 'entry'... Parent, Children, Owned and Owns
+    // CHECKS (A)
+    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.remote_node.lock()->children.size() == 0);
+    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
 
     // forest size is 1
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
@@ -59,6 +67,16 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
     REQUIRE(ptr1.is_root());
     REQUIRE(G.entry.get().neighbors[0].is_owned());
+    // CHECKS (B)
+    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.remote_node.lock()->children.size() == 0);
+    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(G.entry.remote_node.lock()->owns.size() == 1);
+    //
+    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
 
     //
     ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
@@ -71,12 +89,48 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     REQUIRE(ptr1.is_nullptr());
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     REQUIRE(G.entry.get().neighbors[0].is_owned());
+    auto& fake_ptr1 = G.entry.get().neighbors[0];
+    // CHECKS (C)
+    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    //
+    REQUIRE(fake_ptr1.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr1.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr1.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr1.remote_node.lock()->owns.size() == 1);
+    //
+    REQUIRE(ptr2.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr2.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr2.remote_node.lock()->owns.size() == 0);
     //
     ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     //
     ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    // CHECKS (D)
+    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    //
+    REQUIRE(fake_ptr1.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr1.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr1.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr1.remote_node.lock()->owns.size() == 1);
+    //
+    REQUIRE(ptr2.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr2.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr2.remote_node.lock()->owns.size() == 1);
+    //
+    REQUIRE(ptr3.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr3.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr3.remote_node.lock()->owns.size() == 1);
     //
     // will clean all from this context
     //
@@ -86,6 +140,30 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     REQUIRE(ptr3.is_nullptr());
     //
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    auto& fake_ptr2 = fake_ptr1.get().neighbors[0];
+    auto& fake_ptr3 = fake_ptr2.get().neighbors[0];
+    // CHECKS (E)
+    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    //
+    REQUIRE(fake_ptr1.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr1.remote_node.lock()->children.size() == 1);
+    REQUIRE(fake_ptr1.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr1.remote_node.lock()->owns.size() == 0);
+    //
+    REQUIRE(fake_ptr2.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr2.remote_node.lock()->children.size() == 1);
+    REQUIRE(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr2.remote_node.lock()->owns.size() == 0);
+    //
+    REQUIRE(fake_ptr3.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr3.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr3.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr3.remote_node.lock()->owns.size() == 1);
+    REQUIRE(fake_ptr3.remote_node.lock()->owns[0].lock().get() ==
+            G.entry.remote_node.lock().get());
     //
     REQUIRE(G.entry.get().val == -1);
     REQUIRE(G.entry.count_owned_by() == 1);
@@ -127,11 +205,13 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     //
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
     // make everyone verbose
-    G.entry->neighbors[0].setDebug(true);                              // -1
-    G.entry->neighbors[0]->neighbors[0].setDebug(true);                // 1
-    G.entry->neighbors[0]->neighbors[0]->neighbors[0].setDebug(true);  // 2
-    G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0].setDebug(
-        true);  // 3
+    if (false) {
+      G.entry->neighbors[0].setDebug(true);                              // -1
+      G.entry->neighbors[0]->neighbors[0].setDebug(true);                // 1
+      G.entry->neighbors[0]->neighbors[0]->neighbors[0].setDebug(true);  // 2
+      G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0].setDebug(
+          true);  // 3
+    }
     //
     // manually invoke collection
     //
@@ -140,8 +220,8 @@ TEST_CASE("CyclesTestGraph: MyGraph2") {
     //
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);  // NO COLLECTION??
     //
-    G.my_ctx().lock()->debug = true;
-    G.entry.setDebug(true);
+    // G.my_ctx().lock()->debug = true;
+    // G.entry.setDebug(true);
     REQUIRE(true);
   }
   // SHOULD NOT LEAK

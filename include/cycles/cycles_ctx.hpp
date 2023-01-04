@@ -55,7 +55,12 @@ class cycles_ctx {
       if (debug)
         std::cout << " clearing root of ~> " << p.first << "'" << (*p.first)
                   << "' -> " << p.second << " TREE" << std::endl;
-      assert(p.second->root);  // root must never be nullptr
+      assert(p.second->root);    // root must never be nullptr
+      p.second->root = nullptr;  // clear root BEFORE CHILDREN
+      /*
+      if (true)
+        std::cout << "TODO: must remove weak links from root Tree node:"
+                  << p.second->root->owned_by.size() << std::endl;
       if (debug)
         std::cout << " clearing children of Tree node:  root.|children|="
                   << p.second->root->children.size() << std::endl;
@@ -63,6 +68,7 @@ class cycles_ctx {
       if (debug)
         std::cout << " clearing root with root = nullptr " << std::endl;
       p.second->root = nullptr;  // clear root
+      */
     }
     if (debug) std::cout << "~cycles_ctx: final clear forest" << std::endl;
     forest.clear();  // is it necessary??
@@ -71,7 +77,8 @@ class cycles_ctx {
   void collect() {
     assert(this);
     // force collect
-    std::cout << "collect! NOT Implemented (this=" << this << ")" << std::endl;
+    std::cout << "WARNING: collect! NOT Implemented (this=" << this << ")"
+              << std::endl;
   }
 
   void print() {
