@@ -56,21 +56,25 @@ class TNode {
   virtual ~TNode() {
     if (debug_flag) std::cout << "BEGIN ~TNode(" << *value << ")" << std::endl;
     tnode_count--;
-    std::cout << "DEBUG: Part I will check" << std::endl;
+    if (debug_flag) std::cout << "DEBUG: Part I will check" << std::endl;
     //
     // clear 'owns' list
     //
     if (owns.size() > 0) {
-      std::cout << "WARNING: inside ~TNode(" << *value << ")" << std::endl;
-      std::cout << "WARNING! PART I: must clean 'owns' list... not empty!"
-                << std::endl;
+      if (debug_flag) {
+        std::cout << "WARNING: inside ~TNode(" << *value << ")" << std::endl;
+        std::cout << "WARNING! PART I: must clean 'owns' list... not empty!"
+                  << std::endl;
+      }
       for (unsigned i = 0; i < owns.size(); i++) {
         auto s_owned_ptr = owns[i].lock();
         assert(s_owned_ptr);
-        std::cout << "OWNS i=" << i << " => " << (*s_owned_ptr->value)
-                  << std::endl;
-        std::cout << " i has owned_by count: " << s_owned_ptr->owned_by.size()
-                  << std::endl;
+        if (debug_flag) {
+          std::cout << "OWNS i=" << i << " => " << (*s_owned_ptr->value)
+                    << std::endl;
+          std::cout << " i has owned_by count: " << s_owned_ptr->owned_by.size()
+                    << std::endl;
+        }
         // ==================
         assert(s_owned_ptr->owned_by.size() > 0);
         bool removed = false;
@@ -92,15 +96,16 @@ class TNode {
         assert(removed);
       }  // for i
       owns.clear();
-      std::cout << "DEBUG: Part I finished cleanup owns list" << std::endl;
+      if (debug_flag)
+        std::cout << "DEBUG: Part I finished cleanup owns list" << std::endl;
     }  // if owns exists
-    std::cout << "DEBUG: Part II will check" << std::endl;
+    if (debug_flag) std::cout << "DEBUG: Part II will check" << std::endl;
     //
     // clear 'owned_by' list
     //
     if (owned_by.size() > 0) {
-      std::cout << "PASSED IF... owned_by > 0" << std::endl;
       if (debug_flag) {
+        std::cout << "PASSED IF... owned_by > 0" << std::endl;
         std::cout
             << "WARNING! PART II: must clean 'owned_by' list... not empty!"
             << std::endl;
@@ -134,7 +139,10 @@ class TNode {
         assert(removed);
       }  // for i
       owned_by.clear();
-      std::cout << "DEBUG: Part I finished cleanup owned_by list" << std::endl;
+      if (debug_flag) {
+        std::cout << "DEBUG: Part I finished cleanup owned_by list"
+                  << std::endl;
+      }
     }  // if owned_by exists
     if (debug_flag)
       std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;

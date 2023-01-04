@@ -12,22 +12,21 @@ using namespace cycles;  // NOLINT
 // memory management tests
 // =======================
 
-/*
 TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
-  std::cout << "begin MyGraph A just-entry" << std::endl;
+  std::cout << "begin MyGraph MyGraph A B C' D' E'" << std::endl;
   // create context
   {
     MyGraph<double> G;
-    G.debug_flag = true;
-    // REQUIRE(!G.my_ctx().lock()->debug);
-    G.my_ctx().lock()->debug = true;
+    // G.debug_flag = true;
+    REQUIRE(!G.my_ctx().lock()->debug);
+    // G.my_ctx().lock()->debug = true;
 
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
     REQUIRE(G.entry.is_root());
 
-    if (true) {
+    if (false) {
       G.entry.setDebug(true);  // -1
     }
 
@@ -47,8 +46,8 @@ TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
     REQUIRE(ptr3.is_root());
 
     //
-    G.print();
-    std::cout << "WILL RESET ptr1" << std::endl;
+    // G.print();
+    // std::cout << "WILL RESET ptr1" << std::endl;
 
     // CHECKS (C') - ptr1 is deleted (but no ownership is given to ptr2)
     ptr1.reset();
@@ -66,22 +65,23 @@ TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
 
     REQUIRE(!G.entry.is_nullptr());
     //
-    G.print();
+    // G.print();
     //
-    std::cout << "PRINT ptr2 details:" << ptr2.get() << std::endl;
-    for (unsigned i = 0; i < ptr2.get().neighbors.size(); i++)
-      std::cout << "  ptr2 MyNode neighbor i=" << i
-                << " => type: " << ptr2.get().neighbors[i].getType()
-                << std::endl;
+    if (false) {
+      std::cout << "PRINT ptr2 details:" << ptr2.get() << std::endl;
+      for (unsigned i = 0; i < ptr2.get().neighbors.size(); i++)
+        std::cout << "  ptr2 MyNode neighbor i=" << i
+                  << " => type: " << ptr2.get().neighbors[i].getType()
+                  << std::endl;
+    }
     // CHECKS (E') - ptr2 and ptr3 are removed
-    std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
+    // std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
     ptr2.reset();
     REQUIRE(G.entry.is_root());
     REQUIRE(ptr3.is_root());
     REQUIRE(ptr3.get().neighbors[0].is_owned());
-    std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
+    // std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
     ptr3.reset();
-    std::cout << "WARN: HERE 3" << std::endl;
 
     //
     // FINALIZATION
@@ -100,7 +100,6 @@ TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
   // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);
 }
-*/
 
 TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Simple") {
   std::cout << "begin MyGraph A-B-C-D-E Simple" << std::endl;

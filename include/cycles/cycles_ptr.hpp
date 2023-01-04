@@ -314,17 +314,27 @@ class cycles_ptr {
         }
       }  // scope for tree_it deletion
       //
-      std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
+      if (debug())
+        std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
       if (debug()) sptr_mynode->debug_flag = true;
       // manual/explicit deletion
       sptr_mynode = nullptr;
-      std::cout << "destroy: destroyed 'sptr_mynode'" << std::endl;
+      if (debug()) std::cout << "destroy: destroyed 'sptr_mynode'" << std::endl;
       //
       // end-if is_root (MUST KEEP else below, otherwise it may break)
     } else {
       // owned by 'owned_by_node', but not root...
       assert(is_owned_by_node);
       auto owner_node = this->owned_by_node.lock();
+      if (!owner_node) {
+        // SHOULD THIS BEHAVE AS is_nullptr?
+        if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
+        // FORCE CLEAR
+        this->remote_node = wptr<TNode<sptr<T>>>();    // clear
+        this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
+        this->is_owned_by_node = false;
+        return;
+      }
       // owner must exist
       assert(owner_node);
       // just remove this link!
@@ -436,10 +446,12 @@ class cycles_ptr {
     bool b1 = is_owned_by_node;
     // NOLINTNEXTLINE
     bool b2 = (bool)(this->owned_by_node.lock());
-    if (b1 && !b2)
-      std::cout << "cycle_ptr is_owned() WARNING: is_owned_by_node but owner "
-                   "does not exist!"
-                << std::endl;
+    if (b1 && !b2) {
+      if (debug())
+        std::cout << "cycle_ptr is_owned() WARNING: is_owned_by_node but owner "
+                     "does not exist!"
+                  << std::endl;
+    }
     return b1;
   }
 
