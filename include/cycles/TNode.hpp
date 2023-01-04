@@ -60,6 +60,7 @@ class TNode {
     // clear 'owns' list
     //
     if (owns.size() > 0) {
+      std::cout << "WARNING: inside ~TNode(" << *value << ")" << std::endl;
       std::cout << "WARNING! PART I: must clean 'owns' list... not empty!"
                 << std::endl;
       for (unsigned i = 0; i < owns.size(); i++) {
