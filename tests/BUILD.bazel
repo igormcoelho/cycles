@@ -29,7 +29,8 @@ cc_binary(
     name = "test_demo_graph2",
     srcs = ["demo_graph2.cpp"],
     deps=["//include/cycles:cycles_hpp", 
-    "//include/demo_cptr:demo_cptr_hpp"]
+    "//include/demo_cptr:demo_cptr_hpp",
+    "//include/pre-experiments:pre_experiments_hpp"]
 )
 
 

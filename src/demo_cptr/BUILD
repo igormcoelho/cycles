@@ -15,5 +15,6 @@ cc_binary(
     name = "demo",
     srcs = ["demo.cpp"],
     deps=["//include/cycles:cycles_hpp",
-    "//include/demo_cptr:demo_cptr_hpp"]
+    "//include/demo_cptr:demo_cptr_hpp",
+    "//include/pre-experiments:pre_experiments_hpp"]
 )

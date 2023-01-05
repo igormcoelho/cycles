@@ -2,7 +2,7 @@
 
 // EXPERIMENTAL nodes
 
-#include "utils.hpp"
+#include <cycles/utils.hpp>
 
 // strong circular list
 struct Node1 {
@@ -16,8 +16,7 @@ struct Node1 {
 struct List1 {
   sptr<Node1> head;
 
-  void print(int max = 10)
-  {
+  void print(int max = 10) {
     auto p = head;
     int i = 0;
     std::cout << "list: ";
@@ -25,8 +24,7 @@ struct List1 {
       i++;
       std::cout << p->value << " ";
       p = p->next;
-      if (i > max)
-        break;
+      if (i > max) break;
     }
     std::cout << std::endl;
   }

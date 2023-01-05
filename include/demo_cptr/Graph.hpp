@@ -2,17 +2,17 @@
 
 #include <string>
 #include <vector>
-
-#include <cycles/List.hpp>
+//
+#include <pre-experiments/List.hpp>
 
 using std::vector, std::string;
 
 struct Vertice {
-  string label; // what else? // TODO: becomes general type T
+  string label;  // what else? // TODO: becomes general type T
 };
 
 struct Edge {
-  double weight; // what else? // TODO: becomes general type T
+  double weight;  // what else? // TODO: becomes general type T
 };
 
 struct Graph {
@@ -31,8 +31,7 @@ struct Graph {
   // MAYBE, a vertex is the owner of other vertex, THROUGH a cyclic-list
   // thus preventing cycles in the "ownership chain"
 
-  void print()
-  {
+  void print() {
     std::cout << " ====> WILL PRINT GRAPH" << std::endl;
     std::cout << "Graph (|V|=" << vertex.size() << "):" << std::endl;
     for (unsigned i = 0; i < vertex.size(); i++) {
