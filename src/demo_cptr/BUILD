@@ -7,20 +7,13 @@ package(
 cc_binary(
     name = "demo0_cycles_test",
     srcs = ["demo0_cycles_test_graph.cpp"],
-    deps=["//include/cycles:cycles_hpp"]
+    deps=["//include/cycles:cycles_hpp",
+    "//include/demo_cptr:demo_cptr_hpp"]
 )
 
 cc_binary(
     name = "demo",
     srcs = ["demo.cpp"],
     deps=["//include/cycles:cycles_hpp",
-    ":all_hpp"]
-)
-
-cc_library(
-    name = "all_hpp",
-    hdrs = glob([
-        "**/*.hpp",
-    ]),
-    include_prefix = "demo_cptr/",
+    "//include/demo_cptr:demo_cptr_hpp"]
 )

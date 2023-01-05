@@ -7,20 +7,29 @@ cc_test(
     name = "MyGraph-test",
     srcs = glob([
         "MyGraph.Test.cpp",
-        #"List-test/**/*.hpp",
-        #"List-test/**/*.h",
     ]),
     defines = ["CATCH_CONFIG_MAIN"],
     deps = ["//include/cycles:cycles_hpp", 
-     ":catch2_thirdparty"],
-    #copts=['-g']
+    "//include/demo_cptr:demo_cptr_hpp",
+     ":catch2_thirdparty"]
+)
+
+cc_test(
+    name = "MyList-test",
+    srcs = glob([
+        "MyList.Test.cpp",
+    ]),
+    defines = ["CATCH_CONFIG_MAIN"],
+    deps = ["//include/cycles:cycles_hpp", 
+    "//include/demo_cptr:demo_cptr_hpp",
+     ":catch2_thirdparty"]
 )
 
 cc_binary(
     name = "test_demo_graph2",
     srcs = ["demo_graph2.cpp"],
     deps=["//include/cycles:cycles_hpp", 
-    "//src/demo_cptr:all_hpp"]
+    "//include/demo_cptr:demo_cptr_hpp"]
 )
 
 

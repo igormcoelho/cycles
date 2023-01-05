@@ -3,7 +3,7 @@
 #include <iostream>
 //
 #include <catch2/catch_amalgamated.hpp>
-#include <cycles/MyGraph.hpp>
+#include <demo_cptr/MyGraph.hpp>
 
 using namespace std;     // NOLINT
 using namespace cycles;  // NOLINT

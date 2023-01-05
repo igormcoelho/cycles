@@ -1,12 +1,12 @@
 
+#include <map>
+//
 #include <cycles/List.hpp>
 #include <cycles/Tree.hpp>
 #include <cycles/cycles_ptr.hpp>
 #include <cycles/nodes_exp.hpp>
 #include <cycles/utils.hpp>
-#include <map>
-
-#include "Graph.hpp"
+#include <demo_cptr/Graph.hpp>
 
 using std::string, std::vector, std::map;
 

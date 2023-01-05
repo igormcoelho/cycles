@@ -5,3 +5,7 @@ demo:
 
 test:
 	cd tests && make
+
+clean:
+	rm -f vgcore.*
+	rm -f tests/vgcore.*
