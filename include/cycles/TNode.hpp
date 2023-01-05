@@ -7,10 +7,23 @@
 // C++
 #include <iostream>
 #include <vector>
+// C++ HELPER ONLY
+#include <memory>   // JUST FOR HELPER is_shared_ptr??
+#include <sstream>  // just for value_to_string ??
+#include <string>
 //
 #include <cycles/utils.hpp>
 
 using std::ostream, std::vector;  // NOLINT
+
+// ======================================
+// Helper to detect if type is shared_ptr
+//
+template <class X>
+struct is_shared_ptr : std::false_type {};
+template <class X>
+struct is_shared_ptr<std::shared_ptr<X>> : std::true_type {};
+// ======================================
 
 // ============================
 //   memory-managed Tree Node
@@ -53,8 +66,20 @@ class TNode {
       std::cout << "TNode tnode_count = " << tnode_count << std::endl;
   }
 
+  // helper!
+  std::string value_to_string() {
+    std::stringstream ss;
+    if constexpr (is_shared_ptr<T>::value == true)
+      ss << *value;
+    else
+      ss << value;
+    return ss.str();
+  }
+
   virtual ~TNode() {
-    if (debug_flag) std::cout << "BEGIN ~TNode(" << *value << ")" << std::endl;
+    if (debug_flag) {
+      std::cout << "BEGIN ~TNode(" << value_to_string() << ")" << std::endl;
+    }
     tnode_count--;
     if (debug_flag) std::cout << "DEBUG: Part I will check" << std::endl;
     //
@@ -62,7 +87,8 @@ class TNode {
     //
     if (owns.size() > 0) {
       if (debug_flag) {
-        std::cout << "WARNING: inside ~TNode(" << *value << ")" << std::endl;
+        std::cout << "WARNING: inside ~TNode(" << value_to_string() << ")"
+                  << std::endl;
         std::cout << "WARNING! PART I: must clean 'owns' list... not empty!"
                   << std::endl;
       }
@@ -70,8 +96,8 @@ class TNode {
         auto s_owned_ptr = owns[i].lock();
         assert(s_owned_ptr);
         if (debug_flag) {
-          std::cout << "OWNS i=" << i << " => " << (*s_owned_ptr->value)
-                    << std::endl;
+          std::cout << "OWNS i=" << i << " => "
+                    << (s_owned_ptr->value_to_string()) << std::endl;
           std::cout << " i has owned_by count: " << s_owned_ptr->owned_by.size()
                     << std::endl;
         }
@@ -114,8 +140,8 @@ class TNode {
         auto s_owner_ptr = owned_by[i].lock();
         assert(s_owner_ptr);
         if (debug_flag) {
-          std::cout << "OWNER i=" << i << " => " << (*s_owner_ptr->value)
-                    << std::endl;
+          std::cout << "OWNER i=" << i << " => "
+                    << (s_owner_ptr->value_to_string()) << std::endl;
           std::cout << " i is owner of count: " << s_owner_ptr->owns.size()
                     << std::endl;
         }
@@ -146,11 +172,21 @@ class TNode {
     }  // if owned_by exists
     if (debug_flag)
       std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
-    if (debug_flag) std::cout << "FINISH ~TNode(" << *value << ")" << std::endl;
     if (debug_flag)
-      std::cout << "FINISH ~TNode Will destroy value: " << *value << std::endl;
+      std::cout << "FINISH ~TNode(" << value_to_string() << ")" << std::endl;
+    if (debug_flag)
+      std::cout << "FINISH ~TNode Will destroy value: " << value_to_string()
+                << std::endl;
     // ONLY FOR SHARED POINTERS!
-    value = nullptr;
+    if constexpr (is_shared_ptr<T>::value == true) {
+      value = nullptr;
+    } else {
+      // CANNOT FORCE DESTRUCTION!
+      if (debug_flag)
+        std::cout << "FINISH REAL ~TNode WARNING: CANNOT FORCE DESTRUCTION!"
+                  << std::endl;
+    }
+
     if (debug_flag) std::cout << "FINISH REAL ~TNode(nullptr)" << std::endl;
   }
 
