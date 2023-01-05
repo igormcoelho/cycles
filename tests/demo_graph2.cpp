@@ -65,22 +65,22 @@ int main() {
     G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 3);  // CASE 1.1A
+    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
     ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 3);  // CASE 2
+    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
     ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 2);  // CASE 1.1A
+    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
     G.print();
     std::cout << std::endl;
     std::cout << "WILL ADD LAST LINK" << std::endl;
     ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 2);  // CASE 2
+    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
     //
     std::cout << std::endl;
     std::cout << "after setup!" << std::endl;
@@ -97,9 +97,65 @@ int main() {
     G.print();
     std::cout << "forest size = " << G.my_ctx().lock()->forest.size()
               << std::endl;
+    // =======================
+    // return 0;
+    // OK, NO LEAKS UNTIL NOW!
+    // =======================
     //
-    ////G.entry = nullptr; // TODO: WHY THIS LEAKS??
-  }  // WILL LEAK
+    // force reset: root dies but other refs still on main()
+    G.entry.reset();
+    assert(ptr3->neighbors[0]->val == -1);
+    // force reset: node 2 still accessible through ptr1
+    ptr2.reset();
+    assert(ptr1->neighbors[0]->val == 2);
+    // two root survivors
+    std::cout << "forest size = " << G.my_ctx().lock()->forest.size()
+              << std::endl;
+    assert(G.my_ctx().lock()->forest.size() == 2);
+    //
+    auto& fake_ptr2 = ptr1->neighbors[0];
+    auto& fake_entry = ptr3->neighbors[0];
+    assert(G.entry.is_nullptr());
+    assert(ptr1.is_root());
+    assert(fake_ptr2.is_owned());  // node 2
+    assert(ptr2.is_nullptr());
+    assert(ptr3.is_root());
+    assert(fake_entry.is_owned());  // node -1
+
+    // deeper debug
+    assert(ptr1.remote_node.lock()->has_parent() == false);
+    assert(ptr1.remote_node.lock()->children.size() == 1);  // node 2
+    assert(ptr1.remote_node.lock()->owned_by.size() == 1);  // node -1
+    assert(ptr1.remote_node.lock()->owns.size() == 0);
+    //
+    assert(fake_ptr2.remote_node.lock()->has_parent() == true);  // node 1
+    assert(fake_ptr2.remote_node.lock()->children.size() == 0);
+    assert(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_ptr2.remote_node.lock()->owns.size() == 1);  // node 3
+
+    //
+    assert(ptr3.remote_node.lock()->has_parent() == false);
+    assert(ptr3.remote_node.lock()->children.size() == 1);  // node -1
+    assert(ptr3.remote_node.lock()->owned_by.size() == 1);  // node 2
+    assert(ptr3.remote_node.lock()->owns.size() == 0);
+    //
+    assert(fake_entry.remote_node.lock()->has_parent() == true);  // node 3
+    assert(fake_entry.remote_node.lock()->children.size() == 0);
+    assert(fake_entry.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_entry.remote_node.lock()->owns.size() == 1);  // node 1
+    //
+    ptr3.reset();
+    ptr1.reset();
+    //
+    std::cout << "============================" << std::endl;
+    std::cout << "BEGIN DEBUG FOR DESTRUCTION!" << std::endl;
+    std::cout << "============================" << std::endl;
+    G.entry.setDebug(true);
+    ptr1.setDebug(true);
+    ptr2.setDebug(true);
+    ptr3.setDebug(true);
+    G.my_ctx().lock()->debug = true;
+  }  // WILL LEAK... WHY?
 
   std::cout << "FINISHED!" << std::endl;
   return 0;
