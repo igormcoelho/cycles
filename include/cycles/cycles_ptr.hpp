@@ -369,6 +369,10 @@ class cycles_ptr {
         sptr_myparent->remove_child(sptr_mynode.get());
         // I guess I'm dead next...
         removed = true;
+        std::cout << "WARNING! THIS MAY HAVE ISSUES!"
+                  << "MUST LOOK FOR WEAK LINKS HERE TOO,"
+                  << "MAYBE MY NODE WILL STILL BE ALIVE!" << std::endl;
+        assert(false);
       } else {
         // find a weak link that supports me...
         std::cout << "WARNING! THIS MAY HAVE ISSUES!"
