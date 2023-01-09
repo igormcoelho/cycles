@@ -264,14 +264,47 @@ class cycles_ptr {
       // this node is root in tree!
       // must find someone to strongly own me, otherwise the whole tree will
       // die! First: find someone in my 'owned_by' list
+      bool will_die = true;
       auto sptr_mynode = this->remote_node.lock();
-      if (sptr_mynode->owned_by.size() > 0) {
-        auto myNewParent = sptr_mynode->owned_by[0].lock();
+      //
+      // if (sptr_mynode->owned_by.size() > 0) {
+      for (unsigned k = 0; k < sptr_mynode->owned_by.size(); k++) {
+        auto myNewParent = sptr_mynode->owned_by[k].lock();
         if (!myNewParent) {
           std::cout << "ERROR! no new parent! how??" << std::endl;
         }
         // new parent must exist
         assert(myNewParent);
+        if (debug()) {
+          std::cout
+              << "Found new parent to own me (will check if not on subtree): "
+              << myNewParent->value_to_string() << std::endl;
+        }
+        // CHECK IF myNewParent is not my descendent
+        bool isDescendent = false;
+        auto parentsParent = myNewParent->parent;
+        while (auto sptrPP = parentsParent.lock()) {
+          if (sptrPP == sptr_mynode) {
+            isDescendent = true;
+            break;
+          }
+          parentsParent = sptrPP->parent;
+        }
+        if (debug())
+          std::cout << "DEBUG: isDescendent=" << isDescendent << " k=" << k
+                    << std::endl;
+        if (isDescendent) {
+          std::cout << "WARNING: owned_by IS descendent! Will try next!"
+                    << "k=" << k << std::endl;
+          // k++
+          continue;
+        }
+        //
+        will_die = false;
+        if (debug()) {
+          std::cout << "Found new VALID parent to own me: "
+                    << myNewParent->value_to_string() << std::endl;
+        }
         // remove me from the 'owns' list of my owner
         assert(myNewParent->owns.size() > 0);
         bool removed = false;
@@ -287,12 +320,19 @@ class cycles_ptr {
         myNewParent->add_child_strong(sptr_mynode);
         // delete myself from owned_by (now I'm child)
         sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + 0);
-      } else {
-        if (debug()) std::cout << "destroy: MOVE TO GARBAGE????" << std::endl;
+      }  // end for k
+      //
+      if (will_die) {
+        if (debug())
+          std::cout << "destroy: will_die is FALSE. MOVE TO GARBAGE????"
+                    << std::endl;
         // MOVE TO GARBAGE?
         // assert(false);
       }
       // CLEAR!
+      if (debug())
+        std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
+      //
       {  // scope for tree_it deletion
         if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
         // find my tree
@@ -317,6 +357,32 @@ class cycles_ptr {
       if (debug())
         std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
       if (debug()) sptr_mynode->debug_flag = true;
+      if (sptr_mynode->children.size() > 0) {
+        if (debug())
+          std::cout << "WARNING: 'sptr_mynode' has some children! |children|="
+                    << sptr_mynode->children.size() << std::endl;
+        for (unsigned i = 0; i < sptr_mynode->children.size(); i++) {
+          auto& sptr_child = sptr_mynode->children[0];
+          assert(sptr_child);
+          //
+          if (debug()) {
+            std::cout << "destroy CHILD: " << sptr_child->value_to_string()
+                      << std::endl;
+          }
+          //
+          /*
+          if (sptr_child->children.size() > 0) {
+            std::cout << "GRANDSON DETECTED! STRANGE..." << std::endl;
+            for (unsigned j = 0; j < sptr_child->children.size(); j++) {
+              std::cout << "j=" << j << " => "
+                        << sptr_child->children[j]->value_to_string()
+                        << std::endl;
+            }
+            assert(false);
+          } // if
+          */
+        }
+      }
       // manual/explicit deletion
       sptr_mynode = nullptr;
       if (debug()) std::cout << "destroy: destroyed 'sptr_mynode'" << std::endl;
