@@ -117,68 +117,8 @@ class cycles_ptr {
       std::cout << " -> finished C1 pointer constructor" << std::endl;
   }
 
-  /*
-    // private:
-    // ALLOW THIS, FOR NOW!
-    //
-    // ======= C2 pointer constructor WITH owner =======
-    // 1. will store T* t owned by new local shared_ptr 'ref'
-    // 2. will create a new TNode , also carrying shared_ptr 'ref'
-    // 3. will create a new Tree and point
-    cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t, cycles_ptr<T>& owner)
-        : ctx{ctx}  //, ref { t }
-                    //, remote_node { !t ? nullptr : sptr<TNode<sptr<T>>>(new
-                    // TNode<sptr<T>> { this->ref }) }
-    {
-      sptr<T> ref{t};
-      // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
-      // this 'remote_node' is weak!
-      auto sptr_remote_node =
-          !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>>{ref});
-      // we only hold weak reference here
-      this->remote_node = sptr_remote_node;
-      this->debug_flag = get_ctx().lock()->debug;
-      //
-      if (debug()) {
-        std::cout
-            << "C2 pointer constructor: creating NEW OWNED cycles_ptr
-    (this_new="
-            << this << " to t*=" << t << ") "
-            << " owner='" << owner.get() << "' ";
-        if (ref)
-          std::cout << "with ref -> " << *ref << std::endl;
-        else
-          std::cout << "with ref -> nullptr" << std::endl;
-      }
-      //
-      if (!ref) {
-        // THIS IS A STRANGE SITUATION... CHECK IF IT'S REALLY USEFUL!
-        assert(false);
-        return;  // SHOULD NOT CREATE A NEW TREE OR A NEW RELATION
-      }
-      //
-      if (debug()) {
-        std::cout
-            << "=> C2 pointer constructor: Registering this in EXISTING Tree "
-               "context!"
-            << std::endl;
-      }
-      //
-      // auto node_new = sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
-      // remote_node = node_new;
-      assert(sptr_remote_node);
-      //
-      // IMPORTANT! TREE OF OWNER MUST EXIST... BUT...
-      // ... WE CANNOT LOCATE IT ANYMORE (removed field 'tree_root')
-      //
-      // so, just check context and...
-      assert(this->ctx.lock() == owner.ctx.lock());
-      // ... and STRONG point from owner node to new node
-      owner.remote_node.lock()->add_child_strong(sptr_remote_node);
-      if (debug()) ctx.lock()->print();
-      //
-    }
-  */
+  // NO C2 ANYMORE - CONSTRUCTOR REMOVED!
+  // cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t, cycles_ptr<T>& owner) = 0;
 
  private:
   //
@@ -238,6 +178,59 @@ class cycles_ptr {
 
   int get_ref_use_count() const { return this->get_sptr().use_count(); }
 
+  void destroy_tree(sptr<TNode<sptr<T>>> sptr_mynode) {
+    if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
+    // find my tree
+    auto tree_it = ctx.lock()->forest.find(sptr_mynode);
+    if (tree_it == ctx.lock()->forest.end()) {
+      // ????
+      std::cout << "ERROR! COULD NOT FIND MY TREE!" << std::endl;
+      assert(false);
+    } else {
+      if (debug()) {
+        std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
+      }
+      // clear tree
+      ctx.lock()->forest.erase(tree_it);
+
+      if (debug()) {
+        std::cout << " ~~~> OK DELETED MY TREE." << std::endl;
+      }
+    }
+  }
+
+  // ================================================================
+  // Check if 'myNewParent' is not my descendent.
+  // Note that this test is very costly, up to O(tree_size).
+  // Since tree_size can grow O(N), this check is O(N) in worst case,
+  // where N is total number of data nodes.
+  // ================================================================
+  bool isDescendent(auto myNewParent, auto sptr_mynode) {
+    bool isDescendent = false;
+    auto parentsParent = myNewParent->parent;
+    while (auto sptrPP = parentsParent.lock()) {
+      if (sptrPP == sptr_mynode) {
+        isDescendent = true;
+        break;
+      }
+      parentsParent = sptrPP->parent;
+    }
+    return isDescendent;
+  }
+
+  // remove me from the 'owns' list of myNewParent owner
+  bool removeFromOwnsList(auto myNewParent, auto sptr_mynode) {
+    assert(myNewParent->owns.size() > 0);
+    bool removed = false;
+    for (unsigned i = 0; i < myNewParent->owns.size(); i++)
+      if (myNewParent->owns[i].lock().get() == sptr_mynode.get()) {
+        myNewParent->owns.erase(myNewParent->owns.begin() + i);
+        removed = true;
+        break;
+      }
+    return removed;
+  }
+
   void destroy() {
     if (debug()) std::cout << "destroy: BEGIN" << std::endl;
     // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
@@ -280,46 +273,35 @@ class cycles_ptr {
               << "Found new parent to own me (will check if not on subtree): "
               << myNewParent->value_to_string() << std::endl;
         }
-        // CHECK IF myNewParent is not my descendent
-        bool isDescendent = false;
-        auto parentsParent = myNewParent->parent;
-        while (auto sptrPP = parentsParent.lock()) {
-          if (sptrPP == sptr_mynode) {
-            isDescendent = true;
-            break;
-          }
-          parentsParent = sptrPP->parent;
-        }
+        // NOTE: costly O(tree_size)=O(N) test in worst case for 'isDescendent'
+        bool _isDescendent = isDescendent(myNewParent, sptr_mynode);
+        //
         if (debug())
-          std::cout << "DEBUG: isDescendent=" << isDescendent << " k=" << k
+          std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
                     << std::endl;
-        if (isDescendent) {
-          std::cout << "WARNING: owned_by IS descendent! Will try next!"
+        if (_isDescendent) {
+          std::cout << "WARNING: owned_by is already my descendent! Discard. "
+                    << "Will try next k!"
                     << "k=" << k << std::endl;
           // k++
           continue;
         }
-        //
+        // assume this will not die (for this 'k'). FOUND some good owner!
         will_die = false;
         if (debug()) {
           std::cout << "Found new VALID parent to own me: "
                     << myNewParent->value_to_string() << std::endl;
         }
-        // remove me from the 'owns' list of my owner
-        assert(myNewParent->owns.size() > 0);
-        bool removed = false;
-        for (unsigned i = 0; i < myNewParent->owns.size(); i++)
-          if (myNewParent->owns[i].lock().get() == sptr_mynode.get()) {
-            myNewParent->owns.erase(myNewParent->owns.begin() + i);
-            removed = true;
-            break;
-          }
+        // COSTLY. Remove me from the 'owns' list of my owner
+        bool removed = removeFromOwnsList(myNewParent, sptr_mynode);
         assert(removed);
+        // delete myself from owned_by (now I'm child)
+        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + k);
         // add myself as myNewParent child
         sptr_mynode->parent = myNewParent;
         myNewParent->add_child_strong(sptr_mynode);
-        // delete myself from owned_by (now I'm child)
-        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + 0);
+        // will_die should be False, at this point
+        if (!will_die) break;
       }  // end for k
       //
       if (will_die) {
@@ -333,30 +315,12 @@ class cycles_ptr {
       if (debug())
         std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
       //
-      {  // scope for tree_it deletion
-        if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
-        // find my tree
-        auto tree_it = ctx.lock()->forest.find(sptr_mynode);
-        if (tree_it == ctx.lock()->forest.end()) {
-          // ????
-          std::cout << "ERROR! COULD NOT FIND MY TREE!" << std::endl;
-          assert(false);
-        } else {
-          if (debug()) {
-            std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
-          }
-          // clear tree
-          ctx.lock()->forest.erase(tree_it);
-
-          if (debug()) {
-            std::cout << " ~~~> OK DELETED MY TREE." << std::endl;
-          }
-        }
-      }  // scope for tree_it deletion
+      destroy_tree(sptr_mynode);
       //
       if (debug())
         std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
       if (debug()) sptr_mynode->debug_flag = true;
+      /*
       if (sptr_mynode->children.size() > 0) {
         if (debug())
           std::cout << "WARNING: 'sptr_mynode' has some children! |children|="
@@ -370,19 +334,9 @@ class cycles_ptr {
                       << std::endl;
           }
           //
-          /*
-          if (sptr_child->children.size() > 0) {
-            std::cout << "GRANDSON DETECTED! STRANGE..." << std::endl;
-            for (unsigned j = 0; j < sptr_child->children.size(); j++) {
-              std::cout << "j=" << j << " => "
-                        << sptr_child->children[j]->value_to_string()
-                        << std::endl;
-            }
-            assert(false);
-          } // if
-          */
         }
-      }
+      } // if has children (NOTHING HERE)
+      */
       // manual/explicit deletion
       sptr_mynode = nullptr;
       if (debug()) std::cout << "destroy: destroyed 'sptr_mynode'" << std::endl;
@@ -417,6 +371,10 @@ class cycles_ptr {
         removed = true;
       } else {
         // find a weak link that supports me...
+        std::cout << "WARNING! THIS MAY HAVE ISSUES!"
+                  << "WE ARE NOT YET SEARCHING FOR DESCENDENTS!" << std::endl;
+        assert(false);
+        // TODO(igormcoelho): must use COSTLY method 'isDescendent' HERE
         for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)
           if (sptr_mynode->owned_by[i].lock() == owner_node) {
             // I will not die because of this... just a weak link.
@@ -569,104 +527,6 @@ class cycles_ptr {
       std::cout << "owner |children|="
                 << this->remote_node.lock()->children.size() << std::endl;
     //
-    if (debug()) ctx.lock()->print();
-    //
-  }
-
-  // the unsafe method will not check if it's already owner...
-  // this strongly reduces computational cost (NOT inspecting child list)
-  void unsafe_set_owned_by_DEPRECATED(const cycles_ptr<T>& owner) {
-    //
-    if (debug()) {
-      std::cout << std::endl << "cycles_ptr:: unsafe_set_owned_by" << std::endl;
-      std::cout << "TODO: Must register relation of:" << std::endl;
-      std::cout << "\tthis=" << this
-                << " this->remote_node=" << this->remote_node.lock() << ") '"
-                << (this->get()) << "' owned_by:" << std::endl;
-      std::cout << "\t&owner=" << &owner << " '" << (owner.get())
-                << "'  owner.is_root()=" << owner.is_root() << std::endl;
-    }
-    //
-    // TREE OF OWNER MUST EXIST... BUT... WE CANNOT CHECK IT ANYMORE (removed
-    // 'tree_root') WRONG!!!! CASE 1) IF... this is root (no parent), then
-    // 'owner' can really take this (STRONGLY).. CASE 2) otherwise, just add a
-    // weak link from 'owner' to this node.
-    //
-    // SECOND TRY!!
-    //
-    // CASE 1) IF... owner is root (no parent), then 'owner' can really take
-    // this (STRONGLY) CASE 1.1) IF myself is also root, then my tree is
-    // removed; otherwise, I'm just removed from children list. CASE 2)
-    // otherwise, just add a weak link from 'owner' to this node.
-    // =========== CASE 1 ===========
-    // if (!owner.remote_node.lock()->parent.lock()) {
-    if (owner.is_root()) {
-      if (debug()) {
-        std::cout << "CASE 1: owner is root of some tree! Solution: OWNER will "
-                     "take it!"
-                  << std::endl;
-      }
-      // //std::cout << "HOWEVER.... IF owner also belongs to this same tree,
-      //  this should be a WEAK LINK...." << std::endl;
-      //
-      // STEP 1 - add strong link from OWNER to THIS
-      // store weak link to old parent
-      auto old_parent = this->remote_node.lock()->parent;
-      //
-      // update parent before calling method
-      this->remote_node.lock()->parent = owner.remote_node;
-      owner.remote_node.lock()->add_child_strong(this->remote_node.lock());
-      //
-      // =========== CHECK CASE 1.1
-      //
-      if (!old_parent.lock()) {
-        // CASE 1.1A - I was also root! must remove my Tree!!!
-        //
-        if (debug()) {
-          std::cout
-              << "  => CASE 1.1A - I'm also root, should remove this Tree "
-                 "from forest..."
-              << std::endl;
-        }
-        //
-        auto tree_it = ctx.lock()->forest.find(this->remote_node.lock());
-        if (tree_it == ctx.lock()->forest.end()) {
-          std::cout << "CASE 1.1 ERROR! could not find Tree!" << std::endl;
-          assert(false);
-        } else {
-          if (debug()) {
-            std::cout << " ~~~> CASE 1.1 OK FOUND MY TREE. How to properly "
-                         "clear it?"
-                      << std::endl;
-            std::cout << "First try, just drop it, and let all nodes die "
-                         "automatically"
-                      << std::endl;
-          }
-          // auto stree = tree_it->second;
-          ctx.lock()->forest.erase(tree_it);
-          // clear tree
-        }
-      } else {
-        // CASE 1.1B - I'm not root... must remove me from my old_parent
-        // children list
-        //
-        std::cout << "  => CASE 1.1B - I'm not root, must remove me from "
-                     "old_parent children list..."
-                  << std::endl;
-        bool b =
-            old_parent.lock()->remove_child(this->remote_node.lock().get());
-        assert(b);
-      }
-      if (debug()) std::cout << "CASE 1: finished!" << std::endl;
-    } else {
-      // =========== CASE 2 ===========
-      if (debug()) {
-        std::cout << "CASE 2: owner is already part of some tree! Solution: "
-                     "OWNER will add weak link to it!"
-                  << std::endl;
-      }
-      owner.remote_node.lock()->add_child_weak(this->remote_node);
-    }
     if (debug()) ctx.lock()->print();
     //
   }
