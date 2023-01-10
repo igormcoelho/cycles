@@ -70,6 +70,7 @@ class cycles_ptr {
         !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>>{ref});
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
+    this->is_owned_by_node = false;
     //
     this->debug_flag_ptr = get_ctx().lock()->debug;
     //
@@ -134,7 +135,7 @@ class cycles_ptr {
       : ctx{corpse.ctx},
         remote_node{std::move(corpse.remote_node)},
         owned_by_node{std::move(corpse.owned_by_node)},
-        is_owned_by_node{std::move(corpse.is_owned_by_node)} {
+        is_owned_by_node{corpse.is_owned_by_node} {
     corpse.remote_node.reset();
     corpse.owned_by_node.reset();
     corpse.is_owned_by_node = false;
@@ -233,6 +234,11 @@ class cycles_ptr {
       bool will_die = false;
       auto sptr_mynode = this->remote_node.lock();
       auto owner_node = this->owned_by_node.lock();
+      //
+      if (debug())
+        std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
+                  << " |owned_by|=" << sptr_mynode->owned_by.size()
+                  << std::endl;
       //
       // check situation of node (if dying or not)
       //
@@ -359,8 +365,26 @@ class cycles_ptr {
                     << std::endl;
         // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
         assert(ctx.lock()->pending.size() == 0);
+        if (debug()) {
+          std::cout
+              << "destroy: moving to pending list with these properties: ";
+          std::cout << "node |owns|=" << sptr_mynode->owns.size()
+                    << " |owned_by|=" << sptr_mynode->owned_by.size()
+                    << std::endl;
+        }
         ctx.lock()->pending.push_back(std::move(sptr_mynode));
+        int sz_pending = ctx.lock()->pending.size();
+        if (debug())
+          std::cout << "DEBUG: sz_pending=" << sz_pending << std::endl;
         sptr_mynode = nullptr;  // NO EFFECT!
+        if (debug()) {
+          std::cout << "destroy: in pending list with these properties: ";
+          std::cout << "node |owns|="
+                    << ctx.lock()->pending[sz_pending - 1]->owns.size()
+                    << " |owned_by|="
+                    << ctx.lock()->pending[sz_pending - 1]->owned_by.size()
+                    << std::endl;
+        }
       }
       // last holding reference to node is on pending list
       if (ctx.lock()->auto_collect) {

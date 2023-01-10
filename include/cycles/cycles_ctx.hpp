@@ -89,14 +89,18 @@ class cycles_ctx {
 
   void destroy_pending() {
     if (is_destroying) {
-      std::cout << "WARNING: destroy_pending() already executing!" << std::endl;
+      if (debug)
+        std::cout << "WARNING: destroy_pending() already executing!"
+                  << std::endl;
       return;
     } else {
-      std::cout << "CTX: NOT DESTROYING! BEGIN PROCESS!" << std::endl;
+      if (debug)
+        std::cout << "CTX: NOT DESTROYING! BEGIN PROCESS!" << std::endl;
     }
     is_destroying = true;
-    std::cout << "CTX: destroy_pending. |pending|=" << pending.size()
-              << std::endl;
+    if (debug)
+      std::cout << "CTX: destroy_pending. |pending|=" << pending.size()
+                << std::endl;
     if (pending.size() == 0) {
       is_destroying = false;
       return;
@@ -105,35 +109,57 @@ class cycles_ctx {
     while (pending.size() > 0) {
       auto sptr_delete = std::move(pending[0]);
       pending.erase(pending.begin() + 0);
-      // this must be clean, regarding external
-      assert(sptr_delete->owned_by.size() == 0);
+      if (debug) {
+        std::cout << "CTX: sptr_delete with these properties: ";
+        std::cout << "node |owns|=" << sptr_delete->owns.size()
+                  << " |owned_by|=" << sptr_delete->owned_by.size()
+                  << std::endl;
+      }
+      // this must be clean, regarding external (Except for cycles, maybe...)
+      if (sptr_delete->owned_by.size() > 0) {
+        // assert(sptr_delete->owned_by.size() == 0);
+        std::cout << "WARNING: owned_by but dying... must be some cycle!"
+                  << std::endl;
+      }
+      // force clean owned_by list before continuing... should be good!
+      for (unsigned i = 0; i < sptr_delete->owned_by.size(); i++) {
+        auto sptr_owner = sptr_delete->owned_by[i].lock();
+        TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_owner, sptr_delete);
+        TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_owner, sptr_delete);
+      }
+      sptr_delete->owned_by.clear();
+      //
       // force clean owns list before continuing... should be good!
       for (unsigned i = 0; i < sptr_delete->owns.size(); i++) {
         auto sptr_owned = sptr_delete->owns[i].lock();
         TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_delete, sptr_owned);
+        TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_delete, sptr_owned);
       }
-      // is this guaranteed? must be...
-      assert(sptr_delete->owns.size() == 0);
+      sptr_delete->owns.clear();
+      //
       // get its children
       auto children = std::move(sptr_delete->children);
-      std::cout << "destroy_pending: destroy node" << std::endl;
-      sptr_delete->debug_flag = true;
+      if (debug) std::cout << "destroy_pending: destroy node" << std::endl;
+      if (debug) {
+        sptr_delete->debug_flag = true;
+      }
       // IMPORTANT: destroy node
       sptr_delete = nullptr;
       //
-      std::cout << "destroy_pending: check children of node" << std::endl;
+      if (debug)
+        std::cout << "destroy_pending: check children of node" << std::endl;
       // check if children can be saved
       while (children.size() > 0) {
         bool will_die = true;
-        std::cout << "DEBUG: will move child!" << std::endl;
+        if (debug) std::cout << "DEBUG: will move child!" << std::endl;
         auto sptr_child = std::move(children[0]);
-        std::cout << "DEBUG: will erase empty child!" << std::endl;
+        if (debug) std::cout << "DEBUG: will erase empty child!" << std::endl;
         children.erase(children.begin() + 0);
         // I BELIEVE THAT, IN THIS CASE, ANY OWNER IS GOOD ENOUGH!
         // CHILD IS ROOT NOW, NO ONE IS ABOVE IT!
         // NO NEED TO CHECK DESCENDENT HERE!
         if (sptr_child->owned_by.size() > 0) {
-          std::cout << "DEBUG: child found new parent!" << std::endl;
+          if (debug) std::cout << "DEBUG: child found new parent!" << std::endl;
           will_die = false;
           auto sptr_new_parent = sptr_child->owned_by[0].lock();
           sptr_child->parent = sptr_new_parent;
@@ -143,21 +169,23 @@ class cycles_ctx {
           sptr_new_parent->add_child_strong(sptr_child);
         }
         // kill if not held by anyone now
-        std::cout << "DEBUG: may kill child!" << std::endl;
+        if (debug) std::cout << "DEBUG: may kill child!" << std::endl;
         if (will_die) {
           pending.push_back(std::move(sptr_child));
-          std::cout << "DEBUG: child sent to pending list! |pending|="
-                    << pending.size() << std::endl;
+          if (debug)
+            std::cout << "DEBUG: child sent to pending list! |pending|="
+                      << pending.size() << std::endl;
         } else {
-          std::cout << "DEBUG: child is saved!" << std::endl;
+          if (debug) std::cout << "DEBUG: child is saved!" << std::endl;
         }
       }  // while children exists
       //
     }  // while pending list
-    std::cout << "destroy_pending: final clear pending list" << std::endl;
+    if (debug)
+      std::cout << "destroy_pending: final clear pending list" << std::endl;
     pending.clear();
     is_destroying = false;
-    std::cout << "destroy_pending: finished!" << std::endl;
+    if (debug) std::cout << "destroy_pending: finished!" << std::endl;
   }
 
   void print() {

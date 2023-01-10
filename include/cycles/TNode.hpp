@@ -6,6 +6,7 @@
 
 // C++
 #include <iostream>
+#include <utility>
 #include <vector>
 // C++ HELPER ONLY
 #include <memory>   // JUST FOR HELPER is_shared_ptr??
@@ -66,6 +67,20 @@ class TNode {
       std::cout << "TNode tnode_count = " << tnode_count << std::endl;
   }
 
+  // IS THIS REALLY NECESSARY?????
+
+  TNode(TNode&& corpse) noexcept = delete;
+  TNode(const TNode& corpse) = delete;
+  /*
+  TNode(TNode&& corpse) noexcept
+      : value{std::move(corpse.value)},
+        debug_flag{corpse.debug_flag},
+        parent{std::move(corpse.parent)},
+        children{std::move(corpse.children)},
+        owned_by{std::move(corpse.owned_by)},
+        owns{std::move(corpse.owns)} {}
+        */
+
   // helper!
   std::string value_to_string() {
     std::stringstream ss;
@@ -81,7 +96,9 @@ class TNode {
       std::cout << "BEGIN ~TNode(" << value_to_string() << ")" << std::endl;
     }
     tnode_count--;
-    if (debug_flag) std::cout << "DEBUG: Part I will check" << std::endl;
+    if (debug_flag)
+      std::cout << "DEBUG: Part I will check. |owns|=" << owns.size()
+                << std::endl;
     //
     // clear 'owns' list
     //
@@ -125,7 +142,9 @@ class TNode {
       if (debug_flag)
         std::cout << "DEBUG: Part I finished cleanup owns list" << std::endl;
     }  // if owns exists
-    if (debug_flag) std::cout << "DEBUG: Part II will check" << std::endl;
+    if (debug_flag)
+      std::cout << "DEBUG: Part II will check. |owned_by|=" << owned_by.size()
+                << std::endl;
     //
     // clear 'owned_by' list
     //
@@ -166,7 +185,7 @@ class TNode {
       }  // for i
       owned_by.clear();
       if (debug_flag) {
-        std::cout << "DEBUG: Part I finished cleanup owned_by list"
+        std::cout << "DEBUG: Part II finished cleanup owned_by list"
                   << std::endl;
       }
     }  // if owned_by exists
