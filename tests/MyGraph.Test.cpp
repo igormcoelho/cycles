@@ -12,7 +12,7 @@ using namespace cycles;  // NOLINT
 // memory management tests
 // =======================
 
-TEST_CASE("CyclesTestGraph: MyGraph Single") {
+TEST_CASE("CyclesTestGraph: TEST_CASE 1 - MyGraph Single") {
   std::cout << "begin MyGraph Single" << std::endl;
   // create context
   {
@@ -38,14 +38,14 @@ TEST_CASE("CyclesTestGraph: MyGraph Single") {
   REQUIRE(mynode_count == 0);
 }
 
-TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
+TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
   std::cout << "begin MyGraph MyGraph A B C' D' E'" << std::endl;
   // create context
   {
     MyGraph<double> G;
-    // G.debug_flag = true;
-    REQUIRE(!G.my_ctx().lock()->debug);
-    // G.my_ctx().lock()->debug = true;
+    // REQUIRE(!G.my_ctx().lock()->debug);
+    G.debug_flag = true;
+    G.my_ctx().lock()->debug = true;
 
     // STEP (A)
     // creating -1 node
@@ -101,12 +101,19 @@ TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
                   << std::endl;
     }
     // CHECKS (E') - ptr2 and ptr3 are removed
-    // std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
     ptr2.reset();
+    // node 2 should not point to node 3 anymore
+    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr3.remote_node.lock()->owns.size() == 1);
+    //
     REQUIRE(G.entry.is_root());
     REQUIRE(ptr3.is_root());
     REQUIRE(ptr3.get().neighbors[0].is_owned());
-    // std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
+    //
+    std::cout << std::endl;
+    std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
     ptr3.reset();
 
     //
@@ -127,7 +134,7 @@ TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
   REQUIRE(mynode_count == 0);
 }
 
-TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Simple") {
+TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
   std::cout << "begin MyGraph A-B-C-D-E Simple" << std::endl;
   // create context
   {
@@ -228,7 +235,7 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Simple") {
 }
 
 // NOLINTNEXTLINE
-TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Detailed") {
+TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
   std::cout << "begin MyGraph A-B-C-D-E Detailed" << std::endl;
   // create context
   {
@@ -447,7 +454,8 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Detailed") {
 }
 
 // NOLINTNEXTLINE
-TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force slow destruction") {
+TEST_CASE(
+    "CyclesTestGraph: TEST_CASE 5 - MyGraph A-B-C-D force slow destruction") {
   std::cout << "begin MyGraph A-B-C-D force slow destruction" << std::endl;
   // create context
   {
@@ -532,8 +540,8 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force slow destruction") {
 }
 
 // NOLINTNEXTLINE
-TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force head kill all") {
-  std::cout << "begin MyGraph A-B-C-D force head kill all" << std::endl;
+TEST_CASE("CyclesTestGraph: TEST_CASE 6 - MyGraph 1 2 3 -1 kill 2") {
+  std::cout << "begin MyGraph 1 2 3 -1 kill 2" << std::endl;
   // create context
   {
     // THIS CASE FORCES GRAPH TO HAVE USELESS WEAK LINK ON TOP, UNTIL LAST
@@ -570,6 +578,77 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force head kill all") {
     //
     REQUIRE(fake_ptr2.is_nullptr());
 
+    // deeper debug
+    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_ptr2.is_nullptr());
+    // fake_ptr3 is broken now
+    // REQUIRE(fake_ptr3.is_nullptr());
+    // fake_entry is broken now
+    // REQUIRE(fake_entry.is_nullptr());
+    //
+    // SHOULD NOT LEAK
+  }
+  REQUIRE(mynode_count == 0);
+}
+
+// NOLINTNEXTLINE
+TEST_CASE(
+    "CyclesTestGraph: TEST_CASE 7 - MyGraph 1 2 3 -1 (4) kill 2 but 4 saves 3 "
+    "-1") {
+  std::cout << "begin MyGraph 1 2 3 -1 (4) kill 2 but 4 saves 3 -1"
+            << std::endl;
+  // create context
+  {
+    // THIS CASE FORCES GRAPH TO HAVE USELESS WEAK LINK ON TOP, UNTIL LAST
+    // DESTRUCTION
+
+    MyGraph<double> G;
+    G.debug_flag = true;
+    G.my_ctx().lock()->debug = true;
+    //
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    //
+    G.entry = G.make_node(-1.0);
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+
+    // make cycle
+    auto ptr1 = G.make_node(1.0);
+    ptr1->neighbors.push_back(G.make_node(2.0).copy_owned(ptr1));
+    auto& fake_ptr2 = ptr1->neighbors[0];
+    fake_ptr2->neighbors.push_back(G.make_node(3.0).copy_owned(fake_ptr2));
+    auto& fake_ptr3 = fake_ptr2->neighbors[0];
+    fake_ptr3->neighbors.push_back(G.entry.copy_owned(fake_ptr3));
+
+    // force reset: root dies but other refs still on main(), from ptr1
+    G.entry.reset();
+    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(ptr1.is_root());
+    REQUIRE(fake_ptr2.is_owned());
+    REQUIRE(fake_ptr3.is_owned());
+    auto& fake_entry = fake_ptr3->neighbors[0];
+    REQUIRE(fake_entry.is_owned());  // node -1
+    // add node 4 saving 3 and -1
+    auto ptr4 = G.make_node(4.0);
+    ptr4->neighbors.push_back(fake_ptr3.copy_owned(ptr4));
+    //
+    // KILL PART!
+    std::cout << std::endl << "KILL PART!" << std::endl;
+    // node 2 must die
+    // node 3 and node -1 must survive (held by node 4)
+    REQUIRE(fake_ptr2.is_owned());  // node 2
+    // force reset: node 2 is killed together with node 3 and node -1
+    fake_ptr2.reset();
+    // two root survivors (1) and (4) -> 3 -1
+    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    //
+    REQUIRE(ptr1.is_root());
+    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(fake_ptr3.is_owned());
+    REQUIRE(fake_entry.is_owned());
+    REQUIRE(ptr4.is_root());
     // deeper debug
     REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr1.remote_node.lock()->children.size() == 0);

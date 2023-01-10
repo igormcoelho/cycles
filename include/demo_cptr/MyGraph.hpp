@@ -38,7 +38,7 @@ class MyNode {
                     << " => type: " << neighbors[i].getType() << std::endl;
         neighbors.clear();
       }
-      std::cout << "~MyNode: FINISHED!" << std::endl;
+      std::cout << "~MyNode(" << val << "): FINISHED!" << std::endl;
     }
   }
   //

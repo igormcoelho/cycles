@@ -287,6 +287,55 @@ class TNode {
   }
 };
 
+template <typename T>
+class TNodeHelper {
+ public:
+  // ================================================================
+  // Check if 'myNewParent' is not my descendent.
+  // Note that this test is very costly, up to O(tree_size).
+  // Since tree_size can grow O(N), this check is O(N) in worst case,
+  // where N is total number of data nodes.
+  // ================================================================
+  static bool isDescendent(auto myNewParent, auto sptr_mynode) {
+    bool isDescendent = false;
+    auto parentsParent = myNewParent->parent;
+    while (auto sptrPP = parentsParent.lock()) {
+      if (sptrPP == sptr_mynode) {
+        isDescendent = true;
+        break;
+      }
+      parentsParent = sptrPP->parent;
+    }
+    return isDescendent;
+  }
+
+  // remove me from the 'owns' list of myNewParent owner
+  static bool removeFromOwnsList(auto sptrOwner, auto sptrOwned) {
+    assert(sptrOwner->owns.size() > 0);
+    bool removed = false;
+    for (unsigned i = 0; i < sptrOwner->owns.size(); i++)
+      if (sptrOwner->owns[i].lock().get() == sptrOwned.get()) {
+        sptrOwner->owns.erase(sptrOwner->owns.begin() + i);
+        removed = true;
+        break;
+      }
+    return removed;
+  }
+
+  // remove other from my 'owned_by' list of sptr_myWeakOwner owner
+  static bool removeFromOwnedByList(auto sptr_myWeakOwner, auto sptr_mynode) {
+    assert(sptr_mynode->owned_by.size() > 0);
+    bool removed = false;
+    for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)
+      if (sptr_mynode->owned_by[i].lock().get() == sptr_myWeakOwner.get()) {
+        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + i);
+        removed = true;
+        break;
+      }
+    return removed;
+  }
+};
+
 }  // namespace cycles
 
 #endif  // CYCLES_TNODE_HPP_ // NOLINT

@@ -28,55 +28,6 @@ using std::vector, std::ostream, std::map;  // NOLINT
 namespace cycles {
 
 template <typename T>
-class TNodeHelper {
- public:
-  // ================================================================
-  // Check if 'myNewParent' is not my descendent.
-  // Note that this test is very costly, up to O(tree_size).
-  // Since tree_size can grow O(N), this check is O(N) in worst case,
-  // where N is total number of data nodes.
-  // ================================================================
-  static bool isDescendent(auto myNewParent, auto sptr_mynode) {
-    bool isDescendent = false;
-    auto parentsParent = myNewParent->parent;
-    while (auto sptrPP = parentsParent.lock()) {
-      if (sptrPP == sptr_mynode) {
-        isDescendent = true;
-        break;
-      }
-      parentsParent = sptrPP->parent;
-    }
-    return isDescendent;
-  }
-
-  // remove me from the 'owns' list of myNewParent owner
-  static bool removeFromOwnsList(auto myNewParent, auto sptr_mynode) {
-    assert(myNewParent->owns.size() > 0);
-    bool removed = false;
-    for (unsigned i = 0; i < myNewParent->owns.size(); i++)
-      if (myNewParent->owns[i].lock().get() == sptr_mynode.get()) {
-        myNewParent->owns.erase(myNewParent->owns.begin() + i);
-        removed = true;
-        break;
-      }
-    return removed;
-  }
-
-  // remove other from my 'owned_by' list of sptr_myWeakOwner owner
-  static bool removeFromOwnedByList(auto sptr_myWeakOwner, auto sptr_mynode) {
-    assert(sptr_mynode->owned_by.size() > 0);
-    bool removed = false;
-    for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)
-      if (sptr_mynode->owned_by[i].lock().get() == sptr_myWeakOwner.get()) {
-        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + i);
-        removed = true;
-        break;
-      }
-    return removed;
-  }
-};
-
-template <typename T>
 // NOLINTNEXTLINE
 class cycles_ptr {
   // TODO(igormcoelho): make private!
@@ -318,7 +269,8 @@ class cycles_ptr {
             assert(r1);
           }
         }
-      }  // is_owned
+      }  // end is_owned
+      //
       if (!will_die) {
         if (debug())
           std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
@@ -380,13 +332,6 @@ class cycles_ptr {
         if (!will_die) break;
       }  // end for k
       //
-      if (will_die) {
-        if (debug())
-          std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE????"
-                    << std::endl;
-        // MOVE TO GARBAGE?
-        // assert(false);
-      }
       // CLEAR!
       if (debug())
         std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
@@ -407,16 +352,23 @@ class cycles_ptr {
         bool r = owner_node->remove_child(sptr_mynode.get());
         assert(r);
       }
-      // last holding reference to node is sptr_mynode
-      if (debug())
-        std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
-      if (debug()) sptr_mynode->debug_flag = true;
-      // manual/explicit deletion
-      sptr_mynode = nullptr;
-      if (debug())
-        std::cout << "destroy: destroyed 'sptr_mynode' (AND WHOLE TREE "
-                     "BELOW... PROBABLY NOT GOOD!)"
-                  << std::endl;
+      // final check: if will_die, send to pending list (FAST)
+      if (will_die) {
+        if (debug())
+          std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE."
+                    << std::endl;
+        // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
+        assert(ctx.lock()->pending.size() == 0);
+        ctx.lock()->pending.push_back(std::move(sptr_mynode));
+        sptr_mynode = nullptr;  // NO EFFECT!
+      }
+      // last holding reference to node is on pending list
+      if (ctx.lock()->auto_collect) {
+        // if (debug())
+        std::cout << "DEBUG: begin auto_collect. |pending|="
+                  << ctx.lock()->pending.size() << std::endl;
+        ctx.lock()->destroy_pending();
+      }
       //
       // end-if is_root || is_owned
     }
