@@ -28,6 +28,55 @@ using std::vector, std::ostream, std::map;  // NOLINT
 namespace cycles {
 
 template <typename T>
+class TNodeHelper {
+ public:
+  // ================================================================
+  // Check if 'myNewParent' is not my descendent.
+  // Note that this test is very costly, up to O(tree_size).
+  // Since tree_size can grow O(N), this check is O(N) in worst case,
+  // where N is total number of data nodes.
+  // ================================================================
+  static bool isDescendent(auto myNewParent, auto sptr_mynode) {
+    bool isDescendent = false;
+    auto parentsParent = myNewParent->parent;
+    while (auto sptrPP = parentsParent.lock()) {
+      if (sptrPP == sptr_mynode) {
+        isDescendent = true;
+        break;
+      }
+      parentsParent = sptrPP->parent;
+    }
+    return isDescendent;
+  }
+
+  // remove me from the 'owns' list of myNewParent owner
+  static bool removeFromOwnsList(auto myNewParent, auto sptr_mynode) {
+    assert(myNewParent->owns.size() > 0);
+    bool removed = false;
+    for (unsigned i = 0; i < myNewParent->owns.size(); i++)
+      if (myNewParent->owns[i].lock().get() == sptr_mynode.get()) {
+        myNewParent->owns.erase(myNewParent->owns.begin() + i);
+        removed = true;
+        break;
+      }
+    return removed;
+  }
+
+  // remove other from my 'owned_by' list of sptr_myWeakOwner owner
+  static bool removeFromOwnedByList(auto sptr_myWeakOwner, auto sptr_mynode) {
+    assert(sptr_mynode->owned_by.size() > 0);
+    bool removed = false;
+    for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)
+      if (sptr_mynode->owned_by[i].lock().get() == sptr_myWeakOwner.get()) {
+        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + i);
+        removed = true;
+        break;
+      }
+    return removed;
+  }
+};
+
+template <typename T>
 // NOLINTNEXTLINE
 class cycles_ptr {
   // TODO(igormcoelho): make private!
@@ -199,38 +248,6 @@ class cycles_ptr {
     }
   }
 
-  // ================================================================
-  // Check if 'myNewParent' is not my descendent.
-  // Note that this test is very costly, up to O(tree_size).
-  // Since tree_size can grow O(N), this check is O(N) in worst case,
-  // where N is total number of data nodes.
-  // ================================================================
-  bool isDescendent(auto myNewParent, auto sptr_mynode) {
-    bool isDescendent = false;
-    auto parentsParent = myNewParent->parent;
-    while (auto sptrPP = parentsParent.lock()) {
-      if (sptrPP == sptr_mynode) {
-        isDescendent = true;
-        break;
-      }
-      parentsParent = sptrPP->parent;
-    }
-    return isDescendent;
-  }
-
-  // remove me from the 'owns' list of myNewParent owner
-  bool removeFromOwnsList(auto myNewParent, auto sptr_mynode) {
-    assert(myNewParent->owns.size() > 0);
-    bool removed = false;
-    for (unsigned i = 0; i < myNewParent->owns.size(); i++)
-      if (myNewParent->owns[i].lock().get() == sptr_mynode.get()) {
-        myNewParent->owns.erase(myNewParent->owns.begin() + i);
-        removed = true;
-        break;
-      }
-    return removed;
-  }
-
   void destroy() {
     if (debug()) std::cout << "destroy: BEGIN" << std::endl;
     // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
@@ -252,15 +269,71 @@ class cycles_ptr {
       if (debug()) std::cout << "destroy: is_nullptr()" << std::endl;
       return;  // nothing to destroy
                // (MUST KEEP else below, otherwise it may break(?))
-    } else if (is_root()) {
-      if (debug()) std::cout << "destroy: is_root()" << std::endl;
-      // this node is root in tree!
-      // must find someone to strongly own me, otherwise the whole tree will
-      // die! First: find someone in my 'owned_by' list
-      bool will_die = true;
-      auto sptr_mynode = this->remote_node.lock();
+    } else {
       //
-      // if (sptr_mynode->owned_by.size() > 0) {
+      bool isRoot = is_root();
+      bool isOwned = is_owned();
+      //
+      assert(isRoot || isOwned);
+      //
+      if (debug()) std::cout << "destroy: is_root() || is_owned()" << std::endl;
+      // must find someone to strongly own me, otherwise node may die!
+      // First:  find someone in my 'owned_by' list
+      bool will_die = false;
+      auto sptr_mynode = this->remote_node.lock();
+      auto owner_node = this->owned_by_node.lock();
+      //
+      // check situation of node (if dying or not)
+      //
+      if (isRoot) {
+        // this node is root in tree!
+        if (debug()) std::cout << "DEBUG: I AM ROOT! I WILL DIE!" << std::endl;
+        will_die = true;
+      }  // is_root
+      //
+      if (isOwned) {
+        // check if owner still exists
+        if (debug()) std::cout << "DEBUG: I AM OWNED!" << std::endl;
+        if (!owner_node) {
+          // SHOULD THIS BEHAVE AS is_nullptr?
+          if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
+          will_die = false;
+        } else {
+          // CHECK IF OWNER IS MY PARENT...
+          if (owner_node == sptr_mynode->parent.lock()) {
+            std::cout << "DEBUG: OWNER IS MY PARENT! I WILL DIE!" << std::endl;
+            will_die = true;
+          } else {
+            std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
+                      << std::endl;
+            // my node will stay alive since my parent still holds me strong
+            will_die = false;
+            // remove my weak link from owner
+            bool r0 = TNodeHelper<sptr<T>>::removeFromOwnsList(owner_node,
+                                                               sptr_mynode);
+            assert(r0);
+            // remove owner from my weak link list
+            bool r1 = TNodeHelper<sptr<T>>::removeFromOwnedByList(owner_node,
+                                                                  sptr_mynode);
+            assert(r1);
+          }
+        }
+      }  // is_owned
+      if (!will_die) {
+        if (debug())
+          std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
+        // FORCE CLEAR
+        this->remote_node = wptr<TNode<sptr<T>>>();    // clear
+        this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
+        this->is_owned_by_node = false;
+        return;
+      }
+      assert(will_die);
+      if (debug())
+        std::cout
+            << "DEBUG: FIND OWNED_BY. NODE WILL DIE IF NOT FIND REPLACEMENT!"
+            << std::endl;
+      // find new owner, otherwise will die
       for (unsigned k = 0; k < sptr_mynode->owned_by.size(); k++) {
         auto myNewParent = sptr_mynode->owned_by[k].lock();
         if (!myNewParent) {
@@ -274,7 +347,8 @@ class cycles_ptr {
               << myNewParent->value_to_string() << std::endl;
         }
         // NOTE: costly O(tree_size)=O(N) test in worst case for 'isDescendent'
-        bool _isDescendent = isDescendent(myNewParent, sptr_mynode);
+        bool _isDescendent =
+            TNodeHelper<sptr<T>>::isDescendent(myNewParent, sptr_mynode);
         //
         if (debug())
           std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
@@ -286,6 +360,7 @@ class cycles_ptr {
           // k++
           continue;
         }
+        // found some good k!
         // assume this will not die (for this 'k'). FOUND some good owner!
         will_die = false;
         if (debug()) {
@@ -293,9 +368,10 @@ class cycles_ptr {
                     << myNewParent->value_to_string() << std::endl;
         }
         // COSTLY. Remove me from the 'owns' list of my owner
-        bool removed = removeFromOwnsList(myNewParent, sptr_mynode);
+        bool removed =
+            TNodeHelper<sptr<T>>::removeFromOwnsList(myNewParent, sptr_mynode);
         assert(removed);
-        // delete myself from owned_by (now I'm child)
+        // delete myself from owned_by (now I'm strong child)
         sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + k);
         // add myself as myNewParent child
         sptr_mynode->parent = myNewParent;
@@ -306,7 +382,7 @@ class cycles_ptr {
       //
       if (will_die) {
         if (debug())
-          std::cout << "destroy: will_die is FALSE. MOVE TO GARBAGE????"
+          std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE????"
                     << std::endl;
         // MOVE TO GARBAGE?
         // assert(false);
@@ -314,81 +390,37 @@ class cycles_ptr {
       // CLEAR!
       if (debug())
         std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
-      //
-      destroy_tree(sptr_mynode);
-      //
+
+      // prepare final destruction
+      if (debug())
+        std::cout << "DEBUG: will check situation: either is_root or is_owned"
+                  << std::endl;
+      if (isRoot) {
+        if (debug())
+          std::cout << "DEBUG: is_root. destroy_tree(...)" << std::endl;
+        destroy_tree(sptr_mynode);
+      }
+      if (isOwned) {
+        if (debug())
+          std::cout << "DEBUG: is_owned. owner_node->remove_child(...)"
+                    << std::endl;
+        bool r = owner_node->remove_child(sptr_mynode.get());
+        assert(r);
+      }
+      // last holding reference to node is sptr_mynode
       if (debug())
         std::cout << "destroy: last call to 'sptr_mynode'" << std::endl;
       if (debug()) sptr_mynode->debug_flag = true;
-      /*
-      if (sptr_mynode->children.size() > 0) {
-        if (debug())
-          std::cout << "WARNING: 'sptr_mynode' has some children! |children|="
-                    << sptr_mynode->children.size() << std::endl;
-        for (unsigned i = 0; i < sptr_mynode->children.size(); i++) {
-          auto& sptr_child = sptr_mynode->children[0];
-          assert(sptr_child);
-          //
-          if (debug()) {
-            std::cout << "destroy CHILD: " << sptr_child->value_to_string()
-                      << std::endl;
-          }
-          //
-        }
-      } // if has children (NOTHING HERE)
-      */
       // manual/explicit deletion
       sptr_mynode = nullptr;
-      if (debug()) std::cout << "destroy: destroyed 'sptr_mynode'" << std::endl;
+      if (debug())
+        std::cout << "destroy: destroyed 'sptr_mynode' (AND WHOLE TREE "
+                     "BELOW... PROBABLY NOT GOOD!)"
+                  << std::endl;
       //
-      // end-if is_root (MUST KEEP else below, otherwise it may break)
-    } else {
-      // owned by 'owned_by_node', but not root...
-      assert(is_owned_by_node);
-      auto owner_node = this->owned_by_node.lock();
-      if (!owner_node) {
-        // SHOULD THIS BEHAVE AS is_nullptr?
-        if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
-        // FORCE CLEAR
-        this->remote_node = wptr<TNode<sptr<T>>>();    // clear
-        this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
-        this->is_owned_by_node = false;
-        return;
-      }
-      // owner must exist
-      assert(owner_node);
-      // just remove this link!
-      // MAYBE... check if it's my parent? could it be? or not?
-      // I THINK IT's TWO CASES... A) Parent; B) just some weak link to me.
-      auto sptr_mynode = this->remote_node.lock();
-      auto sptr_myparent = sptr_mynode->parent.lock();
-      bool removed = false;
-      if (sptr_myparent == owner_node) {
-        // this will collapse my whole tree...
-        // move to garbage??
-        sptr_myparent->remove_child(sptr_mynode.get());
-        // I guess I'm dead next...
-        removed = true;
-        std::cout << "WARNING! THIS MAY HAVE ISSUES!"
-                  << "MUST LOOK FOR WEAK LINKS HERE TOO,"
-                  << "MAYBE MY NODE WILL STILL BE ALIVE!" << std::endl;
-        assert(false);
-      } else {
-        // find a weak link that supports me...
-        std::cout << "WARNING! THIS MAY HAVE ISSUES!"
-                  << "WE ARE NOT YET SEARCHING FOR DESCENDENTS!" << std::endl;
-        assert(false);
-        // TODO(igormcoelho): must use COSTLY method 'isDescendent' HERE
-        for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)
-          if (sptr_mynode->owned_by[i].lock() == owner_node) {
-            // I will not die because of this... just a weak link.
-            sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + i);
-            removed = true;
-          }
-      }
+      // end-if is_root || is_owned
+    }
 
-      assert(removed);
-    }  // end 'else' (owned_by_node)
     if (debug()) std::cout << "destroy: last cleanups" << std::endl;
     //
     // this->ref = nullptr;

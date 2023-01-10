@@ -12,6 +12,32 @@ using namespace cycles;  // NOLINT
 // memory management tests
 // =======================
 
+TEST_CASE("CyclesTestGraph: MyGraph Single") {
+  std::cout << "begin MyGraph Single" << std::endl;
+  // create context
+  {
+    MyGraph<double> G;
+    REQUIRE(!G.my_ctx().lock()->debug);
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+
+    // STEP (A)
+    // creating -1 node
+    G.entry = G.make_node(-1.0);
+    REQUIRE(G.entry.is_root());
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    // reset -1 node
+    G.entry.reset();
+    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+
+    if (false) {
+      G.entry.setDebug(true);  // -1
+    }
+  }
+  // SHOULD NOT LEAK
+  REQUIRE(mynode_count == 0);
+}
+
 TEST_CASE("CyclesTestGraph: MyGraph A B C' D' E'") {
   std::cout << "begin MyGraph MyGraph A B C' D' E'" << std::endl;
   // create context
@@ -208,6 +234,8 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D-E Detailed") {
   {
     MyGraph<double> G;
     REQUIRE(!G.my_ctx().lock()->debug);
+    // G.debug_flag = true;
+    // G.my_ctx().lock()->debug = true;
 
     // context should not have created Tree for nullptr node
     REQUIRE(G.my_ctx().lock()->forest.size() == 0);
@@ -529,50 +557,31 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force head kill all") {
     G.entry.reset();
     REQUIRE(G.entry.is_nullptr());
     REQUIRE(ptr1.is_root());
+    REQUIRE(fake_ptr2.is_owned());
     REQUIRE(fake_ptr3.is_owned());
     auto& fake_entry = fake_ptr3->neighbors[0];
     REQUIRE(fake_entry.is_owned());  // node -1
-    //
-    std::cout << "KILL PART!" << std::endl;
+    // KILL PART!
     REQUIRE(fake_ptr2.is_owned());  // node 2
-    // force reset: node 2 still accessible through ptr1
+    // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
-    // one root survivor (1)
+    // only one root survivor (1)
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
     //
-
-    REQUIRE(fake_ptr2.is_owned());  // node 2
-
-    std::cout << "FINAL PART!" << std::endl;
+    REQUIRE(fake_ptr2.is_nullptr());
 
     // deeper debug
     REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr1.remote_node.lock()->children.size() == 1);  // node 2
-    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 1);  // node -1
+    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
-    // change value to 2.2
-    fake_ptr2->val = 2.2;
-    REQUIRE(fake_ptr2.remote_node.lock()->has_parent() == true);  // node 1
-    REQUIRE(fake_ptr2.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr2.remote_node.lock()->owns.size() == 1);  // node 3
-
+    REQUIRE(fake_ptr2.is_nullptr());
+    // fake_ptr3 is broken now
+    // REQUIRE(fake_ptr3.is_nullptr());
+    // fake_entry is broken now
+    // REQUIRE(fake_entry.is_nullptr());
     //
-    REQUIRE(fake_ptr3.remote_node.lock()->has_parent() == false);
-    REQUIRE(fake_ptr3.remote_node.lock()->children.size() == 1);  // node -1
-    REQUIRE(fake_ptr3.remote_node.lock()->owned_by.size() == 1);  // node 2
-    REQUIRE(fake_ptr3.remote_node.lock()->owns.size() == 0);
-    //
-    REQUIRE(fake_entry.remote_node.lock()->has_parent() == true);  // node 3
-    REQUIRE(fake_entry.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_entry.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_entry.remote_node.lock()->owns.size() == 1);  // node 1
-    //
-    // ptr3.reset(); // do not delete here
-    // ptr1.reset(); // do not delete here
-    //
-    // G.entry.setDebug(true);
-    // ptr1.setDebug(true);  // SHOULD NOT LEAK
+    // SHOULD NOT LEAK
   }
   REQUIRE(mynode_count == 0);
 }
