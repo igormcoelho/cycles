@@ -502,3 +502,77 @@ TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force slow destruction") {
   }
   REQUIRE(mynode_count == 0);
 }
+
+// NOLINTNEXTLINE
+TEST_CASE("CyclesTestGraph: MyGraph A-B-C-D force head kill all") {
+  std::cout << "begin MyGraph A-B-C-D force head kill all" << std::endl;
+  // create context
+  {
+    // THIS CASE FORCES GRAPH TO HAVE USELESS WEAK LINK ON TOP, UNTIL LAST
+    // DESTRUCTION
+
+    MyGraph<double> G;
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    //
+    G.entry = G.make_node(-1.0);
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+
+    // make cycle
+    auto ptr1 = G.make_node(1.0);
+    ptr1->neighbors.push_back(G.make_node(2.0).copy_owned(ptr1));
+    auto& fake_ptr2 = ptr1->neighbors[0];
+    fake_ptr2->neighbors.push_back(G.make_node(3.0).copy_owned(fake_ptr2));
+    auto& fake_ptr3 = fake_ptr2->neighbors[0];
+    fake_ptr3->neighbors.push_back(G.entry.copy_owned(fake_ptr3));
+
+    // force reset: root dies but other refs still on main(), from ptr1
+    G.entry.reset();
+    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(ptr1.is_root());
+    REQUIRE(fake_ptr3.is_owned());
+    auto& fake_entry = fake_ptr3->neighbors[0];
+    REQUIRE(fake_entry.is_owned());  // node -1
+    //
+    std::cout << "KILL PART!" << std::endl;
+    REQUIRE(fake_ptr2.is_owned());  // node 2
+    // force reset: node 2 still accessible through ptr1
+    fake_ptr2.reset();
+    // one root survivor (1)
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    //
+
+    REQUIRE(fake_ptr2.is_owned());  // node 2
+
+    std::cout << "FINAL PART!" << std::endl;
+
+    // deeper debug
+    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.remote_node.lock()->children.size() == 1);  // node 2
+    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 1);  // node -1
+    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    // change value to 2.2
+    fake_ptr2->val = 2.2;
+    REQUIRE(fake_ptr2.remote_node.lock()->has_parent() == true);  // node 1
+    REQUIRE(fake_ptr2.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr2.remote_node.lock()->owns.size() == 1);  // node 3
+
+    //
+    REQUIRE(fake_ptr3.remote_node.lock()->has_parent() == false);
+    REQUIRE(fake_ptr3.remote_node.lock()->children.size() == 1);  // node -1
+    REQUIRE(fake_ptr3.remote_node.lock()->owned_by.size() == 1);  // node 2
+    REQUIRE(fake_ptr3.remote_node.lock()->owns.size() == 0);
+    //
+    REQUIRE(fake_entry.remote_node.lock()->has_parent() == true);  // node 3
+    REQUIRE(fake_entry.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_entry.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_entry.remote_node.lock()->owns.size() == 1);  // node 1
+    //
+    // ptr3.reset(); // do not delete here
+    // ptr1.reset(); // do not delete here
+    //
+    // G.entry.setDebug(true);
+    // ptr1.setDebug(true);  // SHOULD NOT LEAK
+  }
+  REQUIRE(mynode_count == 0);
+}
