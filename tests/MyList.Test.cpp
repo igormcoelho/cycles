@@ -17,7 +17,9 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
   // create context
   {
     MyList L;
+    // L.my_ctx().lock()->debug = true;
     REQUIRE(!L.my_ctx().lock()->debug);
+
     //
     L.entry = L.make_node(0);
     L.entry->next = L.make_node_owned(1, L.entry);

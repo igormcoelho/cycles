@@ -84,10 +84,14 @@ class TNode {
   // helper!
   std::string value_to_string() {
     std::stringstream ss;
-    if constexpr (is_shared_ptr<T>::value == true)
-      ss << *value;
-    else
+    if constexpr (is_shared_ptr<T>::value == true) {
+      if (value)
+        ss << *value;
+      else
+        ss << "NULL";
+    } else {
       ss << value;
+    }
     return ss.str();
   }
 

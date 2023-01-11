@@ -179,27 +179,6 @@ class cycles_ptr {
 
   int get_ref_use_count() const { return this->get_sptr().use_count(); }
 
-  void destroy_tree(sptr<TNode<sptr<T>>> sptr_mynode) {
-    if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
-    // find my tree
-    auto tree_it = ctx.lock()->forest.find(sptr_mynode);
-    if (tree_it == ctx.lock()->forest.end()) {
-      // ????
-      std::cout << "ERROR! COULD NOT FIND MY TREE!" << std::endl;
-      assert(false);
-    } else {
-      if (debug()) {
-        std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
-      }
-      // clear tree
-      ctx.lock()->forest.erase(tree_it);
-
-      if (debug()) {
-        std::cout << " ~~~> OK DELETED MY TREE." << std::endl;
-      }
-    }
-  }
-
   void destroy() {
     if (debug()) std::cout << "destroy: BEGIN" << std::endl;
     // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
@@ -352,7 +331,7 @@ class cycles_ptr {
       if (isRoot) {
         if (debug())
           std::cout << "DEBUG: is_root. destroy_tree(...)" << std::endl;
-        destroy_tree(sptr_mynode);
+        ctx.lock()->destroy_tree(sptr_mynode);
       }
       if (isOwned) {
         if (debug())
