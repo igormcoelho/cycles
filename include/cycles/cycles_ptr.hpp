@@ -258,11 +258,14 @@ class cycles_ptr {
         } else {
           // CHECK IF OWNER IS MY PARENT...
           if (owner_node == sptr_mynode->parent.lock()) {
-            std::cout << "DEBUG: OWNER IS MY PARENT! I WILL DIE!" << std::endl;
+            if (debug())
+              std::cout << "DEBUG: OWNER IS MY PARENT! I WILL DIE!"
+                        << std::endl;
             will_die = true;
           } else {
-            std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
-                      << std::endl;
+            if (debug())
+              std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
+                        << std::endl;
             // my node will stay alive since my parent still holds me strong
             will_die = false;
             // remove my weak link from owner
@@ -388,10 +391,11 @@ class cycles_ptr {
       }
       // last holding reference to node is on pending list
       if (ctx.lock()->auto_collect) {
-        // if (debug())
-        std::cout << "DEBUG: begin auto_collect. |pending|="
-                  << ctx.lock()->pending.size() << std::endl;
-        ctx.lock()->destroy_pending();
+        if (debug()) {
+          std::cout << "DEBUG: begin auto_collect. |pending|="
+                    << ctx.lock()->pending.size() << std::endl;
+        }
+        ctx.lock()->collect();
       }
       //
       // end-if is_root || is_owned

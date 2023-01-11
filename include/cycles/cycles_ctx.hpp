@@ -78,20 +78,14 @@ class cycles_ctx {
     forest.clear();  // is it necessary??
   }
 
-  void collect() {
-    assert(this);
-    // force collect
-    std::cout << "WARNING: collect! NOT Implemented (this=" << this << ")"
-              << std::endl;
-  }
-
+ private:
   bool is_destroying{false};
 
-  void destroy_pending() {
+ public:
+  void collect() {
     if (is_destroying) {
       if (debug)
-        std::cout << "WARNING: destroy_pending() already executing!"
-                  << std::endl;
+        std::cout << "WARNING: collect() already executing!" << std::endl;
       return;
     } else {
       if (debug)
@@ -188,6 +182,7 @@ class cycles_ctx {
     if (debug) std::cout << "destroy_pending: finished!" << std::endl;
   }
 
+ public:
   void print() {
     std::cout << "print ctx: (forest size=" << forest.size() << ") ["
               << std::endl;

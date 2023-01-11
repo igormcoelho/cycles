@@ -108,8 +108,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
 
     // CHECKS (E') - ptr2 and ptr3 are removed
     //
-    std::cout << std::endl;
-    std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
+    // std::cout << std::endl;
+    // std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
     ptr2.reset();
     // node 2 should not point to node 3 anymore
     REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 0);
@@ -119,8 +119,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     REQUIRE(ptr3.is_root());
     REQUIRE(ptr3.get().neighbors[0].is_owned());
     //
-    std::cout << std::endl;
-    std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
+    // std::cout << std::endl;
+    // std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
     ptr3.reset();
 
     //
@@ -644,7 +644,7 @@ TEST_CASE(
     auto& fake_ptr3_2 = ptr4->neighbors[0];
     //
     // KILL PART!
-    std::cout << std::endl << "KILL PART!" << std::endl;
+    // std::cout << std::endl << "KILL PART!" << std::endl;
     // node 2 must die
     // node 3 and node -1 must survive (held by node 4)
     REQUIRE(fake_ptr2.is_owned());  // node 2
