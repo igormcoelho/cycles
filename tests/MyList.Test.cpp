@@ -48,6 +48,12 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
       REQUIRE(ptr->get().val == i % 5);
       ptr = &ptr->get().prev;
     }
+    //
+    auto p = L.my_ctx().lock()->debug_count_ownership_links();
+    REQUIRE(p.first == p.second);  // IMPORTANT CHECK!
+    //
+    REQUIRE(p.first == 6);   // owns: TODO CHECK MANUALLY
+    REQUIRE(p.second == 6);  // owned_by: TODO CHECK MANUALLY
   }
   // SHOULD NOT LEAK
   REQUIRE(mylistnode_count == 0);

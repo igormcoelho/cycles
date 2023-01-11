@@ -94,6 +94,30 @@ class cycles_ctx {
   }
 
  public:
+  std::pair<int, int> debug_count_ownership_links() {
+    std::pair<int, int> p{0, 0};
+    for (auto& t : forest) {
+      auto p1 = debug_count_owns_owned_by(t.second->root);
+      p.first += p1.first;
+      p.second += p1.second;
+    }
+    return p;
+  }
+
+ private:
+  std::pair<int, int> debug_count_owns_owned_by(sptr<TNode<sptr<T>>> node) {
+    std::pair<int, int> p{0, 0};
+    p.first += node->owns.size();
+    p.second += node->owned_by.size();
+    for (unsigned i = 0; i < node->children.size(); i++) {
+      auto p1 = debug_count_owns_owned_by(node->children[i]);
+      p.first += p1.first;
+      p.second += p1.second;
+    }
+    return p;
+  }
+
+ public:
   void destroy_tree(sptr<TNode<sptr<T>>> sptr_mynode) {
     if (debug) std::cout << "destroy: will destroy my tree." << std::endl;
     // find my tree
