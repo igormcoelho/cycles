@@ -62,8 +62,34 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     //  | ----------------------------|  |
     //  ----------------------------------
     //
-    REQUIRE(p.first == 6);   // owns: 6 links
-    REQUIRE(p.second == 6);  // owned_by: 6 links
+    // owns: 6 links
+    REQUIRE(p.first == 6);
+    // owned_by: 6 links
+    REQUIRE(p.second == 6);
+    //
+    // deeper debug
+    //
+    REQUIRE(L.entry.is_root());
+    REQUIRE(L.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry.remote_node.lock()->children.size() == 1);  // node 1
+    REQUIRE(L.entry.remote_node.lock()->owned_by.size() ==
+            2);  // node 1 and node 4 ??
+    REQUIRE(L.entry.remote_node.lock()->owns.size() == 1);  // node 4
+    //
+    REQUIRE(L.entry->next.is_owned());
+    REQUIRE(L.entry->next.remote_node.lock()->has_parent() == true);  // node 0
+    REQUIRE(L.entry->next.remote_node.lock()->children.size() == 1);  // node 2
+    REQUIRE(L.entry->next.remote_node.lock()->owned_by.size() == 1);  // node 2
+    REQUIRE(L.entry->next.remote_node.lock()->owns.size() == 1);      // node 0
+                                                                      //
+    REQUIRE(node4.is_owned());
+    REQUIRE(node4.remote_node.lock()->has_parent() == true);  // node 3
+    REQUIRE(node4.remote_node.lock()->children.size() == 0);
+    REQUIRE(node4.remote_node.lock()->owned_by.size() == 1);  // node 0
+    REQUIRE(node4.remote_node.lock()->owns.size() == 2);  // node 3 and node 0
+    //
+    // std::cout << std::endl << "DESTRUCTION!" << std::endl;
+    // L.my_ctx().lock()->debug = true;
   }
   // SHOULD NOT LEAK
   REQUIRE(mylistnode_count == 0);

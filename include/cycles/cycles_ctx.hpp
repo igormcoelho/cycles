@@ -273,6 +273,9 @@ class cycles_ctx {
         // kill if not held by anyone now
         if (debug) std::cout << "DEBUG: may kill child!" << std::endl;
         if (will_die) {
+          if (debug)
+            std::cout << "DEBUG: child will be send to pending list: "
+                      << sptr_child->value_to_string() << std::endl;
           //
           // force clean both lists: owned_by and owns
           bool b1 = TNodeHelper<sptr<T>>::cleanOwnsAndOwnedByLists(sptr_child);

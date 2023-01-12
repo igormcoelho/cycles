@@ -82,7 +82,7 @@ class TNode {
         */
 
   // helper!
-  std::string value_to_string() {
+  std::string value_to_string() const {
     std::stringstream ss;
     if constexpr (is_shared_ptr<T>::value == true) {
       if (value)
@@ -111,6 +111,8 @@ class TNode {
     // We should prevent non-empty |owns| and |owned_by|, as
     // this strategy allows removing a lot of code below...
     // =====================================================
+    assert(owns.size() == 0);
+    assert(owned_by.size() == 0);
     /*
     if (debug_flag)
       std::cout << "DEBUG: (DEPRECATED) Part I will check. |owns|="
@@ -319,7 +321,7 @@ class TNode {
   auto get_value() { return value; }
 
   friend ostream& operator<<(ostream& os, const TNode& me) {
-    os << "TNode(" << me.value << ")";
+    os << "TNode(" << me.value_to_string() << ")";
     return os;
   }
 };
@@ -349,34 +351,78 @@ class TNodeHelper {
   static bool cleanOwnsAndOwnedByLists(auto sptr_mynode) {
     //
     // force clean owned_by list before continuing... should be good!
-    for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++) {
-      auto sptr_owner = sptr_mynode->owned_by[i].lock();
+    //
+    // for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++) {
+    while (sptr_mynode->owned_by.size() > 0) {
+      // std::cout << "owned_by loop i=" << i << std::endl;
+      auto sptr_owner = sptr_mynode->owned_by[0].lock();
+      //
+      int my_ownedby_count = sptr_mynode->owned_by.size();
+      int my_owns_count = sptr_mynode->owns.size();
+      int other_ownedby_count = sptr_owner->owned_by.size();
+      int other_owns_count = sptr_owner->owns.size();
+
       bool b1 =
           TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_owner, sptr_mynode);
       bool b2 =
           TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_owner, sptr_mynode);
       assert(b1);
       assert(b2);
-    }
-    sptr_mynode->owned_by.clear();
+
+      int final_my_ownedby_count = sptr_mynode->owned_by.size();
+      int final_my_owns_count = sptr_mynode->owns.size();
+      int final_other_ownedby_count = sptr_owner->owned_by.size();
+      int final_other_owns_count = sptr_owner->owns.size();
+
+      assert(final_my_ownedby_count == my_ownedby_count - 1);
+      assert(final_my_owns_count == my_owns_count);
+      assert(final_other_ownedby_count == other_ownedby_count);
+      assert(final_other_owns_count == other_owns_count - 1);
+    }  // end while
+
+    assert(sptr_mynode->owned_by.size() == 0);
+    // sptr_mynode->owned_by.clear();
     //
     // force clean owns list before continuing... should be good!
-    for (unsigned i = 0; i < sptr_mynode->owns.size(); i++) {
-      auto sptr_owned = sptr_mynode->owns[i].lock();
+    //
+    // for (unsigned i = 0; i < sptr_mynode->owns.size(); i++) {
+    while (sptr_mynode->owns.size() > 0) {
+      // std::cout << "owns loop i=" << i << std::endl;
+      auto sptr_owned = sptr_mynode->owns[0].lock();
+      //
       if (!sptr_owned) {
         std::cout << "Helper: SERIOUS WARNING - sptr_owned does not exist! "
                      "sptr_mynode="
                   << sptr_mynode->value_to_string() << std::endl;
         continue;
       }
+      //
+
+      int my_ownedby_count = sptr_mynode->owned_by.size();
+      int my_owns_count = sptr_mynode->owns.size();
+      int other_ownedby_count = sptr_owned->owned_by.size();
+      int other_owns_count = sptr_owned->owns.size();
+
+      //
       bool b1 =
           TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_mynode, sptr_owned);
       bool b2 =
           TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_mynode, sptr_owned);
       assert(b1);
       assert(b2);
-    }
-    sptr_mynode->owns.clear();
+
+      int final_my_ownedby_count = sptr_mynode->owned_by.size();
+      int final_my_owns_count = sptr_mynode->owns.size();
+      int final_other_ownedby_count = sptr_owned->owned_by.size();
+      int final_other_owns_count = sptr_owned->owns.size();
+
+      assert(final_my_ownedby_count == my_ownedby_count);
+      assert(final_my_owns_count == my_owns_count - 1);
+      assert(final_other_ownedby_count == other_ownedby_count - 1);
+      assert(final_other_owns_count == other_owns_count);
+    }  // end while
+    assert(sptr_mynode->owns.size() == 0);
+    // sptr_mynode->owns.clear();
     return true;
   }
 
@@ -384,12 +430,15 @@ class TNodeHelper {
   static bool removeFromOwnsList(auto sptrOwner, auto sptrOwned) {
     assert(sptrOwner->owns.size() > 0);
     bool removed = false;
-    for (unsigned i = 0; i < sptrOwner->owns.size(); i++)
+    for (unsigned i = 0; i < sptrOwner->owns.size(); i++) {
+      //
       if (sptrOwner->owns[i].lock().get() == sptrOwned.get()) {
+        //
         sptrOwner->owns.erase(sptrOwner->owns.begin() + i);
         removed = true;
         break;
       }
+    }
     return removed;
   }
 
