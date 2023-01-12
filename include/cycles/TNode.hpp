@@ -100,9 +100,20 @@ class TNode {
       std::cout << "BEGIN ~TNode(" << value_to_string() << ")" << std::endl;
     }
     tnode_count--;
-    if (debug_flag)
-      std::cout << "DEBUG: Part I will check. |owns|=" << owns.size()
+    //
+    if (owns.size() > 0)
+      std::cout << "~TNode WARNING: non-zero owns list. |owns|=" << owns.size()
                 << std::endl;
+    if (owned_by.size() > 0)
+      std::cout << "~TNode WARNING: non-zero owned_by list. |owns|="
+                << owned_by.size() << std::endl;
+    // =====================================================
+    // We should prevent non-empty |owns| and |owned_by|, as
+    // this strategy allows removing a lot of code below...
+    // =====================================================
+    if (debug_flag)
+      std::cout << "DEBUG: (DEPRECATED) Part I will check. |owns|="
+                << owns.size() << std::endl;
     //
     // clear 'owns' list
     //
@@ -147,8 +158,8 @@ class TNode {
         std::cout << "DEBUG: Part I finished cleanup owns list" << std::endl;
     }  // if owns exists
     if (debug_flag)
-      std::cout << "DEBUG: Part II will check. |owned_by|=" << owned_by.size()
-                << std::endl;
+      std::cout << "DEBUG: (DEPRECATED) Part II will check. |owned_by|="
+                << owned_by.size() << std::endl;
     //
     // clear 'owned_by' list
     //
@@ -193,6 +204,7 @@ class TNode {
                   << std::endl;
       }
     }  // if owned_by exists
+    //
     if (debug_flag)
       std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
     if (debug_flag)
@@ -330,6 +342,40 @@ class TNodeHelper {
       parentsParent = sptrPP->parent;
     }
     return isDescendent;
+  }
+
+  static bool cleanOwnsAndOwnedByLists(auto sptr_mynode) {
+    //
+    // force clean owned_by list before continuing... should be good!
+    for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++) {
+      auto sptr_owner = sptr_mynode->owned_by[i].lock();
+      bool b1 =
+          TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_owner, sptr_mynode);
+      bool b2 =
+          TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_owner, sptr_mynode);
+      assert(b1);
+      assert(b2);
+    }
+    sptr_mynode->owned_by.clear();
+    //
+    // force clean owns list before continuing... should be good!
+    for (unsigned i = 0; i < sptr_mynode->owns.size(); i++) {
+      auto sptr_owned = sptr_mynode->owns[i].lock();
+      if (!sptr_owned) {
+        std::cout << "Helper: SERIOUS WARNING - sptr_owned does not exist! "
+                     "sptr_mynode="
+                  << sptr_mynode->value_to_string() << std::endl;
+        continue;
+      }
+      bool b1 =
+          TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_mynode, sptr_owned);
+      bool b2 =
+          TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_mynode, sptr_owned);
+      assert(b1);
+      assert(b2);
+    }
+    sptr_mynode->owns.clear();
+    return true;
   }
 
   // remove me from the 'owns' list of myNewParent owner

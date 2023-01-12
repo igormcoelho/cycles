@@ -68,6 +68,10 @@ class cycles_ctx {
       // DO NOT DESTROY RECURSIVELY HERE
       // p.second->root = nullptr;  // clear root BEFORE CHILDREN
       //
+      // force clean both lists: owned_by and owns
+      bool b1 = TNodeHelper<sptr<T>>::cleanOwnsAndOwnedByLists(p.second->root);
+      assert(b1);
+      //
       // move to pending
       pending.push_back(std::move(p.second->root));
       p.second->root = nullptr;  // useless... just to make sure it's not here
@@ -193,38 +197,12 @@ class cycles_ctx {
         std::cout << "CTX WARNING: owned_by but dying... must be some cycle!"
                   << std::endl;
       }
-      // force clean owned_by list before continuing... should be good!
-      for (unsigned i = 0; i < sptr_delete->owned_by.size(); i++) {
-        auto sptr_owner = sptr_delete->owned_by[i].lock();
-        bool b1 =
-            TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_owner, sptr_delete);
-        bool b2 = TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_owner,
-                                                              sptr_delete);
-        assert(b1);
-        assert(b2);
-      }
-      sptr_delete->owned_by.clear();
+      // force clean both lists: owned_by and owns
+      bool b1 = TNodeHelper<sptr<T>>::cleanOwnsAndOwnedByLists(sptr_delete);
+      assert(b1);
       //
-      // force clean owns list before continuing... should be good!
-      for (unsigned i = 0; i < sptr_delete->owns.size(); i++) {
-        auto sptr_owned = sptr_delete->owns[i].lock();
-        if (!sptr_owned) {
-          std::cout << "CTX: SERIOUS WARNING - sptr_owned does not exist! "
-                       "sptr_delete="
-                    << sptr_delete->value_to_string() << std::endl;
-          continue;
-        }
-        if (debug)
-          std::cout << "sptr_owned is " << sptr_owned->value_to_string()
-                    << std::endl;
-        bool b1 =
-            TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_delete, sptr_owned);
-        bool b2 = TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_delete,
-                                                              sptr_owned);
-        assert(b1);
-        assert(b2);
-      }
-      sptr_delete->owns.clear();
+      assert(sptr_delete->owned_by.size() == 0);
+      assert(sptr_delete->owns.size() == 0);
       //
       // get its children
       auto children = std::move(sptr_delete->children);
