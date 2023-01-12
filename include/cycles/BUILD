@@ -7,7 +7,7 @@ package(
 cc_library(
     name = "cycles_hpp",
     hdrs = glob([
-        "*.hpp",
+        "**/*.hpp",
     ]),
     include_prefix = "cycles/",
 )

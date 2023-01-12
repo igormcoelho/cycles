@@ -13,7 +13,7 @@
 #include <sstream>  // just for value_to_string ??
 #include <string>
 //
-#include <cycles/utils.hpp>
+#include <cycles/detail/utils.hpp>
 
 using std::ostream, std::vector;  // NOLINT
 
@@ -33,6 +33,8 @@ struct is_shared_ptr<std::shared_ptr<X>> : std::true_type {};
 // all memory is self-managed
 
 namespace cycles {
+
+namespace detail {
 
 static int tnode_count = 0;
 
@@ -469,6 +471,8 @@ class TNodeHelper {
     return removed;
   }
 };
+
+}  // namespace detail
 
 }  // namespace cycles
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cycles/utils.hpp>
+#include <cycles/detail/utils.hpp>
 
 // ==================
 //  Node and List

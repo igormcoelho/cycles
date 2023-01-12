@@ -4,9 +4,9 @@
 #include <map>
 #include <vector>
 //
-#include <cycles/Tree.hpp>
 #include <cycles/cycles_ptr.hpp>
-#include <cycles/utils.hpp>
+#include <cycles/detail/Tree.hpp>
+#include <cycles/detail/utils.hpp>
 #include <pre-experiments/List.hpp>
 #include <pre-experiments/nodes_exp.hpp>
 //

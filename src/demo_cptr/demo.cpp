@@ -2,9 +2,9 @@
 // C++
 #include <map>
 //
-#include <cycles/Tree.hpp>
 #include <cycles/cycles_ptr.hpp>
-#include <cycles/utils.hpp>
+#include <cycles/detail/Tree.hpp>
+#include <cycles/detail/utils.hpp>
 #include <demo_cptr/MyGraph.hpp>
 #include <pre-experiments/List.hpp>
 #include <pre-experiments/nodes_exp.hpp>
@@ -12,6 +12,9 @@
 #include <demo_cptr/Graph.hpp>
 
 using std::string, std::vector, std::map;
+
+using namespace cycles;
+using namespace cycles::detail;
 
 struct XNode {
   int content;
@@ -247,8 +250,8 @@ int main() {
 
     map<NodeDouble, sptr<Tree<double>>> mp;
 
-    auto node1 = NodeDouble(new TNode<double>{2.0});
-    auto node2 = NodeDouble(new TNode<double>{3.0});
+    auto node1 = NodeDouble(new TNode<double>{std::make_shared<double>(2.0)});
+    auto node2 = NodeDouble(new TNode<double>{std::make_shared<double>(3.0)});
 
     auto t1 = sptr<Tree<double>>(new Tree<double>{});
     t1->root = node1;
@@ -281,21 +284,19 @@ int main() {
     std::cout << std::endl;
     std::cout << "========= " << std::endl;
 
-    using NodeDouble = sptr<TNode<sptr<double>>>;
-    using TreeDouble = sptr<Tree<sptr<double>>>;
+    using NodeDouble = sptr<TNode<double>>;
+    using TreeDouble = sptr<Tree<double>>;
 
     map<NodeDouble, TreeDouble> mp;
 
-    auto node1 =
-        NodeDouble(new TNode<sptr<double>>{std::make_shared<double>(2.0)});
-    auto node2 =
-        NodeDouble(new TNode<sptr<double>>{std::make_shared<double>(3.0)});
+    auto node1 = NodeDouble(new TNode<double>{std::make_shared<double>(2.0)});
+    auto node2 = NodeDouble(new TNode<double>{std::make_shared<double>(3.0)});
 
-    auto t1 = TreeDouble(new Tree<sptr<double>>{});
+    auto t1 = TreeDouble(new Tree<double>{});
     t1->root = node1;
     std::cout << "t1.root = " << *t1->root->get_value() << std::endl;
     // Tree<double> t2;
-    auto t2 = TreeDouble(new Tree<sptr<double>>{});
+    auto t2 = TreeDouble(new Tree<double>{});
     t2->root = node2;
     std::cout << "t2.root = " << *t2->root->get_value() << std::endl;
 

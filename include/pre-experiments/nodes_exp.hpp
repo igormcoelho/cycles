@@ -2,7 +2,7 @@
 
 // EXPERIMENTAL nodes
 
-#include <cycles/utils.hpp>
+#include <cycles/detail/utils.hpp>
 
 // strong circular list
 struct Node1 {

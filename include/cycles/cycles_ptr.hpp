@@ -12,9 +12,9 @@
 #include <vector>
 
 //
-#include <cycles/Tree.hpp>
 #include <cycles/cycles_ctx.hpp>
-#include <cycles/utils.hpp>
+#include <cycles/detail/Tree.hpp>
+#include <cycles/detail/utils.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
@@ -26,6 +26,9 @@ using std::vector, std::ostream, std::map;  // NOLINT
 //-------------------------
 
 namespace cycles {
+
+// NOLINTNEXTLINE
+using namespace detail;
 
 template <typename T>
 // NOLINTNEXTLINE

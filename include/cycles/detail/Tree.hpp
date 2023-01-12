@@ -4,8 +4,8 @@
 #ifndef CYCLES_TREE_HPP_  // NOLINT
 #define CYCLES_TREE_HPP_  // NOLINT
 
-#include <cycles/TNode.hpp>
-#include <cycles/utils.hpp>
+#include <cycles/detail/TNode.hpp>
+#include <cycles/detail/utils.hpp>
 
 using std::ostream;  // NOLINT
 
@@ -16,6 +16,8 @@ using std::ostream;  // NOLINT
 // all memory is self-managed
 
 namespace cycles {
+
+namespace detail {
 
 template <typename T>
 struct Tree {
@@ -43,7 +45,11 @@ struct Tree {
     // => using aliasing constructor
     // "Point to That and manage with This"
     // managing lifetime by construction
-    return {root, &(root->value)};
+    //
+    // return {root, &(root->value)};
+    //
+    // simpler
+    return root->value;
   }
 
   ~Tree() {
@@ -116,6 +122,8 @@ struct Tree {
   }
   //
 };
+
+}  // namespace detail
 
 }  // namespace cycles
 
