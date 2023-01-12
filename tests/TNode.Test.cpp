@@ -24,4 +24,11 @@ TEST_CASE("CyclesTestTNode: type erased node") {
   std::string str = "TNodeData(1)";
   REQUIRE(str == ss.str());
   //
+  {
+    // begin scope for testing
+    TNode<TNodeData> tnode{TNodeData::make_sptr<double>(new double{1.0})};
+    tnode.debug_flag = true;
+    REQUIRE(tnode_count == 1);
+  }
+  REQUIRE(tnode_count == 0);
 }

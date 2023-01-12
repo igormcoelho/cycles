@@ -92,6 +92,29 @@ class TNodeData {
                    }};
     return data;
   }
+
+  template <class T>
+  static sptr<TNodeData> make_sptr(T* ptr) {
+    // NOLINTNEXTLINE
+    auto* data = new TNodeData{ptr,
+                               [](const void* x) {
+                                 // T destructor to invoke
+                                 //
+                                 // DOES IT WORK FOR PRIMITIVE TYPES?
+                                 //
+                                 // static_cast<const T*>(x)->~T();
+                                 //
+                                 // NOLINTNEXTLINE
+                                 delete static_cast<const T*>(x);
+                               },
+                               [](const void* x) {
+                                 std::stringstream ss;
+                                 ss << *static_cast<const T*>(x);
+                                 return ss.str();
+                               }};
+
+    return sptr<TNodeData>{data};
+  }
 };
 
 template <typename T>
