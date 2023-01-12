@@ -256,9 +256,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     // creating -1 node
 
     G.entry = G.make_node(-1.0);
-    std::cout << "TEST created node -1" << std::endl;
-    std::cout << "mynode_count=" << mynode_count << std::endl;
-    std::cout << "tnode_count=" << tnode_count << std::endl;
+    REQUIRE(mynode_count == 1);
+    REQUIRE(tnode_count == 1);
 
     // check few things on 'entry'... Parent, Children, Owned and Owns
     // CHECKS (A) - just -1 node
@@ -275,23 +274,18 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     // make cycle
 
     auto ptr1 = G.make_node(1.0);
-    std::cout << "TEST created node 1" << std::endl;
-    std::cout << "mynode_count=" << mynode_count << std::endl;
-    std::cout << "tnode_count=" << tnode_count << std::endl;
     REQUIRE(mynode_count == 2);
     REQUIRE(tnode_count == 2);
     REQUIRE(G.my_ctx().lock()->forest.size() == 2);
     REQUIRE(ptr1.is_root());
     //
     auto ptr2 = G.make_node(2.0);
-    std::cout << "TEST created node 2" << std::endl;
     REQUIRE(mynode_count == 3);
     REQUIRE(tnode_count == 3);
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     REQUIRE(ptr2.is_root());
     //
     auto ptr3 = G.make_node(3.0);
-    std::cout << "TEST created node 3" << std::endl;
     REQUIRE(mynode_count == 4);
     REQUIRE(tnode_count == 4);
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);

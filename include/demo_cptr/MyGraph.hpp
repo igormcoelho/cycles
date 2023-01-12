@@ -9,7 +9,7 @@
 
 using namespace cycles;  // NOLINT
 
-static int mynode_count = 0;
+inline int mynode_count = 0;
 
 template <typename X>
 class MyNode {
