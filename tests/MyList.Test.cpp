@@ -52,8 +52,18 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     auto p = L.my_ctx().lock()->debug_count_ownership_links();
     REQUIRE(p.first == p.second);  // IMPORTANT CHECK!
     //
-    REQUIRE(p.first == 6);   // owns: TODO CHECK MANUALLY
-    REQUIRE(p.second == 6);  // owned_by: TODO CHECK MANUALLY
+    //  double => is strong link (parent link not shown)
+    //  single -> is owned_by weak link (owns link not shown)
+    //
+    //  ||
+    //  \/   =>     =>     =>     =>
+    // ( 0 ) <- (1) <- (2) <- (3) <- (4)--
+    //  ^ |                           ^  |
+    //  | ----------------------------|  |
+    //  ----------------------------------
+    //
+    REQUIRE(p.first == 6);   // owns: 6 links
+    REQUIRE(p.second == 6);  // owned_by: 6 links
   }
   // SHOULD NOT LEAK
   REQUIRE(mylistnode_count == 0);

@@ -541,7 +541,12 @@ TEST_CASE(
     // ptr1.reset(); // do not delete here
     //
     // G.entry.setDebug(true);
-    // ptr1.setDebug(true);  // SHOULD NOT LEAK
+    // ptr1.setDebug(true);
+    //
+    // std::cout << "will finish scope" << std::endl;
+    // G.my_ctx().lock()->debug = true;
+
+    // SHOULD NOT LEAK
   }
   REQUIRE(mynode_count == 0);
 }

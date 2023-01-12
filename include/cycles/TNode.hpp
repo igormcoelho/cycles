@@ -111,6 +111,7 @@ class TNode {
     // We should prevent non-empty |owns| and |owned_by|, as
     // this strategy allows removing a lot of code below...
     // =====================================================
+    /*
     if (debug_flag)
       std::cout << "DEBUG: (DEPRECATED) Part I will check. |owns|="
                 << owns.size() << std::endl;
@@ -204,6 +205,7 @@ class TNode {
                   << std::endl;
       }
     }  // if owned_by exists
+    */
     //
     if (debug_flag)
       std::cout << "  -> ~TNode tnode_count = " << tnode_count << std::endl;
