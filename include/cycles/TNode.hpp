@@ -375,8 +375,14 @@ class TNodeHelper {
       int final_other_owns_count = sptr_owner->owns.size();
 
       assert(final_my_ownedby_count == my_ownedby_count - 1);
-      assert(final_my_owns_count == my_owns_count);
-      assert(final_other_ownedby_count == other_ownedby_count);
+      // self linking
+      if (sptr_owner.get() == sptr_mynode.get()) {
+        assert(final_my_owns_count == my_owns_count - 1);
+        assert(final_other_ownedby_count == other_ownedby_count - 1);
+      } else {
+        assert(final_my_owns_count == my_owns_count);
+        assert(final_other_ownedby_count == other_ownedby_count);
+      }
       assert(final_other_owns_count == other_owns_count - 1);
     }  // end while
 

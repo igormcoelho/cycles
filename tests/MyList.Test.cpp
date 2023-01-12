@@ -94,3 +94,57 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
   // SHOULD NOT LEAK
   REQUIRE(mylistnode_count == 0);
 }
+
+TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
+  std::cout << "begin MyList Single Cycle" << std::endl;
+  // create context
+  {
+    MyList L;
+    // L.my_ctx().lock()->debug = true;
+    REQUIRE(!L.my_ctx().lock()->debug);
+
+    //
+    L.entry = L.make_node(-1);
+    L.entry->next = L.entry.copy_owned(L.entry);
+    L.entry->prev = L.entry.copy_owned(L.entry);
+    //
+    // CHECK CYCLE (10 TIMES) - next
+    auto* ptr = &L.entry;
+    for (int i = 0; i < 10; i++) {
+      REQUIRE(ptr->get().val == -1);
+      ptr = &ptr->get().next;
+    }
+    // CHECK CYCLE (10 TIMES) - prev
+    ptr = &L.entry;
+    for (int i = 10; i > 0; i--) {
+      REQUIRE(ptr->get().val == -1);
+      ptr = &ptr->get().prev;
+    }
+    //
+    // deeper debug
+    //
+    REQUIRE(L.entry.is_root());
+    REQUIRE(L.entry.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry.remote_node.lock()->children.size() == 0);
+    REQUIRE(L.entry.remote_node.lock()->owned_by.size() == 2);  // self?
+    REQUIRE(L.entry.remote_node.lock()->owns.size() == 2);      // self?
+    //
+    REQUIRE(L.entry->next.is_owned());
+    REQUIRE(L.entry->next.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry->next.remote_node.lock()->children.size() == 0);
+    REQUIRE(L.entry->next.remote_node.lock()->owned_by.size() == 2);  // self?
+    REQUIRE(L.entry->next.remote_node.lock()->owns.size() == 2);      // self?
+    //
+    REQUIRE(L.entry->prev.is_owned());
+    REQUIRE(L.entry->prev.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry->prev.remote_node.lock()->children.size() == 0);
+    REQUIRE(L.entry->prev.remote_node.lock()->owned_by.size() == 2);  // self?
+    REQUIRE(L.entry->prev.remote_node.lock()->owns.size() == 2);      // self?
+
+    //
+    // std::cout << std::endl << "DESTRUCTION!" << std::endl;
+    // L.my_ctx().lock()->debug = true;
+  }
+  // SHOULD NOT LEAK
+  REQUIRE(mylistnode_count == 0);
+}
