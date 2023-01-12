@@ -110,13 +110,13 @@ class MyGraph {
   void printFrom(const cycles_ptr<MyNodeX>& node) {
     if (node.has_get()) {
       std::cout << "node=" << node.get()
-                << " |neighbors|=" << node.get().neighbors.size() << std::endl;
+                << " |neighbors|=" << node.get()->neighbors.size() << std::endl;
 
-      for (unsigned i = 0; i < node.get().neighbors.size(); i++) {
-        if (node.get().neighbors[i] == entry) {
+      for (unsigned i = 0; i < node.get()->neighbors.size(); i++) {
+        if (node.get()->neighbors[i] == entry) {
           std::cout << "WARNING: cyclic graph! stop printing..." << std::endl;
         } else {
-          printFrom(node.get().neighbors[i]);
+          printFrom(node.get()->neighbors[i]);
         }
       }
     }

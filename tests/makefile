@@ -8,5 +8,10 @@ test_catch2:
 	g++ TNode.Test.cpp MyGraph.Test.cpp MyList.Test.cpp  -g --std=c++20 -I../include/ -I../src -Ithirdparty/ thirdparty/catch2/catch_amalgamated.cpp -o ../build/test_catch2
 	valgrind --leak-check=full ../build/test_catch2
 
+bench_sptr: quick_bench.cpp
+	g++ quick_bench.cpp -Wfatal-errors -I../include/ -I../src -g -std=c++17 -o ../build/bench_sptr
+	../build/bench_sptr
+
+
 bazel_test:
 	bazel test ...

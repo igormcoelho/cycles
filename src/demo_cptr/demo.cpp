@@ -343,11 +343,11 @@ int main() {
 
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
-    // G.entry.get().neighbors.push_back(ptr1);
-    // G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
-    // ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
-    // ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
-    // ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    // G.entry.get()->neighbors.push_back(ptr1);
+    // G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
+    // ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
+    // ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
+    // ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
     //
     auto lsptr = G.my_ctx().lock();
     std::cout << "lsptr2 -> " << lsptr << std::endl;
@@ -392,15 +392,15 @@ int main() {
     auto ptr3 = G.make_node(3.0);
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
-    // G.entry.get().neighbors.push_back(ptr1);
+    // G.entry.get()->neighbors.push_back(ptr1);
     std::cout << "---> setup G.entry" << std::endl;
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
+    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
     std::cout << " => ptr1" << std::endl;
-    ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
     std::cout << " => ptr2" << std::endl;
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
     std::cout << " => ptr3" << std::endl;
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
     //
     auto lsptr = G.my_ctx().lock();
     std::cout << "lsptr -> " << lsptr << std::endl;

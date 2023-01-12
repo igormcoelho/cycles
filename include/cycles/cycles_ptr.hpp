@@ -143,7 +143,12 @@ class cycles_ptr {
  public:
   // ======= M1 move constructor =======
   // simply move smart pointer to all elements: ctx, ref and remote_node
-  cycles_ptr(cycles_ptr<T>&& corpse) noexcept
+  //
+  // IMPORTANT: allow conversion from any type U, such that U* converts to T*
+  //
+  template <class U, class = typename std::enable_if<
+                         std::is_convertible<U*, T*>::value, void>::type>
+  cycles_ptr(cycles_ptr<U>&& corpse) noexcept
       : ctx{corpse.ctx},
         remote_node{std::move(corpse.remote_node)},
         owned_by_node{std::move(corpse.owned_by_node)},
@@ -591,12 +596,12 @@ class cycles_ptr {
     // TODO: think more.
     return (this->has_get() == other.has_get()) &&
            (ctx.lock() == other.ctx.lock()) &&
-           (get_ptr() == other.get_ptr());  //&& (ref == other.ref);
+           (get() == other.get());  //&& (ref == other.ref);
   }
 
   bool has_get() const {
     // NOLINTNEXTLINE
-    return (bool)get_ptr();
+    return (bool)get();
   }
 
   sptr<T> get_sptr() const {
@@ -618,14 +623,10 @@ class cycles_ptr {
     }
   }
 
-  T* get_ptr() const { return get_sptr().get(); }
-
-  T& get() { return *get_ptr(); }
-
-  const T& get() const { return *get_ptr(); }
+  T* get() const { return get_sptr().get(); }
 
   // TODO(igormcoelho): avoid this! but ... WHY?
-  T* operator->() const { return get_ptr(); }
+  T* operator->() const { return get(); }
 };
 
 }  // namespace cycles

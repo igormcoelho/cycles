@@ -61,8 +61,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     // CHECKS (B) - node 1 is owned by -1
     //
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
-    REQUIRE(G.entry.get().neighbors[0].is_owned());
+    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
+    REQUIRE(G.entry.get()->neighbors[0].is_owned());
 
     //
     auto ptr2 = G.make_node(2.0);
@@ -81,13 +81,13 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     // CHECKS (D') - ptr2 and ptr3 are added as owners
     //
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
 
     REQUIRE(ptr2.is_root());
     REQUIRE(ptr3.is_root());
-    REQUIRE(ptr2.get().neighbors[0].is_owned());
-    REQUIRE(ptr3.get().neighbors[0].is_owned());
+    REQUIRE(ptr2.get()->neighbors[0].is_owned());
+    REQUIRE(ptr3.get()->neighbors[0].is_owned());
 
     REQUIRE(!G.entry.is_nullptr());
     //
@@ -95,9 +95,9 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     if (false) {
       std::cout << "PRINT ptr2 details:" << ptr2.get() << std::endl;
-      for (unsigned i = 0; i < ptr2.get().neighbors.size(); i++)
+      for (unsigned i = 0; i < ptr2.get()->neighbors.size(); i++)
         std::cout << "  ptr2 MyNode neighbor i=" << i
-                  << " => type: " << ptr2.get().neighbors[i].getType()
+                  << " => type: " << ptr2.get()->neighbors[i].getType()
                   << std::endl;
     }
     // node 2 should point to node 3
@@ -117,7 +117,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     REQUIRE(G.entry.is_root());
     REQUIRE(ptr3.is_root());
-    REQUIRE(ptr3.get().neighbors[0].is_owned());
+    REQUIRE(ptr3.get()->neighbors[0].is_owned());
     //
     // std::cout << std::endl;
     // std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
@@ -128,7 +128,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     REQUIRE(!G.entry.is_nullptr());
     REQUIRE(G.entry.is_root());
-    REQUIRE(G.entry.get().val == -1);
+    REQUIRE(G.entry.get()->val == -1);
     REQUIRE(G.entry->neighbors.size() == 1);
 
     //
@@ -169,12 +169,12 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     //
     // CHECKS (B) - node 1 is owned by -1
     //
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
+    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
     REQUIRE(ptr1.is_root());
-    REQUIRE(G.entry.get().neighbors[0].is_owned());
-    REQUIRE(G.entry.get().neighbors[0].get().neighbors.size() == 0);
+    REQUIRE(G.entry.get()->neighbors[0].is_owned());
+    REQUIRE(G.entry.get()->neighbors[0].get()->neighbors.size() == 0);
     //
-    ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
     //
     // CHECKS (C) - ptr1 is deleted
     //
@@ -183,21 +183,21 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     //
     // CHECKS (D) - ptr2 and ptr3 are added as owners
     //
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
     // CHECKS
     REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
     REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
     REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 1);
     REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(G.entry.get().neighbors[0].remote_node.lock()->has_parent() ==
+    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->has_parent() ==
             true);
-    REQUIRE(G.entry.get().neighbors[0].remote_node.lock()->children.size() ==
+    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->children.size() ==
             0);
-    REQUIRE(G.entry.get().neighbors[0].remote_node.lock()->owned_by.size() ==
+    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->owned_by.size() ==
             0);
-    REQUIRE(G.entry.get().neighbors[0].remote_node.lock()->owns.size() == 1);
+    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->owns.size() == 1);
     //
     REQUIRE(ptr2.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr2.remote_node.lock()->children.size() == 0);
@@ -219,8 +219,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     //
     // FINALIZATION
     //
-    REQUIRE(G.entry.get().val == -1);
-    REQUIRE(G.entry->neighbors[0].get().val == 1);
+    REQUIRE(G.entry.get()->val == -1);
+    REQUIRE(G.entry->neighbors[0].get()->val == 1);
     REQUIRE(G.entry->neighbors[0]->neighbors[0]->val == 2);
     REQUIRE(G.entry->neighbors[0]->neighbors[0]->neighbors[0]->val == 3);
     //
@@ -297,10 +297,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     // copy of ptr1 will add weak link to owner (aka, G.entry), in owned_by
     // field
     // G.my_ctx().lock()->debug = true;
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
+    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
     REQUIRE(ptr1.is_root());
-    REQUIRE(G.entry.get().neighbors[0].is_owned());
+    REQUIRE(G.entry.get()->neighbors[0].is_owned());
     // CHECKS (B) - node 1 is owned by -1
     REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
     REQUIRE(G.entry.remote_node.lock()->children.size() == 0);
@@ -313,17 +313,17 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
 
     //
-    ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
     REQUIRE(ptr1.is_root());
-    REQUIRE(ptr1.get().neighbors[0].is_owned());
+    REQUIRE(ptr1.get()->neighbors[0].is_owned());
     // will destroy ptr1 from this context...
-    // it still exists as G.entry.get().neighbors[0]
+    // it still exists as G.entry.get()->neighbors[0]
     ptr1.reset();
     REQUIRE(ptr1.is_nullptr());
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
-    REQUIRE(G.entry.get().neighbors[0].is_owned());
-    auto& fake_ptr1 = G.entry.get().neighbors[0];
+    REQUIRE(G.entry.get()->neighbors[0].is_owned());
+    auto& fake_ptr1 = G.entry.get()->neighbors[0];
     // CHECKS (C) - ptr1 is deleted
     REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
     REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
@@ -340,10 +340,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 1);
     REQUIRE(ptr2.remote_node.lock()->owns.size() == 0);
     //
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     //
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
     REQUIRE(G.my_ctx().lock()->forest.size() == 3);
     // CHECKS (D) - ptr2 and ptr3 are added as owners
     REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
@@ -374,8 +374,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(ptr3.is_nullptr());
     //
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
-    auto& fake_ptr2 = fake_ptr1.get().neighbors[0];
-    auto& fake_ptr3 = fake_ptr2.get().neighbors[0];
+    auto& fake_ptr2 = fake_ptr1.get()->neighbors[0];
+    auto& fake_ptr3 = fake_ptr2.get()->neighbors[0];
     // CHECKS (E) - ptr2 and ptr3 are removed
     REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
     REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
@@ -399,12 +399,12 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(fake_ptr3.remote_node.lock()->owns[0].lock().get() ==
             G.entry.remote_node.lock().get());
     //
-    REQUIRE(G.entry.get().val == -1);
+    REQUIRE(G.entry.get()->val == -1);
     REQUIRE(G.entry.count_owned_by() == 1);
     //
-    REQUIRE(G.entry->neighbors[0].get().val == 1);
+    REQUIRE(G.entry->neighbors[0].get()->val == 1);
     REQUIRE(G.entry->neighbors[0].count_owned_by() == 0);
-    REQUIRE(G.entry->neighbors[0].get().neighbors.size() == 1);
+    REQUIRE(G.entry->neighbors[0].get()->neighbors.size() == 1);
     //
     REQUIRE(G.entry->neighbors[0]->neighbors[0]->val == 2);
     REQUIRE(G.entry->neighbors[0]->neighbors[0].count_owned_by() == 0);
@@ -484,16 +484,16 @@ TEST_CASE(
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
+    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
     //
-    ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
     //
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
     //
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
     REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
     //
     auto lsptr = G.my_ctx().lock();

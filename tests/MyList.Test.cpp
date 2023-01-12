@@ -39,14 +39,14 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     // CHECK CYCLE (FOUR TIMES) - next
     auto* ptr = &L.entry;
     for (int i = 0; i < 5 * 4; i++) {
-      REQUIRE(ptr->get().val == i % 5);
-      ptr = &ptr->get().next;
+      REQUIRE(ptr->get()->val == i % 5);
+      ptr = &ptr->get()->next;
     }
     // CHECK CYCLE (FOUR TIMES) - prev
     ptr = &L.entry;
     for (int i = 5 * 4; i >= 0; i--) {
-      REQUIRE(ptr->get().val == i % 5);
-      ptr = &ptr->get().prev;
+      REQUIRE(ptr->get()->val == i % 5);
+      ptr = &ptr->get()->prev;
     }
     //
     auto p = L.my_ctx().lock()->debug_count_ownership_links();
@@ -111,14 +111,14 @@ TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
     // CHECK CYCLE (10 TIMES) - next
     auto* ptr = &L.entry;
     for (int i = 0; i < 10; i++) {
-      REQUIRE(ptr->get().val == -1);
-      ptr = &ptr->get().next;
+      REQUIRE(ptr->get()->val == -1);
+      ptr = &ptr->get()->next;
     }
     // CHECK CYCLE (10 TIMES) - prev
     ptr = &L.entry;
     for (int i = 10; i > 0; i--) {
-      REQUIRE(ptr->get().val == -1);
-      ptr = &ptr->get().prev;
+      REQUIRE(ptr->get()->val == -1);
+      ptr = &ptr->get()->prev;
     }
     //
     // deeper debug
@@ -147,4 +147,18 @@ TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
   }
   // SHOULD NOT LEAK
   REQUIRE(mylistnode_count == 0);
+}
+
+TEST_CASE("CyclesTestMyList: MyList cycles_ptr void derived") {
+  std::cout << "begin MyList cycles_ptr void derived" << std::endl;
+  // create context
+  {
+    sptr<cycles_ctx> ctx{new cycles_ctx{}};
+    cycles_ptr<void> ptr_base(ctx, nullptr);
+    ptr_base = cycles_ptr<double>(ctx, new double{1});
+    sptr<double> p =
+        std::static_pointer_cast<double, void>(ptr_base.get_sptr());
+    REQUIRE(*p == 1);
+  }
+  // SHOULD NOT LEAK
 }

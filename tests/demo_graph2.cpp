@@ -60,24 +60,24 @@ int main() {
     assert(G.my_ctx().lock()->forest.size() == 4);
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
-    // G.entry.get().neighbors.push_back(ptr1);
+    // G.entry.get()->neighbors.push_back(ptr1);
     std::cout << "---> setup G.entry" << std::endl;
-    G.entry.get().neighbors.push_back(ptr1.copy_owned(G.entry));
+    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
-    ptr1.get().neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
-    ptr2.get().neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
     G.print();
     std::cout << std::endl;
     std::cout << "WILL ADD LAST LINK" << std::endl;
-    ptr3.get().neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
@@ -173,7 +173,7 @@ int main() {
     assert(fake_ptr2.remote_node.lock()->children.size() == 1);  // node 3
     assert(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
     assert(fake_ptr2.remote_node.lock()->owns.size() == 0);
-    auto& fake_ptr3 = fake_ptr2.get().neighbors[0];
+    auto& fake_ptr3 = fake_ptr2.get()->neighbors[0];
     //
 
     assert(fake_ptr3.remote_node.lock()->has_parent() == true);  // node 2
