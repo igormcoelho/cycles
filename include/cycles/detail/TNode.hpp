@@ -38,6 +38,56 @@ namespace detail {
 
 static int tnode_count = 0;
 
+// TNodeData is inspired by Herb Sutter's gcpp 'struct destructor{...}'
+// It uses lambda functions to perform type erasure
+
+class TNodeData {
+ public:
+  // raw pointer to the object
+  const void* p;
+  // raw pointer to a type-erased destructor function
+  void (*destroy)(const void*);
+  // debug only: raw pointer to a type-erased toString function
+  std::string (*toString)(const void*);
+
+  TNodeData(void* _p, void (*_destroy)(const void*),
+            std::string (*_toString)(const void*))
+      : p{_p}, destroy{_destroy}, toString{_toString} {}
+
+  // no copy allowed here
+  TNodeData(const TNodeData&) = delete;
+
+  // move is allowed
+  TNodeData(TNodeData&& corpse) noexcept
+      : p{corpse.p}, destroy{corpse.destroy}, toString{corpse.toString} {}
+
+  ~TNodeData() {
+    std::cout << "~TNodeData(" << toString(p) << ")" << std::endl;
+    destroy(p);
+    p = 0;
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const TNodeData& me) {
+    os << "TNodeData(" << me.toString(me.p) << ")";
+    return os;
+  }
+
+  template <class T>
+  static TNodeData make(T* ptr) {
+    TNodeData data{ptr,
+                   [](const void* x) {
+                     // T destructor to invoke
+                     static_cast<const T*>(x)->~T();
+                   },
+                   [](const void* x) {
+                     std::stringstream ss;
+                     ss << *static_cast<const T*>(x);
+                     return ss.str();
+                   }};
+    return data;
+  }
+};
+
 template <typename T>
 class TNode {
   //

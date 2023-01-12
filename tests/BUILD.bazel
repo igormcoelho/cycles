@@ -25,6 +25,16 @@ cc_test(
      ":catch2_thirdparty"]
 )
 
+cc_test(
+    name = "TNode-test",
+    srcs = glob([
+        "TNode.Test.cpp",
+    ]),
+    defines = ["CATCH_CONFIG_MAIN"],
+    deps = ["//include/cycles:cycles_hpp", 
+     ":catch2_thirdparty"]
+)
+
 cc_binary(
     name = "test_demo_graph2",
     srcs = ["demo_graph2.cpp"],
@@ -45,6 +55,8 @@ cc_library(
 test_suite(
     name = "all-tests",
     tests = [
-        "MyGraph-test"
+        "MyGraph-test",
+        "MyList-test",
+        "TNode-test"
     ]
 )
