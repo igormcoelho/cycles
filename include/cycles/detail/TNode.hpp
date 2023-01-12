@@ -77,7 +77,13 @@ class TNodeData {
     TNodeData data{ptr,
                    [](const void* x) {
                      // T destructor to invoke
-                     static_cast<const T*>(x)->~T();
+                     //
+                     // DOES IT WORK FOR PRIMITIVE TYPES?
+                     //
+                     // static_cast<const T*>(x)->~T();
+                     //
+                     // NOLINTNEXTLINE
+                     delete static_cast<const T*>(x);
                    },
                    [](const void* x) {
                      std::stringstream ss;

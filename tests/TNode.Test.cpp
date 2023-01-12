@@ -18,8 +18,10 @@ TEST_CASE("CyclesTestTNode: type erased node") {
   std::cout << "begin  type erased node" << std::endl;
   // NOLINTNEXTLINE
   auto data = TNodeData::make<double>(new double{1.0});
+  // print node
   std::stringstream ss;
   ss << data;
   std::string str = "TNodeData(1)";
   REQUIRE(str == ss.str());
+  //
 }
