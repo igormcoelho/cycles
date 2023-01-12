@@ -35,12 +35,12 @@ class cycles_ctx {
 
   bool debug{false};
 
-  // Forest management system comes here
-  // using NodeType = sptr<TNode<T>>;
-  // using TreeType = sptr<Tree<T>>;
+  // Forest management system comes here (default is sptr)
+  using NodeType = sptr<TNode<T>>;
+  using TreeType = sptr<Tree<T>>;
   //
-  using NodeType = sptr<TNode<sptr<T>>>;
-  using TreeType = sptr<Tree<sptr<T>>>;
+  // using NodeType = sptr<TNode<sptr<T>>>;
+  // using TreeType = sptr<Tree<sptr<T>>>;
 
   // Forest: every Tree is identified by its Root node in map system
   map<NodeType, TreeType> forest;
@@ -69,7 +69,7 @@ class cycles_ctx {
       // p.second->root = nullptr;  // clear root BEFORE CHILDREN
       //
       // force clean both lists: owned_by and owns
-      bool b1 = TNodeHelper<sptr<T>>::cleanOwnsAndOwnedByLists(p.second->root);
+      bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(p.second->root);
       assert(b1);
       //
       // move to pending
@@ -109,7 +109,7 @@ class cycles_ctx {
   }
 
  private:
-  std::pair<int, int> debug_count_owns_owned_by(sptr<TNode<sptr<T>>> node) {
+  std::pair<int, int> debug_count_owns_owned_by(sptr<TNode<T>> node) {
     std::pair<int, int> p{0, 0};
     p.first += node->owns.size();
     p.second += node->owned_by.size();
@@ -122,7 +122,7 @@ class cycles_ctx {
   }
 
  public:
-  void destroy_tree(sptr<TNode<sptr<T>>> sptr_mynode) {
+  void destroy_tree(sptr<TNode<T>> sptr_mynode) {
     if (debug) std::cout << "destroy: will destroy my tree." << std::endl;
     // find my tree
     auto tree_it = this->forest.find(sptr_mynode);
@@ -178,7 +178,7 @@ class cycles_ctx {
         std::cout << "CTX: WHILE processing pending list. |pending|="
                   << pending.size() << std::endl;
       }
-      NodeType sptr_delete = std::move(pending[0]);
+      sptr<TNode<T>> sptr_delete = std::move(pending[0]);
       pending.erase(pending.begin() + 0);
       //
       if (debug) {
@@ -198,7 +198,7 @@ class cycles_ctx {
                   << std::endl;
       }
       // force clean both lists: owned_by and owns
-      bool b1 = TNodeHelper<sptr<T>>::cleanOwnsAndOwnedByLists(sptr_delete);
+      bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_delete);
       assert(b1);
       //
       assert(sptr_delete->owned_by.size() == 0);
@@ -248,7 +248,7 @@ class cycles_ctx {
           // NOTE: costly O(tree_size)=O(N) test in worst case for
           // 'isDescendent'
           bool _isDescendent =
-              TNodeHelper<sptr<T>>::isDescendent(sptr_new_parent, sptr_child);
+              TNodeHelper<T>::isDescendent(sptr_new_parent, sptr_child);
           //
           if (debug)
             std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
@@ -265,9 +265,8 @@ class cycles_ctx {
           will_die = false;
           //
           sptr_child->parent = sptr_new_parent;
-          TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_new_parent, sptr_child);
-          TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_new_parent,
-                                                      sptr_child);
+          TNodeHelper<T>::removeFromOwnsList(sptr_new_parent, sptr_child);
+          TNodeHelper<T>::removeFromOwnedByList(sptr_new_parent, sptr_child);
           sptr_new_parent->add_child_strong(sptr_child);
         }
         // kill if not held by anyone now
@@ -278,7 +277,7 @@ class cycles_ctx {
                       << sptr_child->value_to_string() << std::endl;
           //
           // force clean both lists: owned_by and owns
-          bool b1 = TNodeHelper<sptr<T>>::cleanOwnsAndOwnedByLists(sptr_child);
+          bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_child);
           assert(b1);
           //
           pending.push_back(std::move(sptr_child));

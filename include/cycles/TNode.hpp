@@ -41,7 +41,7 @@ class TNode {
   //
  public:
   //
-  T value;
+  sptr<T> value;
   bool debug_flag{false};
   // ===========================
   // => tree part
@@ -59,7 +59,7 @@ class TNode {
   // list of nodes that I weakly own
   vector<wptr<TNode<T>>> owns;
   //
-  explicit TNode(T value, bool _debug_flag = false,
+  explicit TNode(sptr<T> value, bool _debug_flag = false,
                  wptr<TNode<T>> _parent = wptr<TNode<T>>())
       : value{value}, debug_flag{_debug_flag}, parent{_parent} {
     tnode_count++;
@@ -335,7 +335,8 @@ class TNodeHelper {
   // Since tree_size can grow O(N), this check is O(N) in worst case,
   // where N is total number of data nodes.
   // ================================================================
-  static bool isDescendent(auto myNewParent, auto sptr_mynode) {
+  static bool isDescendent(sptr<TNode<T>> myNewParent,
+                           sptr<TNode<T>> sptr_mynode) {
     bool isDescendent = false;
     auto parentsParent = myNewParent->parent;
     while (auto sptrPP = parentsParent.lock()) {
@@ -348,7 +349,7 @@ class TNodeHelper {
     return isDescendent;
   }
 
-  static bool cleanOwnsAndOwnedByLists(auto sptr_mynode) {
+  static bool cleanOwnsAndOwnedByLists(sptr<TNode<T>> sptr_mynode) {
     //
     // force clean owned_by list before continuing... should be good!
     //
@@ -362,10 +363,8 @@ class TNodeHelper {
       int other_ownedby_count = sptr_owner->owned_by.size();
       int other_owns_count = sptr_owner->owns.size();
 
-      bool b1 =
-          TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_owner, sptr_mynode);
-      bool b2 =
-          TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_owner, sptr_mynode);
+      bool b1 = TNodeHelper<T>::removeFromOwnsList(sptr_owner, sptr_mynode);
+      bool b2 = TNodeHelper<T>::removeFromOwnedByList(sptr_owner, sptr_mynode);
       assert(b1);
       assert(b2);
 
@@ -410,10 +409,8 @@ class TNodeHelper {
       int other_owns_count = sptr_owned->owns.size();
 
       //
-      bool b1 =
-          TNodeHelper<sptr<T>>::removeFromOwnsList(sptr_mynode, sptr_owned);
-      bool b2 =
-          TNodeHelper<sptr<T>>::removeFromOwnedByList(sptr_mynode, sptr_owned);
+      bool b1 = TNodeHelper<T>::removeFromOwnsList(sptr_mynode, sptr_owned);
+      bool b2 = TNodeHelper<T>::removeFromOwnedByList(sptr_mynode, sptr_owned);
       assert(b1);
       assert(b2);
 
@@ -433,7 +430,8 @@ class TNodeHelper {
   }
 
   // remove me from the 'owns' list of myNewParent owner
-  static bool removeFromOwnsList(auto sptrOwner, auto sptrOwned) {
+  static bool removeFromOwnsList(sptr<TNode<T>> sptrOwner,
+                                 sptr<TNode<T>> sptrOwned) {
     assert(sptrOwner->owns.size() > 0);
     bool removed = false;
     for (unsigned i = 0; i < sptrOwner->owns.size(); i++) {
@@ -449,7 +447,8 @@ class TNodeHelper {
   }
 
   // remove other from my 'owned_by' list of sptr_myWeakOwner owner
-  static bool removeFromOwnedByList(auto sptr_myWeakOwner, auto sptr_mynode) {
+  static bool removeFromOwnedByList(sptr<TNode<T>> sptr_myWeakOwner,
+                                    sptr<TNode<T>> sptr_mynode) {
     assert(sptr_mynode->owned_by.size() > 0);
     bool removed = false;
     for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++)

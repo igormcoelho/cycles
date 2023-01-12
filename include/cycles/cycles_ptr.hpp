@@ -35,13 +35,13 @@ class cycles_ptr {
   //
   wptr<cycles_ctx<T>> ctx;
   //
-  wptr<TNode<sptr<T>>> remote_node;
+  wptr<TNode<T>> remote_node;
   //
   // NOTE THAT is_owned_by_node MAY BE TRUE, WHILE owned_by_node
   // BECOMES UNREACHABLE... THIS HAPPENS IF OWNER DIES BEFORE THIS POINTER.
   // THE RELATION SHOULD BE IMMUTABLE, IT MEANS THAT ONCE "OWNED", ALWAYS
   // "OWNED".
-  wptr<TNode<sptr<T>>> owned_by_node;
+  wptr<TNode<T>> owned_by_node;
   bool is_owned_by_node{false};
   //
   bool debug_flag_ptr{false};
@@ -66,8 +66,7 @@ class cycles_ptr {
     sptr<T> ref{t};  // LOCAL!
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
     // this 'remote_node' is weak!
-    auto sptr_remote_node =
-        !t ? nullptr : sptr<TNode<sptr<T>>>(new TNode<sptr<T>>{ref});
+    auto sptr_remote_node = !t ? nullptr : sptr<TNode<T>>(new TNode<T>{ref});
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
     this->is_owned_by_node = false;
@@ -97,10 +96,10 @@ class cycles_ptr {
                    "Context!"
                 << std::endl;
     }
-    // auto node_new = sptr<TNode<sptr<T>>>(new TNode<sptr<T>> { ref });
+    // auto node_new = sptr<TNode<T>>(new TNode<T> { ref });
     // this->remote_node = node_new;
     //
-    auto stree = sptr<Tree<sptr<T>>>(new Tree<sptr<T>>{});
+    auto stree = sptr<Tree<T>>(new Tree<T>{});
     if (debug()) {
       std::cout << "tree ~> ";
       stree->print();
@@ -248,12 +247,12 @@ class cycles_ptr {
             // my node will stay alive since my parent still holds me strong
             will_die = false;
             // remove my weak link from owner
-            bool r0 = TNodeHelper<sptr<T>>::removeFromOwnsList(owner_node,
-                                                               sptr_mynode);
+            bool r0 =
+                TNodeHelper<T>::removeFromOwnsList(owner_node, sptr_mynode);
             assert(r0);
             // remove owner from my weak link list
-            bool r1 = TNodeHelper<sptr<T>>::removeFromOwnedByList(owner_node,
-                                                                  sptr_mynode);
+            bool r1 =
+                TNodeHelper<T>::removeFromOwnedByList(owner_node, sptr_mynode);
             assert(r1);
           }
         }
@@ -263,8 +262,8 @@ class cycles_ptr {
         if (debug())
           std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
         // FORCE CLEAR
-        this->remote_node = wptr<TNode<sptr<T>>>();    // clear
-        this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
+        this->remote_node = wptr<TNode<T>>();    // clear
+        this->owned_by_node = wptr<TNode<T>>();  // clear
         this->is_owned_by_node = false;
         return;
       }
@@ -288,7 +287,7 @@ class cycles_ptr {
         }
         // NOTE: costly O(tree_size)=O(N) test in worst case for 'isDescendent'
         bool _isDescendent =
-            TNodeHelper<sptr<T>>::isDescendent(myNewParent, sptr_mynode);
+            TNodeHelper<T>::isDescendent(myNewParent, sptr_mynode);
         //
         if (debug())
           std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
@@ -309,7 +308,7 @@ class cycles_ptr {
         }
         // COSTLY. Remove me from the 'owns' list of my owner
         bool removed =
-            TNodeHelper<sptr<T>>::removeFromOwnsList(myNewParent, sptr_mynode);
+            TNodeHelper<T>::removeFromOwnsList(myNewParent, sptr_mynode);
         assert(removed);
         // delete myself from owned_by (now I'm strong child)
         sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + k);
@@ -383,8 +382,8 @@ class cycles_ptr {
     if (debug()) std::cout << "destroy: last cleanups" << std::endl;
     //
     // this->ref = nullptr;
-    this->remote_node = wptr<TNode<sptr<T>>>();    // clear
-    this->owned_by_node = wptr<TNode<sptr<T>>>();  // clear
+    this->remote_node = wptr<TNode<T>>();    // clear
+    this->owned_by_node = wptr<TNode<T>>();  // clear
     this->is_owned_by_node = false;
     if (debug()) std::cout << "destroy: END" << std::endl;
   }
@@ -515,8 +514,8 @@ class cycles_ptr {
     // OLD:
     // this->remote_node.lock()->add_weak_link_owned(owner.remote_node);
     // NEW:
-    TNode<sptr<T>>::add_weak_link_owned(this->remote_node.lock(),
-                                        owner.remote_node.lock());
+    TNode<T>::add_weak_link_owned(this->remote_node.lock(),
+                                  owner.remote_node.lock());
     //
     if (debug())
       std::cout << "owner |children|="
