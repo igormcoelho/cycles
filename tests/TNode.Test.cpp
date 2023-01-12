@@ -32,3 +32,22 @@ TEST_CASE("CyclesTestTNode: type erased node") {
   }
   REQUIRE(tnode_count == 0);
 }
+
+TEST_CASE("CyclesTestTNode: type erased null node") {
+  std::cout << "begin  type erased null node" << std::endl;
+  // NOLINTNEXTLINE
+  auto data = TNodeData::make<double>(nullptr);
+  // print node
+  std::stringstream ss;
+  ss << data;
+  std::string str = "TNodeData(NULL)";
+  REQUIRE(str == ss.str());
+  //
+  {
+    // begin scope for testing
+    TNode<TNodeData> tnode{TNodeData::make_sptr<double>(nullptr)};
+    tnode.debug_flag = true;
+    REQUIRE(tnode_count == 1);
+  }
+  REQUIRE(tnode_count == 0);
+}

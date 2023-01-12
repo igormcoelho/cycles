@@ -58,13 +58,13 @@ class MyGraph {
   bool debug_flag{false};
 
  private:
-  sptr<cycles_ctx<MyNodeX>> ctx;
+  sptr<cycles_ctx> ctx;
 
  public:
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
   cycles_ptr<MyNodeX> entry;
 
-  MyGraph() : ctx{new cycles_ctx<MyNodeX>{}}, entry{make_null_node()} {}
+  MyGraph() : ctx{new cycles_ctx{}}, entry{make_null_node()} {}
 
   ~MyGraph() {
     if (debug_flag) std::cout << "~MyGraph" << std::endl;
@@ -72,11 +72,16 @@ class MyGraph {
     // entry.do_reset();
   }
   //
-  auto my_ctx() -> wptr<cycles_ctx<MyNodeX>> { return this->ctx; }
+  auto my_ctx() -> wptr<cycles_ctx> { return this->ctx; }
 
   auto make_node(X v) -> cycles_ptr<MyNodeX> {
     auto* ptr = new MyNodeX(v, debug_flag);  // NOLINT
-    return cycles_ptr<MyNodeX>(this->ctx, ptr);
+    int nc1 = tnode_count;
+    cycles_ptr<MyNodeX> cptr(this->ctx, ptr);
+    int nc2 = tnode_count;
+    // checking tnode_count against possible (and crazy...) ODR errors
+    assert(nc2 == nc1 + 1);
+    return cptr;
   }
 
   auto make_node_owned(X v, const cycles_ptr<MyNodeX>& owner)

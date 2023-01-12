@@ -19,7 +19,8 @@ namespace cycles {
 
 namespace detail {
 
-template <typename T>
+// default is now type-erased T
+template <typename T = TNodeData>
 struct Tree {
   //
   sptr<TNode<T>> root;  // owned reference

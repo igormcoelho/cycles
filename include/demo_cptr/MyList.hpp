@@ -32,13 +32,13 @@ class MyList {
     }
   };
 
-  sptr<cycles_ctx<MyListNode>> ctx;
+  sptr<cycles_ctx> ctx;
 
  public:
   bool debug_flag{false};
   cycles_ptr<MyListNode> entry;
 
-  MyList() : ctx{new cycles_ctx<MyListNode>{}}, entry{make_null_node()} {}
+  MyList() : ctx{new cycles_ctx{}}, entry{make_null_node()} {}
 
   ~MyList() {
     if (debug_flag) std::cout << "~MyList" << std::endl;
@@ -54,7 +54,7 @@ class MyList {
 
   // HELPERS FOR CTX
 
-  auto my_ctx() -> wptr<cycles_ctx<MyListNode>> { return this->ctx; }
+  auto my_ctx() -> wptr<cycles_ctx> { return this->ctx; }
 
   auto make_node(double v) -> cycles_ptr<MyListNode> {
     auto* ptr =

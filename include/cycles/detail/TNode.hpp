@@ -36,8 +36,6 @@ namespace cycles {
 
 namespace detail {
 
-static int tnode_count = 0;
-
 // TNodeData is inspired by Herb Sutter's gcpp 'struct destructor{...}'
 // It uses lambda functions to perform type erasure
 
@@ -62,7 +60,7 @@ class TNodeData {
       : p{corpse.p}, destroy{corpse.destroy}, toString{corpse.toString} {}
 
   ~TNodeData() {
-    std::cout << "~TNodeData(" << toString(p) << ")" << std::endl;
+    // std::cout << "~TNodeData(" << toString(p) << ")" << std::endl;
     destroy(p);
     p = 0;
   }
@@ -83,11 +81,14 @@ class TNodeData {
                      // static_cast<const T*>(x)->~T();
                      //
                      // NOLINTNEXTLINE
-                     delete static_cast<const T*>(x);
+                     if (x) delete static_cast<const T*>(x);
                    },
                    [](const void* x) {
                      std::stringstream ss;
-                     ss << *static_cast<const T*>(x);
+                     if (x)
+                       ss << *static_cast<const T*>(x);
+                     else
+                       ss << "NULL";
                      return ss.str();
                    }};
     return data;
@@ -105,11 +106,14 @@ class TNodeData {
                                  // static_cast<const T*>(x)->~T();
                                  //
                                  // NOLINTNEXTLINE
-                                 delete static_cast<const T*>(x);
+                                 if (x) delete static_cast<const T*>(x);
                                },
                                [](const void* x) {
                                  std::stringstream ss;
-                                 ss << *static_cast<const T*>(x);
+                                 if (x)
+                                   ss << *static_cast<const T*>(x);
+                                 else
+                                   ss << "NULL";
                                  return ss.str();
                                }};
 
@@ -117,7 +121,10 @@ class TNodeData {
   }
 };
 
-template <typename T>
+inline int tnode_count = 0;
+
+// default is now type-erased T
+template <typename T = TNodeData>
 class TNode {
   //
  public:
@@ -416,7 +423,8 @@ class TNode {
   }
 };
 
-template <typename T>
+// default is now type-erased T
+template <typename T = TNodeData>
 class TNodeHelper {
  public:
   // ================================================================

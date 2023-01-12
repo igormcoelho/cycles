@@ -29,9 +29,11 @@ namespace cycles {
 // NOLINTNEXTLINE
 using namespace detail;
 
-template <typename T>
 // NOLINTNEXTLINE
 class cycles_ctx {
+  // cycles_ctx is now type-erased, using T=TNodeData
+  using T = TNodeData;
+
  public:
   // collect strategy parameters
   bool auto_collect{true};
@@ -39,8 +41,8 @@ class cycles_ctx {
   bool debug{false};
 
   // Forest management system comes here (default is sptr)
-  using NodeType = sptr<TNode<T>>;
-  using TreeType = sptr<Tree<T>>;
+  using NodeType = sptr<TNode<TNodeData>>;
+  using TreeType = sptr<Tree<TNodeData>>;
   //
   // using NodeType = sptr<TNode<sptr<T>>>;
   // using TreeType = sptr<Tree<sptr<T>>>;

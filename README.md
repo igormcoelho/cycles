@@ -71,10 +71,10 @@ class MyGraph {
   using MyNodeX = MyNode<X>;
 
 private:
-  sptr<cycles_ctx<MyNodeX>> ctx;
+  sptr<cycles_ctx> ctx;
 
 public:
-  auto my_ctx() -> wptr<cycles_ctx<MyNodeX>>
+  auto my_ctx() -> wptr<cycles_ctx>
   {
     return this->ctx;
   }
@@ -99,7 +99,7 @@ public:
 
   MyGraph()
       : entry { make_null_node() }
-      , ctx { new cycles_ctx<MyNodeX> {} }
+      , ctx { new cycles_ctx {} }
   {
   }
 

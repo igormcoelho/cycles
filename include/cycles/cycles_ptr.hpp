@@ -33,18 +33,19 @@ using namespace detail;
 template <typename T>
 // NOLINTNEXTLINE
 class cycles_ptr {
+  using X = TNodeData;
   // TODO(igormcoelho): make private!
  public:
   //
-  wptr<cycles_ctx<T>> ctx;
+  wptr<cycles_ctx> ctx;
   //
-  wptr<TNode<T>> remote_node;
+  wptr<TNode<X>> remote_node;
   //
   // NOTE THAT is_owned_by_node MAY BE TRUE, WHILE owned_by_node
   // BECOMES UNREACHABLE... THIS HAPPENS IF OWNER DIES BEFORE THIS POINTER.
   // THE RELATION SHOULD BE IMMUTABLE, IT MEANS THAT ONCE "OWNED", ALWAYS
   // "OWNED".
-  wptr<TNode<T>> owned_by_node;
+  wptr<TNode<X>> owned_by_node;
   bool is_owned_by_node{false};
   //
   bool debug_flag_ptr{false};
@@ -65,11 +66,15 @@ class cycles_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t) : ctx{ctx} {
-    sptr<T> ref{t};  // LOCAL!
+  cycles_ptr(wptr<cycles_ctx> ctx, T* t) : ctx{ctx} {
+    // KEEP LOCAL!
+    // sptr<T> ref{t};
+    sptr<TNodeData> ref;
+    if (t) ref = TNodeData::make_sptr<T>(t);
+    //
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
     // this 'remote_node' is weak!
-    auto sptr_remote_node = !t ? nullptr : sptr<TNode<T>>(new TNode<T>{ref});
+    auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
     // we only hold weak reference here
     this->remote_node = sptr_remote_node;
     this->is_owned_by_node = false;
@@ -80,16 +85,21 @@ class cycles_ptr {
       std::cout << "C1 pointer constructor: creating NEW cycles_ptr (this_new="
                 << this << " to t*=" << t << ") ";
       if (ref)
+        // if (t)
         std::cout << "with ref -> " << *ref << std::endl;
       else
         std::cout << "with ref -> nullptr" << std::endl;
     }
     //
     if (!ref) {
+      // if (!t) {
       return;  // SHOULD NOT CREATE A NEW TREE!
     }
     if (!(this->remote_node.lock())) {
       // STRANGE ERROR! SHOULD NEVER OCCUR!
+      std::cout << "ERROR: this should never occur! remote_node is not "
+                   "accessible on C1."
+                << std::endl;
       assert(false);
       return;
     }
@@ -99,10 +109,10 @@ class cycles_ptr {
                    "Context!"
                 << std::endl;
     }
-    // auto node_new = sptr<TNode<T>>(new TNode<T> { ref });
+    // auto node_new = sptr<TNode<X>>(new TNode<X> { ref });
     // this->remote_node = node_new;
     //
-    auto stree = sptr<Tree<T>>(new Tree<T>{});
+    auto stree = sptr<Tree<X>>(new Tree<X>{});
     if (debug()) {
       std::cout << "tree ~> ";
       stree->print();
@@ -114,14 +124,14 @@ class cycles_ptr {
     stree->set_root(sptr_remote_node);
     ctx.lock()->forest[sptr_remote_node] = stree;
     if (debug()) ctx.lock()->print();
-    // stree.root = sptr<TNode<T>>(new TNode<T>(val, stree));
+    // stree.root = sptr<TNode<X>>(new TNode<X>(val, stree));
     // forest[ref] = stree;
     if (debug())
       std::cout << " -> finished C1 pointer constructor" << std::endl;
   }
 
   // NO C2 ANYMORE - CONSTRUCTOR REMOVED!
-  // cycles_ptr(wptr<cycles_ctx<T>> ctx, T* t, cycles_ptr<T>& owner) = 0;
+  // cycles_ptr(wptr<cycles_ctx> ctx, T* t, cycles_ptr<T>& owner) = 0;
 
  private:
   //
@@ -251,11 +261,11 @@ class cycles_ptr {
             will_die = false;
             // remove my weak link from owner
             bool r0 =
-                TNodeHelper<T>::removeFromOwnsList(owner_node, sptr_mynode);
+                TNodeHelper<X>::removeFromOwnsList(owner_node, sptr_mynode);
             assert(r0);
             // remove owner from my weak link list
             bool r1 =
-                TNodeHelper<T>::removeFromOwnedByList(owner_node, sptr_mynode);
+                TNodeHelper<X>::removeFromOwnedByList(owner_node, sptr_mynode);
             assert(r1);
           }
         }
@@ -265,8 +275,8 @@ class cycles_ptr {
         if (debug())
           std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
         // FORCE CLEAR
-        this->remote_node = wptr<TNode<T>>();    // clear
-        this->owned_by_node = wptr<TNode<T>>();  // clear
+        this->remote_node = wptr<TNode<X>>();    // clear
+        this->owned_by_node = wptr<TNode<X>>();  // clear
         this->is_owned_by_node = false;
         return;
       }
@@ -290,7 +300,7 @@ class cycles_ptr {
         }
         // NOTE: costly O(tree_size)=O(N) test in worst case for 'isDescendent'
         bool _isDescendent =
-            TNodeHelper<T>::isDescendent(myNewParent, sptr_mynode);
+            TNodeHelper<X>::isDescendent(myNewParent, sptr_mynode);
         //
         if (debug())
           std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
@@ -311,7 +321,7 @@ class cycles_ptr {
         }
         // COSTLY. Remove me from the 'owns' list of my owner
         bool removed =
-            TNodeHelper<T>::removeFromOwnsList(myNewParent, sptr_mynode);
+            TNodeHelper<X>::removeFromOwnsList(myNewParent, sptr_mynode);
         assert(removed);
         // delete myself from owned_by (now I'm strong child)
         sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + k);
@@ -385,8 +395,8 @@ class cycles_ptr {
     if (debug()) std::cout << "destroy: last cleanups" << std::endl;
     //
     // this->ref = nullptr;
-    this->remote_node = wptr<TNode<T>>();    // clear
-    this->owned_by_node = wptr<TNode<T>>();  // clear
+    this->remote_node = wptr<TNode<X>>();    // clear
+    this->owned_by_node = wptr<TNode<X>>();  // clear
     this->is_owned_by_node = false;
     if (debug()) std::cout << "destroy: END" << std::endl;
   }
@@ -517,7 +527,7 @@ class cycles_ptr {
     // OLD:
     // this->remote_node.lock()->add_weak_link_owned(owner.remote_node);
     // NEW:
-    TNode<T>::add_weak_link_owned(this->remote_node.lock(),
+    TNode<X>::add_weak_link_owned(this->remote_node.lock(),
                                   owner.remote_node.lock());
     //
     if (debug())
@@ -572,7 +582,7 @@ class cycles_ptr {
   // with opposite relationship? do we let ctx handle all this?
   bool remove_owned(const cycles_ptr<T>& owned) { assert(false); }
 
-  auto get_ctx() -> wptr<cycles_ctx<T>> { return ctx; }
+  auto get_ctx() -> wptr<cycles_ctx> { return ctx; }
 
   bool operator==(const cycles_ptr<T>& other) const {
     // do not comparing null pointers as 'true' (why?)... just feels like
@@ -591,8 +601,21 @@ class cycles_ptr {
 
   sptr<T> get_sptr() const {
     auto sremote_node = this->remote_node.lock();
-    if (!sremote_node) return nullptr;
-    return sremote_node->value;
+    if (!sremote_node) {
+      return nullptr;
+    } else {
+      // return sremote_node->value;
+      //
+      /*
+      sptr<TNodeData> tdata = sremote_node->value;
+      T* ptr_t = (T*)tdata->p;
+      */
+      //
+      // delegate liveness of sptr<TNodeData> to sptr<T>
+      //
+      // NOLINTNEXTLINE
+      return {sremote_node->value, (T*)(sremote_node->value->p)};
+    }
   }
 
   T* get_ptr() const { return get_sptr().get(); }
