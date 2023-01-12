@@ -223,14 +223,17 @@ class TNode {
       std::cout << "FINISH ~TNode Will destroy value: " << value_to_string()
                 << std::endl;
     // ONLY FOR SHARED POINTERS!
+    value = nullptr;
+    /*
     if constexpr (is_shared_ptr<T>::value == true) {
       value = nullptr;
     } else {
       // CANNOT FORCE DESTRUCTION!
-      if (debug_flag)
+      // if (debug_flag)
         std::cout << "FINISH REAL ~TNode WARNING: CANNOT FORCE DESTRUCTION!"
                   << std::endl;
     }
+    */
 
     if (debug_flag) std::cout << "FINISH REAL ~TNode(nullptr)" << std::endl;
   }
