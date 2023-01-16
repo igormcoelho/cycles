@@ -62,6 +62,12 @@ class cycles_ptr {
 
   bool debug() const { return debug_flag_ptr; }
 
+  // ======= C0 nullptr ===============
+  cycles_ptr() {
+    this->is_owned_by_node = false;
+    assert(is_nullptr());
+  }
+
   // ======= C1 - spointer constructor =======
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
@@ -627,6 +633,14 @@ class cycles_ptr {
 
   // TODO(igormcoelho): avoid this! but ... WHY?
   T* operator->() const { return get(); }
+
+ public:
+  template <class... Args>
+  static cycles_ptr<T> make(sptr<cycles_ctx> ctx, Args&&... args) {
+    // NOLINTNEXTLINE
+    auto* t = new T(std::forward<Args>(args)...);
+    return cycles_ptr<T>{ctx, t};
+  }
 };
 
 }  // namespace cycles

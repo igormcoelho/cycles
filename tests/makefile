@@ -9,7 +9,7 @@ test_catch2:
 	valgrind --leak-check=full ../build/test_catch2
 
 bench_sptr: quick_bench.cpp
-	g++ quick_bench.cpp -Wfatal-errors -I../include/ -I../src -g -std=c++17 -o ../build/bench_sptr
+	g++ quick_bench.cpp -Wfatal-errors   -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_sptr
 	../build/bench_sptr
 
 
