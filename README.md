@@ -1,110 +1,112 @@
 # cycles
-Data Structures in C++ with Cycles
+Data Structures in C++ with cycles.
 
-The cyclic List works as expected (for teaching purposes), but can be considered experimental (for production).
+This project proposes a new kind of pointer currently called `cycles_ptr`, that represents a "pointer to relations between objects". These objects belong to a "pool", currently called `cycles_ctx`. 
 
-This is alpha software, still in early phases.
+**General recommendation:** as with gcpp project, this smart pointer type should be used only when `std::unique_ptr` and `std::shared_ptr` do not work, specially with cyclic structures. So, this is expected to be innefficient, but it is meant to be easy to use and leak-free.
 
-## Initial Testing (alpha)
+This pointer has advantages (mostly inspired by gcpp project):
 
-`bazel build ...`
+- **header only project** (just copy the `.hpp` and it works)
+- **zero overhead C++17 structure** (costs are only applied to who uses this project, and proportional to the number of smart pointer allocations)
+- **deferred destruction** (such as gcpp)
+- type erased pool type (or context, or arena, or section, etc) that automatically discards all references in same pool (such as gcpp)
+- ability to manually destroy/collect garbage on convenient locations (such as gcpp)
+- deferred destruction by means of stored destructors and not raw memory (such as gcpp)
+- **automatic destruction of objects, regardless of cycles** (not available in gcpp)
+- **relatively simple implementation aiming cross-language support, based on tree ownership data structures** (gcpp is implemented with a completely different strategy focused on C/C++, not yet considered for other languages, as far as I know)
 
-`valgrind ./bazel-bin/demo0_cycles_test`
+This pointer has disadvantages too:
 
-## 'cyclic' List
+- **experimental project, likely with hidden bugs and inneficient implementation** (SERIOUS testing and benchmarking considered! ALL existing tests are passing!)
+- slower performance, compared to `std::shared_ptr` (see benchmarks below)
+- slower performance, compared to `gcpp` (supposed... must validate, yet)
+- likely thread unsafe (must investigate deeper)
+- does not support copy semantics, only move semantics and a `copy_owned` method as helper
+- (planned feature) no support for delegated construction of smart pointer (such as in `std::shared_ptr` two parameter constructor)
 
-The first structure tested here is a cyclic List, made by `std::shared_ptr` and `std::weak_ptr`.
+## Typical use cases
 
-This List can be extended to cases where `std::unique_ptr` ("strong") and raw ptr ("weak") are used.
+- developing cyclic data structures using an unified pointer type
+- developing simple data structures, such as lists, where `std::unique_ptr` fails with native recursive destruction (due to stack-overflow)
+- developing graph-based data structures, without worrying about memory cleanups, or performing manual memory cleanups (specially where efficiency is not top priority)
+- prototyping in a simpler way without memory-leaks, and later improving the code with native `std::unique_ptr`, `std::shared_ptr` and `std::weak_ptr`
+- prototyping with a clear strategy of **ownership** and **relations** between entities, completely isolated in memory pools
 
-### Current Methods
+## Tests and benchmark
 
-- `push_front(T)`
-- `pop_front() -> T`
-- `push_back(T)`
-- `empty() -> bool`
+`make test`
 
-There's currently no `pop_back()`, as tail_node link cannot be updated backwards.
+### some benchmarks
 
-Maybe, we could also support some sort of circular Double Linked List, to complement this forward / singly linked list.
+`make bench`
 
-### Example
-
-```{.cpp}
-  {
-    List<double> l;
-    l.print();
-    l.push_front(5);
-    l.push_front(6);
-    l.push_front(7);
-    l.print();
-    std::cout << "will push_back" << std::endl;
-    l.push_back(8);
-    l.push_back(9);
-    l.print();
-  }
-```
-
-Memory is cleaned up automatically.
+#### benchmark of construction compared with `std::shared_ptr`
 
 ```
-make
-valgrind ./app_demo 
+cycles_ptr: 11396.6ms
+shared_ptr: 1968.57ms
 ```
 
-No leaks are ever expected.
+Around 5x slower just to construct 10 million smart pointers.
 
-## Advanced Example with Graph
+#### benchmark of deferred destruction of list and tree
+
+```
+UList unique_ptr: 6.561ms
+SList shared_ptr: 10.1938ms
+CList cycles_ptr: 163596ms
+```
+
+Around 27266x slower! Just for 100k elements. 
+
+**Terrible, but expected result... can still improve ownership construction!**
+
+```
+UTree with unique_ptr: 3.16638ms
+STree with shared_ptr: 7.86247ms
+CTree with cycles_ptr: 228.678ms
+```
+
+Around 76x slower! For just 2^15 ~ 32k elements.
+
+
+## Motivation: implementing a Graph
 
 Consider node structure:
 
-```
-template <typename X>
+```{.cpp}
+using cycles::cycles_ptr;
+using cycles::cycles_ctx;
+
 class MyNode {
 public:
-  X val;
-  vector<cycles_ptr<MyNode>> neighbors;
+  double val;
+  std::vector<cycles_ptr<MyNode>> neighbors;
 };
 
-template <typename X>
-class MyGraph {
-  using MyNodeX = MyNode<X>;
 
-private:
+class MyGraph {
+public:
   sptr<cycles_ctx> ctx;
 
-public:
-  auto my_ctx() -> wptr<cycles_ctx>
+  auto make_node(double v) -> cycles_ptr<MyNode>
   {
-    return this->ctx;
-  }
-
-  auto make_node(X v) -> cycles_ptr<MyNodeX>
-  {
-    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v });
-  }
-
-  auto make_node_owned(X v, cycles_ptr<MyNodeX>& owner) -> cycles_ptr<MyNodeX>
-  {
-    return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX { .val = v }, owner);
-  }
-
-  auto make_null_node() -> cycles_ptr<MyNodeX>
-  {
-    return cycles_ptr<MyNodeX>(this->ctx, nullptr);
+    return cycles_ptr<MyNode>(this->ctx, new MyNode { .val = v });
   }
 
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  cycles_ptr<MyNodeX> entry;
+  cycles_ptr<MyNode> entry;
 
   MyGraph()
-      : entry { make_null_node() }
+      : entry { cycles_ptr<MyNode>{} }
       , ctx { new cycles_ctx {} }
   {
   }
 
   ~MyGraph()
   {
+    // optional, no need to clean anything
     ctx = nullptr;
   }
 
@@ -114,49 +116,40 @@ public:
 This DRAFT example shows that, even for a cyclic graph, no leaks happen!
 Graph stores a cycle_ctx while all cycles_ptr ensure that no real cycle dependencies exist.
 
-```
+```{.cpp}
   {
     MyGraph<double> G;
-    G.my_ctx().lock()->print();
+    G.ctx->print();
     //
     G.entry = G.make_node(-1.0);
-    G.print();
     // make cycle
-    using MyNodeX = MyNode<double>;
-    cycles_ptr<MyNodeX> ptr1 = G.make_node_owned(1.0, G.entry);
-    cycles_ptr<MyNodeX> ptr2 = G.make_node_owned(2.0, ptr1);
-    cycles_ptr<MyNodeX> ptr3 = G.make_node_owned(3.0, ptr2);
-    // JUST ASSIGN OWNED TO head again... copy is not really necessary (TODO: create other method)
-    auto ptr_head = G.entry.copy_owned(ptr3);
+    cycles_ptr<MyNode> ptr1 = G.make_node(1.0);
+    g.entry->neighbors.push_back(ptr1.copy_owned(G.entry));
+    cycles_ptr<MyNode> ptr2 = G.make_node(2.0);
+    ptr1->neighbors.push_back(ptr2.copy_owned(ptr1));
+    cycles_ptr<MyNode> ptr3 = G.make_node(3.0);
+    ptr2->neighbors.push_back(ptr3.copy_owned(ptr1));
+    // finish cycle
+    ptr3->neighbors.push_back(G.entry.copy_owned(ptr3));
   }
   // This will not leak! (even if a cycle exists)
 ```
 
-Currently, we need to handle Tree merging, as expected, in order to deal with other examples.
+## How this works
 
-TODO:
-- Out of order insertions that create multiple Trees (requiring merges)
-- Removal of arcs (much harder), but with forseen strategies
-   * make bridge and no realtime remove (could be handled with callbacks, to allow realtime usage)
-   * immediate restructuring of trees and weak links (likely requires running through trees)
-      - we can try to improve this too! but at the moment, priority is to make it work
+This is implemented using efficient tree ownership data structures.
 
-### Improvements
-
-The typical recursive behavior of destructors can limit the usage up to stack limit.
-For this reason, the implemented destructor prevents such poor behavior (so List can grow bigger than stack limit).
-
-However, we plan to add more transparent support for the internals of list, although quite experimental.
+More details will come soon, regarding the expected operations of the underlying types, so as more efficient alternatives to implement this proposed smart pointer type.
 
 ## Other experiments
 
-This is quite experimental, so other structures are expected to join these soon.
+See [ExperimentsList.md](ExperimentsList.md) for some other experiments with cyclic lists, that inspired early phases of the construction of this smart pointer type.
 
 ## Interesting Projects
 
 This project can be used to manage cyclic data structures with memory safe.
 
-See https://github.com/hsutter/gcpp and its video from cppcon 2016
+See https://github.com/hsutter/gcpp and its video from cppcon 2016 [Leak Freedom in C++... by Default](https://www.youtube.com/watch?v=JfmTagWcqoE).
 
 ## License
 
@@ -164,4 +157,4 @@ Free to use
 
 dual LGPLv3 and MIT License
 
-Copyleft 2022, Igor Machado Coelho
+Copyleft 2022-2023, Igor Machado Coelho

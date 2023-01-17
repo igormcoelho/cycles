@@ -8,9 +8,14 @@ test_catch2:
 	g++ TNode.Test.cpp MyGraph.Test.cpp MyList.Test.cpp  -g --std=c++20 -I../include/ -I../src -Ithirdparty/ thirdparty/catch2/catch_amalgamated.cpp -o ../build/test_catch2
 	valgrind --leak-check=full ../build/test_catch2
 
-bench_sptr: quick_bench.cpp
-	g++ quick_bench.cpp -Wfatal-errors   -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_sptr
-	../build/bench_sptr
+bench: quick_bench_sptr.cpp quick_bench_list_tree.cpp
+	g++ quick_bench_sptr.cpp -Wfatal-errors   -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_sptr
+	g++ quick_bench_list_tree.cpp -Wfatal-errors   -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_list_tree
+	#../build/bench_sptr
+	# valgrind --leak-check=full ../build/bench_uptr
+	../build/bench_list_tree
+
+
 
 
 bazel_test:

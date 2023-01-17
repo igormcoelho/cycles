@@ -6,6 +6,9 @@ demo:
 test:
 	cd tests && make
 
+bench:
+	cd tests && make bench
+
 clean:
 	rm -f vgcore.*
 	rm -f tests/vgcore.*

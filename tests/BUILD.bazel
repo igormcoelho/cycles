@@ -52,6 +52,19 @@ cc_library(
     #include_prefix = "catch2/"
 )
 
+cc_binary(
+    name = "quick_bench_list_tree",
+    srcs = ["quick_bench_list_tree.cpp"],
+    deps=["//include/cycles:cycles_hpp", ":test_list_test_tree"]
+)
+
+cc_library(
+    name = "test_list_test_tree",
+    hdrs = ["TestList.hpp", "TestTree.hpp"],
+    # strip_include_prefix="thirdparty/",
+    #include_prefix = "catch2/"
+)
+
 test_suite(
     name = "all-tests",
     tests = [
