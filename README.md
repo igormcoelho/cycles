@@ -13,7 +13,7 @@ These structures have cycle-breaking properties, thus allowing usage when `std::
 
 Consider node structure:
 
-```{.cpp}
+```{cpp}
 using cycles::relation_ptr;
 using cycles::relation_pool;
 
@@ -27,14 +27,14 @@ public:
 class MyGraph {
 public:
   relation_pool pool;
+  
+  // Example: graph with entry, similar to a root in trees... but may be cyclic.
+  relation_ptr<MyNode> entry;
 
   auto make_node(double v) -> relation_ptr<MyNode>
   {
     return relation_ptr<MyNode>(pool.getContext(), new MyNode { .val = v });
   }
-
-  // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  relation_ptr<MyNode> entry;
 
   MyGraph()
       : entry { relation_ptr<MyNode>{} }
@@ -51,9 +51,9 @@ public:
 ```
 
 This DRAFT example shows that, even for a cyclic graph, no leaks happen!
-Graph stores a cycle_ctx while all relation_ptr ensure that no real cycle dependencies exist.
+Graph stores a relation_pool while all `relation_ptr` ensure that no real cycle dependencies exist.
 
-```{.cpp}
+```{cpp}
   {
     MyGraph<double> G;
     G.pool.getContext()->print();
