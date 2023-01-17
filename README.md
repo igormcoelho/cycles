@@ -1,9 +1,12 @@
 # cycles
-Data Structures in C++ with cycles.
+Smart pointers in C++ for cyclic data structures.
 
-This project proposes a new kind of pointer currently called `relation_ptr`, that represents a "pointer to relations between objects". These objects belong to a "pool", currently called `forest_ctx`. 
+This project proposes a new kind of pointer called `relation_ptr`, that represents a "pointer to relations between objects". These objects belong to a common "pool", called `relation_pool`.
+These structures have cycle-breaking properties, thus allowing usage when `std::shared_ptr` alone fails to clean memory.
 
-**General recommendation:** as with gcpp project, this smart pointer type should be used only when `std::unique_ptr` and `std::shared_ptr` do not work, specially with cyclic structures. So, this is expected to be innefficient, but it is meant to be easy to use and leak-free.
+This is inspired by [hsutter/gcpp](https://github.com/hsutter/gcpp) project, `relation_pool` works like `deferred_heap`, and `relation_ptr` works like `deferred_ptr` (without the need of custom allocators or manual invocation of `collect()` method).
+
+**General recommendation:** as with gcpp project, this smart pointer type should be used only when `std::unique_ptr` and `std::shared_ptr` (with `std::weak_ptr`) do not work, specially with cyclic structures. So, this is expected to be innefficient, but it is meant to be easy to use and leak-free.
 
 
 ## Motivation: implementing a Graph
@@ -12,7 +15,7 @@ Consider node structure:
 
 ```{.cpp}
 using cycles::relation_ptr;
-using cycles::forest_ctx;
+using cycles::relation_pool;
 
 class MyNode {
 public:
@@ -23,11 +26,11 @@ public:
 
 class MyGraph {
 public:
-  sptr<forest_ctx> ctx;
+  relation_pool pool;
 
   auto make_node(double v) -> relation_ptr<MyNode>
   {
-    return relation_ptr<MyNode>(this->ctx, new MyNode { .val = v });
+    return relation_ptr<MyNode>(pool.getContext(), new MyNode { .val = v });
   }
 
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
@@ -35,14 +38,13 @@ public:
 
   MyGraph()
       : entry { relation_ptr<MyNode>{} }
-      , ctx { new forest_ctx {} }
   {
   }
 
   ~MyGraph()
   {
     // optional, no need to clean anything
-    ctx = nullptr;
+    pool.clear();
   }
 
 };
@@ -54,7 +56,7 @@ Graph stores a cycle_ctx while all relation_ptr ensure that no real cycle depend
 ```{.cpp}
   {
     MyGraph<double> G;
-    G.ctx->print();
+    G.pool.getContext()->print();
     //
     G.entry = G.make_node(-1.0);
     // make cycle

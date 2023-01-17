@@ -8,7 +8,8 @@
 #include <memory>
 #include <vector>
 // lib
-#include <cycles/forest_ctx.hpp>
+#include <cycles/detail/forest_ctx.hpp>
+#include <cycles/relation_pool.hpp>
 #include <cycles/relation_ptr.hpp>
 
 using namespace cycles;  // NOLINT
@@ -61,7 +62,7 @@ private:
 //--- Solution 2 (deferred_ptr) -----------------------------------------------
 /*/
 
-static sptr<forest_ctx> ctx;
+static relation_pool pool;
 
 class MyGraph {
  public:
@@ -95,9 +96,11 @@ class MyGraph {
   // GetRoot added by igormcoelho
   relation_ptr<Node>& GetRoot() { return root; }
 
-  void ShrinkToFit() { ctx->collect(); }
+  void ShrinkToFit() { pool.getContext()->collect(); }
 
-  static auto MakeNode() { return relation_ptr<Node>::make(::ctx); }
+  static auto MakeNode() {
+    return relation_ptr<Node>::make(::pool.getContext());
+  }
 
  private:
   relation_ptr<Node> root;
@@ -176,7 +179,6 @@ bool TestCase4() {
 
 int main() {
   cout.setf(ios::boolalpha);
-  ::ctx = sptr<forest_ctx>(new forest_ctx{});
 
   bool passed1 = TestCase1();
   cout << passed1 << endl;

@@ -26,8 +26,7 @@ using std::vector, std::ostream, std::map;  // NOLINT
 
 namespace cycles {
 
-// NOLINTNEXTLINE
-using namespace detail;
+namespace detail {
 
 // NOLINTNEXTLINE
 class forest_ctx {
@@ -334,6 +333,8 @@ class forest_ctx {
     std::cout << "]" << std::endl;
   }
 };
+
+}  // namespace detail
 
 }  // namespace cycles
 

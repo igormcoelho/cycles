@@ -13,8 +13,9 @@
 
 //
 #include <cycles/detail/Tree.hpp>
+#include <cycles/detail/forest_ctx.hpp>
 #include <cycles/detail/utils.hpp>
-#include <cycles/forest_ctx.hpp>
+#include <cycles/relation_pool.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
@@ -36,7 +37,7 @@ class relation_ptr {
   using X = TNodeData;
   // TODO(igormcoelho): make private!
  public:
-  //
+  // TODO(igormcoelho): is this weak or strong?
   wptr<forest_ctx> ctx;
   //
   wptr<TNode<X>> remote_node;

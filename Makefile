@@ -12,3 +12,4 @@ bench:
 clean:
 	rm -f vgcore.*
 	rm -f tests/vgcore.*
+	rm -f src/demo_cptr/vgcore.*
