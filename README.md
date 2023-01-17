@@ -97,8 +97,8 @@ This pointer has disadvantages too:
 
 ## Typical use cases
 
-- developing cyclic data structures using an unified pointer type
-- developing simple data structures, such as lists, where `std::unique_ptr` fails with native recursive destruction (due to stack-overflow)
+- developing cyclic data structures using an unified pointer type. *See [ExperimentsList.md](ExperimentsList.md) to learn more about that.*
+- developing simple data structures, such as lists, where `std::unique_ptr` fails with native recursive destruction (due to stack-overflow). *See [ExperimentsList.md](ExperimentsList.md).*
 - developing graph-based data structures, without worrying about memory cleanups, or performing manual memory cleanups (specially where efficiency is not top priority)
 - prototyping in a simpler way without memory-leaks, and later improving the code with native `std::unique_ptr`, `std::shared_ptr` and `std::weak_ptr`
 - prototyping with a clear strategy of **ownership** and **relations** between entities, completely isolated in memory pools
@@ -146,10 +146,6 @@ Around 76x slower! For just 2^15 ~ 32k elements.
 This is implemented using efficient tree ownership data structures.
 
 More details will come soon, regarding the expected operations of the underlying types, so as more efficient alternatives to implement this proposed smart pointer type.
-
-## Other experiments
-
-See [ExperimentsList.md](ExperimentsList.md) for some other experiments with cyclic lists, that inspired early phases of the construction of this smart pointer type.
 
 ## Interesting Projects
 
