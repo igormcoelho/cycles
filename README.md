@@ -5,6 +5,73 @@ This project proposes a new kind of pointer currently called `cycles_ptr`, that 
 
 **General recommendation:** as with gcpp project, this smart pointer type should be used only when `std::unique_ptr` and `std::shared_ptr` do not work, specially with cyclic structures. So, this is expected to be innefficient, but it is meant to be easy to use and leak-free.
 
+
+## Motivation: implementing a Graph
+
+Consider node structure:
+
+```{.cpp}
+using cycles::cycles_ptr;
+using cycles::cycles_ctx;
+
+class MyNode {
+public:
+  double val;
+  std::vector<cycles_ptr<MyNode>> neighbors;
+};
+
+
+class MyGraph {
+public:
+  sptr<cycles_ctx> ctx;
+
+  auto make_node(double v) -> cycles_ptr<MyNode>
+  {
+    return cycles_ptr<MyNode>(this->ctx, new MyNode { .val = v });
+  }
+
+  // Example: graph with entry, similar to a root in trees... but may be cyclic.
+  cycles_ptr<MyNode> entry;
+
+  MyGraph()
+      : entry { cycles_ptr<MyNode>{} }
+      , ctx { new cycles_ctx {} }
+  {
+  }
+
+  ~MyGraph()
+  {
+    // optional, no need to clean anything
+    ctx = nullptr;
+  }
+
+};
+```
+
+This DRAFT example shows that, even for a cyclic graph, no leaks happen!
+Graph stores a cycle_ctx while all cycles_ptr ensure that no real cycle dependencies exist.
+
+```{.cpp}
+  {
+    MyGraph<double> G;
+    G.ctx->print();
+    //
+    G.entry = G.make_node(-1.0);
+    // make cycle
+    cycles_ptr<MyNode> ptr1 = G.make_node(1.0);
+    g.entry->neighbors.push_back(ptr1.copy_owned(G.entry));
+    cycles_ptr<MyNode> ptr2 = G.make_node(2.0);
+    ptr1->neighbors.push_back(ptr2.copy_owned(ptr1));
+    cycles_ptr<MyNode> ptr3 = G.make_node(3.0);
+    ptr2->neighbors.push_back(ptr3.copy_owned(ptr1));
+    // finish cycle
+    ptr3->neighbors.push_back(G.entry.copy_owned(ptr3));
+  }
+  // This will not leak! (even if a cycle exists)
+```
+
+## features
+
 This pointer has advantages (mostly inspired by gcpp project):
 
 - **header only project** (just copy the `.hpp` and it works)
@@ -70,70 +137,6 @@ CTree with cycles_ptr: 228.678ms
 
 Around 76x slower! For just 2^15 ~ 32k elements.
 
-
-## Motivation: implementing a Graph
-
-Consider node structure:
-
-```{.cpp}
-using cycles::cycles_ptr;
-using cycles::cycles_ctx;
-
-class MyNode {
-public:
-  double val;
-  std::vector<cycles_ptr<MyNode>> neighbors;
-};
-
-
-class MyGraph {
-public:
-  sptr<cycles_ctx> ctx;
-
-  auto make_node(double v) -> cycles_ptr<MyNode>
-  {
-    return cycles_ptr<MyNode>(this->ctx, new MyNode { .val = v });
-  }
-
-  // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  cycles_ptr<MyNode> entry;
-
-  MyGraph()
-      : entry { cycles_ptr<MyNode>{} }
-      , ctx { new cycles_ctx {} }
-  {
-  }
-
-  ~MyGraph()
-  {
-    // optional, no need to clean anything
-    ctx = nullptr;
-  }
-
-};
-```
-
-This DRAFT example shows that, even for a cyclic graph, no leaks happen!
-Graph stores a cycle_ctx while all cycles_ptr ensure that no real cycle dependencies exist.
-
-```{.cpp}
-  {
-    MyGraph<double> G;
-    G.ctx->print();
-    //
-    G.entry = G.make_node(-1.0);
-    // make cycle
-    cycles_ptr<MyNode> ptr1 = G.make_node(1.0);
-    g.entry->neighbors.push_back(ptr1.copy_owned(G.entry));
-    cycles_ptr<MyNode> ptr2 = G.make_node(2.0);
-    ptr1->neighbors.push_back(ptr2.copy_owned(ptr1));
-    cycles_ptr<MyNode> ptr3 = G.make_node(3.0);
-    ptr2->neighbors.push_back(ptr3.copy_owned(ptr1));
-    // finish cycle
-    ptr3->neighbors.push_back(G.entry.copy_owned(ptr3));
-  }
-  // This will not leak! (even if a cycle exists)
-```
 
 ## How this works
 
