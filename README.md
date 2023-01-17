@@ -4,7 +4,7 @@ Smart pointers in C++ for cyclic data structures.
 This project proposes a new kind of pointer called `relation_ptr`, that represents a "pointer to relations between objects". These objects belong to a common "pool", called `relation_pool`.
 These structures have cycle-breaking properties, thus allowing usage when `std::shared_ptr` alone fails to clean memory.
 
-This is inspired by [hsutter/gcpp](https://github.com/hsutter/gcpp) project, `relation_pool` works like `deferred_heap`, and `relation_ptr` works like `deferred_ptr` (without the need of custom allocators or manual invocation of `collect()` method).
+**Note:** *This is inspired by [hsutter/gcpp](https://github.com/hsutter/gcpp) project, `relation_pool` works like `deferred_heap`, and `relation_ptr` works like `deferred_ptr` (without the need of custom allocators or manual invocation of `collect()` method).*
 
 **General recommendation:** as with gcpp project, this smart pointer type should be used only when `std::unique_ptr` and `std::shared_ptr` (with `std::weak_ptr`) do not work, specially with cyclic structures. So, this is expected to be innefficient, but it is meant to be easy to use and leak-free.
 
