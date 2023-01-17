@@ -13,7 +13,7 @@ These structures have cycle-breaking properties, thus allowing usage when `std::
 
 Consider node structure:
 
-```{cpp}
+```{.cpp}
 using cycles::relation_ptr;
 using cycles::relation_pool;
 
@@ -50,10 +50,11 @@ public:
 };
 ```
 
-This DRAFT example shows that, even for a cyclic graph, no leaks happen!
-Graph stores a relation_pool while all `relation_ptr` ensure that no real cycle dependencies exist.
+This example shows that, even for a cyclic graph, no leaks happen!
+Graph stores a `relation_pool` while all `relation_ptr` ensure that no real cycle dependencies exist. The `relation_ptr` has move-only semantics, but it is possible to
+create new relations pointing to the same objects by using helper method `copy_owned`.
 
-```{cpp}
+```{.cpp}
   {
     MyGraph<double> G;
     G.pool.getContext()->print();
