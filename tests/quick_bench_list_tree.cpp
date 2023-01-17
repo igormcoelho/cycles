@@ -7,7 +7,7 @@
 #include <queue>
 #include <utility>
 //
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/relation_ptr.hpp>
 
 #include "TestList.hpp"
 #include "TestTree.hpp"
@@ -74,13 +74,13 @@ int main() {
 
   // =======================================
 
-  std::cout << "populate CList with cycles_ptr. Currently too slow! around 3 "
+  std::cout << "populate CList with relation_ptr. Currently too slow! around 3 "
                "minutes... =("
             << std::endl;
   c = high_resolution_clock::now();
   if (false) {
     CList list;
-    list.ctx = sptr<cycles_ctx>{new cycles_ctx{}};
+    list.ctx = sptr<forest_ctx>{new forest_ctx{}};
 
     int nMax = 100'000;
     //
@@ -89,35 +89,36 @@ int main() {
     // initialize root
     {
       auto* node = new CListNode{.v = n++};  // NOLINT
-      list.entry = cycles::cycles_ptr<CListNode>{list.ctx, node};
+      list.entry = cycles::relation_ptr<CListNode>{list.ctx, node};
     }
     //
-    cycles::cycles_ptr<CListNode>* current = &list.entry;
+    cycles::relation_ptr<CListNode>* current = &list.entry;
     //
     while (n < nMax) {
       // if (n % 1000) std::cout << "n=" << n << std::endl;
       auto* node_next = new CListNode{.v = n++};  // NOLINT
       (*current)->next =
-          cycles::cycles_ptr<CListNode>{list.ctx, node_next}.copy_owned(
+          cycles::relation_ptr<CListNode>{list.ctx, node_next}.copy_owned(
               *current);
       current = &((*current)->next);
     }
     // std::cout << "will destroy list!" << std::endl;
   }
   std::cout
-      << "CList cycles_ptr: "
+      << "CList relation_ptr: "
       << duration<double, std::milli>(high_resolution_clock::now() - c).count()
       << "ms" << std::endl;
 
   // ================================
 
-  std::cout << "populate CList with cycles_ptr. no auto_collect! too terrible "
-               "efficiency for now, ignore... "
-            << std::endl;
+  std::cout
+      << "populate CList with relation_ptr. no auto_collect! too terrible "
+         "efficiency for now, ignore... "
+      << std::endl;
   c = high_resolution_clock::now();
   if (false) {
     CList list;
-    list.ctx = sptr<cycles_ctx>{new cycles_ctx{}};
+    list.ctx = sptr<forest_ctx>{new forest_ctx{}};
     list.ctx->auto_collect = false;
 
     int nMax = 100'000;
@@ -127,23 +128,23 @@ int main() {
     // initialize root
     {
       auto* node = new CListNode{.v = n++};  // NOLINT
-      list.entry = cycles::cycles_ptr<CListNode>{list.ctx, node};
+      list.entry = cycles::relation_ptr<CListNode>{list.ctx, node};
     }
     //
-    cycles::cycles_ptr<CListNode>* current = &list.entry;
+    cycles::relation_ptr<CListNode>* current = &list.entry;
     //
     while (n < nMax) {
       // if (n % 1000) std::cout << "n=" << n << std::endl;
       auto* node_next = new CListNode{.v = n++};  // NOLINT
       (*current)->next =
-          cycles::cycles_ptr<CListNode>{list.ctx, node_next}.copy_owned(
+          cycles::relation_ptr<CListNode>{list.ctx, node_next}.copy_owned(
               *current);
       current = &((*current)->next);
     }
     // std::cout << "will destroy list!" << std::endl;
   }
   std::cout
-      << "CList no auto_collect cycles_ptr: "
+      << "CList no auto_collect relation_ptr: "
       << duration<double, std::milli>(high_resolution_clock::now() - c).count()
       << "ms" << std::endl;
 
@@ -253,12 +254,12 @@ int main() {
 
   // ================================
 
-  std::cout << "populate TestTree with cycles_ptr" << std::endl;
+  std::cout << "populate TestTree with relation_ptr" << std::endl;
   c = high_resolution_clock::now();
   {
-    std::queue<cycles_ptr<CTreeNode>*> temp;
+    std::queue<relation_ptr<CTreeNode>*> temp;
     CTree tree;
-    tree.ctx = sptr<cycles_ctx>{new cycles_ctx{}};
+    tree.ctx = sptr<forest_ctx>{new forest_ctx{}};
     // DO NOT PUT 2^29... too much memory!
     int nMax = ::pow(2, 15) - 1;  // 10000000;
     int n = 0;
@@ -266,7 +267,7 @@ int main() {
     // initialize root
     {
       auto* node = new CTreeNode{.v = n++};  // NOLINT
-      tree.root = cycles::cycles_ptr<CTreeNode>{tree.ctx, node};
+      tree.root = cycles::relation_ptr<CTreeNode>{tree.ctx, node};
     }
     temp.push(&tree.root);
     //
@@ -275,7 +276,7 @@ int main() {
       std::cout << "level=" << level << std::endl;
       assert(level == temp.size());
       //
-      std::queue<cycles_ptr<CTreeNode>*> newChild;
+      std::queue<relation_ptr<CTreeNode>*> newChild;
       for (unsigned j = 0; j < level; j++) {
         auto* target = temp.front();
         // std::cout << "processing target=" << target->v << std::endl;
@@ -283,11 +284,11 @@ int main() {
         // binary tree
         auto* node1 = new CTreeNode{.v = n++};  // NOLINT
         (*target)->children.push_back(
-            cycles_ptr<CTreeNode>{tree.ctx, node1}.copy_owned(*target));
+            relation_ptr<CTreeNode>{tree.ctx, node1}.copy_owned(*target));
         //
         auto* node2 = new CTreeNode{.v = n++};  // NOLINT
         (*target)->children.push_back(
-            cycles_ptr<CTreeNode>{tree.ctx, node2}.copy_owned(*target));
+            relation_ptr<CTreeNode>{tree.ctx, node2}.copy_owned(*target));
         //
         newChild.push(&(*target)->children[0]);
         newChild.push(&(*target)->children[1]);
@@ -304,7 +305,7 @@ int main() {
     std::cout << "will destroy tree!" << std::endl;
   }
   std::cout
-      << "CTree with cycles_ptr: "
+      << "CTree with relation_ptr: "
       << duration<double, std::milli>(high_resolution_clock::now() - c).count()
       << "ms" << std::endl;
 

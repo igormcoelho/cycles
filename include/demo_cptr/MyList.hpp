@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 //
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/relation_ptr.hpp>
 //
 // ================== EXAMPLE ================
 
@@ -17,10 +17,10 @@ class MyList {
   class MyListNode {
    public:
     double val;
-    cycles_ptr<MyListNode> next;
-    cycles_ptr<MyListNode> prev;
-    MyListNode(double _val, cycles_ptr<MyListNode> _next,
-               cycles_ptr<MyListNode> _prev)
+    relation_ptr<MyListNode> next;
+    relation_ptr<MyListNode> prev;
+    MyListNode(double _val, relation_ptr<MyListNode> _next,
+               relation_ptr<MyListNode> _prev)
         : val{_val}, next{std::move(_next)}, prev{std::move(_prev)} {
       mylistnode_count++;
     }
@@ -32,13 +32,13 @@ class MyList {
     }
   };
 
-  sptr<cycles_ctx> ctx;
+  sptr<forest_ctx> ctx;
 
  public:
   bool debug_flag{false};
-  cycles_ptr<MyListNode> entry;
+  relation_ptr<MyListNode> entry;
 
-  MyList() : ctx{new cycles_ctx{}}, entry{make_null_node()} {}
+  MyList() : ctx{new forest_ctx{}}, entry{make_null_node()} {}
 
   ~MyList() {
     if (debug_flag) std::cout << "~MyList" << std::endl;
@@ -47,30 +47,30 @@ class MyList {
   }
 
   // NOLINTNEXTLINE
-  void addNext(double v, cycles_ptr<MyListNode>& node) {
+  void addNext(double v, relation_ptr<MyListNode>& node) {
     node->next = make_node_owned(v, node);
     node->next->prev = node.copy_owned(node->next);
   }
 
   // HELPERS FOR CTX
 
-  auto my_ctx() -> wptr<cycles_ctx> { return this->ctx; }
+  auto my_ctx() -> wptr<forest_ctx> { return this->ctx; }
 
-  auto make_node(double v) -> cycles_ptr<MyListNode> {
+  auto make_node(double v) -> relation_ptr<MyListNode> {
     auto* ptr =
         new MyListNode(v, make_null_node(), make_null_node());  // NOLINT
-    return cycles_ptr<MyListNode>(this->ctx, ptr);
+    return relation_ptr<MyListNode>(this->ctx, ptr);
   }
 
-  auto make_node_owned(double v, const cycles_ptr<MyListNode>& owner)
-      -> cycles_ptr<MyListNode> {
-    auto ptr1 = cycles_ptr<MyListNode>(
+  auto make_node_owned(double v, const relation_ptr<MyListNode>& owner)
+      -> relation_ptr<MyListNode> {
+    auto ptr1 = relation_ptr<MyListNode>(
         this->ctx, new MyListNode(v, make_null_node(), make_null_node()));
     return ptr1.copy_owned(owner);
   }
 
-  auto make_null_node() -> cycles_ptr<MyListNode> {
-    return cycles_ptr<MyListNode>(this->ctx, nullptr);
+  auto make_null_node() -> relation_ptr<MyListNode> {
+    return relation_ptr<MyListNode>(this->ctx, nullptr);
   }
 
   // PRINT
@@ -84,7 +84,7 @@ class MyList {
     std::cout << "============================ " << std::endl;
   }
 
-  void printFrom(const cycles_ptr<MyListNode>& node) {
+  void printFrom(const relation_ptr<MyListNode>& node) {
     if (node.has_get()) {
       std::cout << "node:" << node.get() << " prev:" << node->prev.get()
                 << " next:" << node->prev.get() << std::endl;

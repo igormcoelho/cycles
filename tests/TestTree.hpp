@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 //
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/relation_ptr.hpp>
 
 namespace cycles {
 
@@ -97,13 +97,13 @@ class STree {
 };
 
 // =========================
-//       cycles_ptr
+//       relation_ptr
 // =========================
 
 class CTreeNode {
  public:
   int v;
-  std::vector<cycles::cycles_ptr<CTreeNode>> children;
+  std::vector<cycles::relation_ptr<CTreeNode>> children;
 
   int height() const {
     int hMax = 0;
@@ -129,8 +129,8 @@ class CTreeNode {
 
 class CTree {
  public:
-  sptr<cycles::cycles_ctx> ctx;
-  cycles::cycles_ptr<CTreeNode> root;
+  sptr<cycles::forest_ctx> ctx;
+  cycles::relation_ptr<CTreeNode> root;
 
   int tHeight() const {
     if (!root.has_get())

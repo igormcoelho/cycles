@@ -1,7 +1,7 @@
 # cycles
 Data Structures in C++ with cycles.
 
-This project proposes a new kind of pointer currently called `cycles_ptr`, that represents a "pointer to relations between objects". These objects belong to a "pool", currently called `cycles_ctx`. 
+This project proposes a new kind of pointer currently called `relation_ptr`, that represents a "pointer to relations between objects". These objects belong to a "pool", currently called `forest_ctx`. 
 
 **General recommendation:** as with gcpp project, this smart pointer type should be used only when `std::unique_ptr` and `std::shared_ptr` do not work, specially with cyclic structures. So, this is expected to be innefficient, but it is meant to be easy to use and leak-free.
 
@@ -11,31 +11,31 @@ This project proposes a new kind of pointer currently called `cycles_ptr`, that 
 Consider node structure:
 
 ```{.cpp}
-using cycles::cycles_ptr;
-using cycles::cycles_ctx;
+using cycles::relation_ptr;
+using cycles::forest_ctx;
 
 class MyNode {
 public:
   double val;
-  std::vector<cycles_ptr<MyNode>> neighbors;
+  std::vector<relation_ptr<MyNode>> neighbors;
 };
 
 
 class MyGraph {
 public:
-  sptr<cycles_ctx> ctx;
+  sptr<forest_ctx> ctx;
 
-  auto make_node(double v) -> cycles_ptr<MyNode>
+  auto make_node(double v) -> relation_ptr<MyNode>
   {
-    return cycles_ptr<MyNode>(this->ctx, new MyNode { .val = v });
+    return relation_ptr<MyNode>(this->ctx, new MyNode { .val = v });
   }
 
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  cycles_ptr<MyNode> entry;
+  relation_ptr<MyNode> entry;
 
   MyGraph()
-      : entry { cycles_ptr<MyNode>{} }
-      , ctx { new cycles_ctx {} }
+      : entry { relation_ptr<MyNode>{} }
+      , ctx { new forest_ctx {} }
   {
   }
 
@@ -49,7 +49,7 @@ public:
 ```
 
 This DRAFT example shows that, even for a cyclic graph, no leaks happen!
-Graph stores a cycle_ctx while all cycles_ptr ensure that no real cycle dependencies exist.
+Graph stores a cycle_ctx while all relation_ptr ensure that no real cycle dependencies exist.
 
 ```{.cpp}
   {
@@ -58,11 +58,11 @@ Graph stores a cycle_ctx while all cycles_ptr ensure that no real cycle dependen
     //
     G.entry = G.make_node(-1.0);
     // make cycle
-    cycles_ptr<MyNode> ptr1 = G.make_node(1.0);
+    relation_ptr<MyNode> ptr1 = G.make_node(1.0);
     g.entry->neighbors.push_back(ptr1.copy_owned(G.entry));
-    cycles_ptr<MyNode> ptr2 = G.make_node(2.0);
+    relation_ptr<MyNode> ptr2 = G.make_node(2.0);
     ptr1->neighbors.push_back(ptr2.copy_owned(ptr1));
-    cycles_ptr<MyNode> ptr3 = G.make_node(3.0);
+    relation_ptr<MyNode> ptr3 = G.make_node(3.0);
     ptr2->neighbors.push_back(ptr3.copy_owned(ptr1));
     // finish cycle
     ptr3->neighbors.push_back(G.entry.copy_owned(ptr3));
@@ -111,7 +111,7 @@ This pointer has disadvantages too:
 #### benchmark of construction compared with `std::shared_ptr`
 
 ```
-cycles_ptr: 11396.6ms
+relation_ptr: 11396.6ms
 shared_ptr: 1968.57ms
 ```
 
@@ -122,7 +122,7 @@ Around 5x slower just to construct 10 million smart pointers.
 ```
 UList unique_ptr: 6.561ms
 SList shared_ptr: 10.1938ms
-CList cycles_ptr: 163596ms
+CList relation_ptr: 163596ms
 ```
 
 Around 27266x slower! Just for 100k elements. 
@@ -132,7 +132,7 @@ Around 27266x slower! Just for 100k elements.
 ```
 UTree with unique_ptr: 3.16638ms
 STree with shared_ptr: 7.86247ms
-CTree with cycles_ptr: 228.678ms
+CTree with relation_ptr: 228.678ms
 ```
 
 Around 76x slower! For just 2^15 ~ 32k elements.

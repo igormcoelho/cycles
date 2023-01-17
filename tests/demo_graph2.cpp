@@ -6,7 +6,7 @@
 #include <demo_cptr/XNode.hpp>
 
 //
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/relation_ptr.hpp>
 #include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
 #include <demo_cptr/MyGraph.hpp>
@@ -35,7 +35,7 @@ int main() {
     G.my_ctx().lock()->print();
     //
     G.print();
-    // G.entry = cycles_ptr<MyNode>(G.get_ctx(), new MyNode { .val = -1.0 });
+    // G.entry = relation_ptr<MyNode>(G.get_ctx(), new MyNode { .val = -1.0 });
     std::cout << "WILL MAKE NODE -1" << std::endl;
     G.entry = G.make_node(-1.0);
     std::cout << "CONTEXT SHOULD HAVE CREATED Tree for -1 node" << std::endl;

@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 //
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/relation_ptr.hpp>
 
 namespace cycles {
 
@@ -51,13 +51,13 @@ class SList {
 };
 
 // =========================
-//       cycles_ptr
+//       relation_ptr
 // =========================
 
 class CListNode {
  public:
   int v;
-  cycles::cycles_ptr<CListNode> next;
+  cycles::relation_ptr<CListNode> next;
 
   friend std::ostream& operator<<(std::ostream& os, const CListNode& me) {
     os << "CListNode(" << me.v << ")";
@@ -67,8 +67,8 @@ class CListNode {
 
 class CList {
  public:
-  sptr<cycles::cycles_ctx> ctx;
-  cycles::cycles_ptr<CListNode> entry;
+  sptr<cycles::forest_ctx> ctx;
+  cycles::relation_ptr<CListNode> entry;
 
   ~CList() {
     std::cout << "~CList BEGIN" << std::endl;

@@ -4,15 +4,16 @@
 #include <demo_cptr/Graph.hpp>
 #include <demo_cptr/XNode.hpp>
 //
-#include <cycles/Tree.hpp>
-#include <cycles/cycles_ptr.hpp>
-#include <cycles/utils.hpp>
+#include <cycles/detail/Tree.hpp>
+#include <cycles/detail/utils.hpp>
+#include <cycles/relation_ptr.hpp>
 #include <pre-experiments/List.hpp>
 #include <pre-experiments/nodes_exp.hpp>
 
 using std::string, std::vector, std::map;
 
-using namespace cycles;
+using namespace cycles;          // NOLINT
+using namespace cycles::detail;  // NOLINT
 
 int main() {
   // tree
@@ -26,8 +27,8 @@ int main() {
 
     map<NodeDouble, sptr<Tree<double>>> mp;
 
-    auto node1 = NodeDouble(new TNode<double>{2.0});
-    auto node2 = NodeDouble(new TNode<double>{3.0});
+    auto node1 = NodeDouble{new TNode<double>{sptr<double>{new double{2.0}}}};
+    auto node2 = NodeDouble{new TNode<double>{sptr<double>{new double{3.0}}}};
 
     auto t1 = sptr<Tree<double>>(new Tree<double>{});
     t1->root = node1;

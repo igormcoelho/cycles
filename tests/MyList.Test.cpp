@@ -149,13 +149,13 @@ TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
   REQUIRE(mylistnode_count == 0);
 }
 
-TEST_CASE("CyclesTestMyList: MyList cycles_ptr void derived") {
-  std::cout << "begin MyList cycles_ptr void derived" << std::endl;
+TEST_CASE("CyclesTestMyList: MyList relation_ptr void derived") {
+  std::cout << "begin MyList relation_ptr void derived" << std::endl;
   // create context
   {
-    sptr<cycles_ctx> ctx{new cycles_ctx{}};
-    cycles_ptr<void> ptr_base(ctx, nullptr);
-    ptr_base = cycles_ptr<double>(ctx, new double{1});
+    sptr<forest_ctx> ctx{new forest_ctx{}};
+    relation_ptr<void> ptr_base(ctx, nullptr);
+    ptr_base = relation_ptr<double>(ctx, new double{1});
     sptr<double> p =
         std::static_pointer_cast<double, void>(ptr_base.get_sptr());
     REQUIRE(*p == 1);

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier:  MIT
 // Copyright (C) 2021-2022 - Cycles - https://github.com/igormcoelho/cycles
 
-#ifndef CYCLES_cycles_ctx_HPP_  // NOLINT
-#define CYCLES_cycles_ctx_HPP_  // NOLINT
+#ifndef CYCLES_FOREST_CTX_HPP_  // NOLINT
+#define CYCLES_FOREST_CTX_HPP_  // NOLINT
 
 // C++
 #include <iostream>
@@ -18,7 +18,7 @@
 using std::vector, std::ostream, std::map;  // NOLINT
 
 // ========================
-// cycles_ptr and cycles_ctx
+// relation_ptr and forest_ctx
 // ========================
 // smart pointer suitable for cycles
 // memory is self-managed
@@ -30,8 +30,8 @@ namespace cycles {
 using namespace detail;
 
 // NOLINTNEXTLINE
-class cycles_ctx {
-  // cycles_ctx is now type-erased, using T=TNodeData
+class forest_ctx {
+  // forest_ctx is now type-erased, using T=TNodeData
   using T = TNodeData;
 
  public:
@@ -53,13 +53,13 @@ class cycles_ctx {
   vector<NodeType> pending;
 
  public:
-  cycles_ctx() {
-    if (debug) std::cout << "cycles_ctx created!" << std::endl;
+  forest_ctx() {
+    if (debug) std::cout << "forest_ctx created!" << std::endl;
   }
 
-  ~cycles_ctx() {
+  ~forest_ctx() {
     if (debug)
-      std::cout << "~cycles_ctx() forest_size =" << forest.size() << std::endl;
+      std::cout << "~forest_ctx() forest_size =" << forest.size() << std::endl;
     for (auto p : forest) {
       if (debug)
         std::cout << " clearing root of ~> " << p.first << "'" << (*p.first)
@@ -93,13 +93,13 @@ class cycles_ctx {
       p.second->root = nullptr;  // clear root
       */
     }
-    if (debug) std::cout << "~cycles_ctx: final clear forest" << std::endl;
+    if (debug) std::cout << "~forest_ctx: final clear forest" << std::endl;
     forest.clear();  // is it necessary??
     if (debug)
-      std::cout << "~cycles_ctx: final cleanup on pending" << std::endl;
+      std::cout << "~forest_ctx: final cleanup on pending" << std::endl;
     assert(!is_destroying);
     collect();
-    if (debug) std::cout << "~cycles_ctx: finished final collect" << std::endl;
+    if (debug) std::cout << "~forest_ctx: finished final collect" << std::endl;
   }
 
  public:
@@ -199,8 +199,9 @@ class cycles_ctx {
       // this must be clean, regarding external (Except for cycles, maybe...)
       if (sptr_delete->owned_by.size() > 0) {
         // assert(sptr_delete->owned_by.size() == 0);
-        std::cout << "CTX WARNING: owned_by but dying... must be some cycle!"
-                  << std::endl;
+        if (debug)
+          std::cout << "CTX WARNING: owned_by but dying... must be some cycle!"
+                    << std::endl;
       }
       // force clean both lists: owned_by and owns
       bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_delete);
@@ -336,4 +337,4 @@ class cycles_ctx {
 
 }  // namespace cycles
 
-#endif  // CYCLES_cycles_ctx_HPP_ // NOLINT
+#endif  // CYCLES_FOREST_CTX_HPP_ // NOLINT

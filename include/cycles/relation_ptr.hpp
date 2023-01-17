@@ -1,8 +1,8 @@
 // SPDX-License-Identifier:  MIT
 // Copyright (C) 2021-2022 - Cycles - https://github.com/igormcoelho/cycles
 
-#ifndef CYCLES_cycles_ptr_HPP_  // NOLINT
-#define CYCLES_cycles_ptr_HPP_  // NOLINT
+#ifndef CYCLES_RELATION_PTR_HPP_  // NOLINT
+#define CYCLES_RELATION_PTR_HPP_  // NOLINT
 
 // C++
 #include <iostream>
@@ -12,14 +12,14 @@
 #include <vector>
 
 //
-#include <cycles/cycles_ctx.hpp>
 #include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/forest_ctx.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
 // ========================
-// cycles_ptr and cycles_ctx
+// relation_ptr and forest_ctx
 // ========================
 // smart pointer suitable for cycles
 // memory is self-managed
@@ -32,12 +32,12 @@ using namespace detail;
 
 template <typename T>
 // NOLINTNEXTLINE
-class cycles_ptr {
+class relation_ptr {
   using X = TNodeData;
   // TODO(igormcoelho): make private!
  public:
   //
-  wptr<cycles_ctx> ctx;
+  wptr<forest_ctx> ctx;
   //
   wptr<TNode<X>> remote_node;
   //
@@ -63,7 +63,7 @@ class cycles_ptr {
   bool debug() const { return debug_flag_ptr; }
 
   // ======= C0 nullptr ===============
-  cycles_ptr() {
+  relation_ptr() {
     this->is_owned_by_node = false;
     assert(is_nullptr());
   }
@@ -72,7 +72,7 @@ class cycles_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  cycles_ptr(wptr<cycles_ctx> ctx, T* t) : ctx{ctx} {
+  relation_ptr(wptr<forest_ctx> ctx, T* t) : ctx{ctx} {
     // KEEP LOCAL!
     // sptr<T> ref{t};
     sptr<TNodeData> ref;
@@ -88,8 +88,9 @@ class cycles_ptr {
     this->debug_flag_ptr = get_ctx().lock()->debug;
     //
     if (debug()) {
-      std::cout << "C1 pointer constructor: creating NEW cycles_ptr (this_new="
-                << this << " to t*=" << t << ") ";
+      std::cout
+          << "C1 pointer constructor: creating NEW relation_ptr (this_new="
+          << this << " to t*=" << t << ") ";
       if (ref)
         // if (t)
         std::cout << "with ref -> " << *ref << std::endl;
@@ -137,14 +138,14 @@ class cycles_ptr {
   }
 
   // NO C2 ANYMORE - CONSTRUCTOR REMOVED!
-  // cycles_ptr(wptr<cycles_ctx> ctx, T* t, cycles_ptr<T>& owner) = 0;
+  // relation_ptr(wptr<forest_ctx> ctx, T* t, relation_ptr<T>& owner) = 0;
 
  private:
   //
   // NO COPY CONSTRUCTOR
   //
   // ======= C3 copy constructor =======
-  cycles_ptr(const cycles_ptr<T>& copy) = delete;
+  relation_ptr(const relation_ptr<T>& copy) = delete;
 
  public:
   // ======= M1 move constructor =======
@@ -154,7 +155,7 @@ class cycles_ptr {
   //
   template <class U, class = typename std::enable_if<
                          std::is_convertible<U*, T*>::value, void>::type>
-  cycles_ptr(cycles_ptr<U>&& corpse) noexcept
+  relation_ptr(relation_ptr<U>&& corpse) noexcept
       : ctx{corpse.ctx},
         remote_node{std::move(corpse.remote_node)},
         owned_by_node{std::move(corpse.owned_by_node)},
@@ -168,14 +169,17 @@ class cycles_ptr {
  public:
   // ======= C4 copy constructor WITH owner =======
   // copy constructor (still good for vector... must be the meaning of a
-  // "copy") proposed operation is: cptr1 = cycles_ptr<T>(cptr0, cptr2); //
+  // "copy") proposed operation is: cptr1 = relation_ptr<T>(cptr0, cptr2); //
   // (cptr0 and cptr2 exists already) it could also follow this logic:
-  // 1. cptr1 = cycles_ptr<T>{cptr0}; // copy cptr0 into cptr1
+  // 1. cptr1 = relation_ptr<T>{cptr0}; // copy cptr0 into cptr1
   // 2. cptr1.set_owned_by(cptr2);   // makes cptr1 (and also cptr0) owned by
   // cptr2
   //
-  cycles_ptr(const cycles_ptr<T>& copy, const cycles_ptr<T>& owner)
+  relation_ptr(const relation_ptr<T>& copy, const relation_ptr<T>& owner)
       : ctx{copy.ctx}, remote_node{copy.remote_node} {
+    // context must exist
+    assert(ctx.lock());
+    //
     this->debug_flag_ptr = get_ctx().lock()->debug;
     if (debug()) std::cout << "c4 constructor for copy_owned" << std::endl;
     if (this == &copy) {
@@ -188,6 +192,7 @@ class cycles_ptr {
       // ... so let's avoid it, for now
       assert(false);
     }
+    assert(!owner.is_nullptr());
     //
     // register ownership in tree
     this->set_owned_by(owner);
@@ -317,9 +322,10 @@ class cycles_ptr {
           std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
                     << std::endl;
         if (_isDescendent) {
-          std::cout << "WARNING: owned_by is already my descendent! Discard. "
-                    << "Will try next k!"
-                    << "k=" << k << std::endl;
+          if (debug())
+            std::cout << "WARNING: owned_by is already my descendent! Discard. "
+                      << "Will try next k!"
+                      << "k=" << k << std::endl;
           // k++
           continue;
         }
@@ -413,9 +419,9 @@ class cycles_ptr {
   }
 
   void reset() {
-    if (debug()) std::cout << "cycles_ptr::reset() BEGIN" << std::endl;
+    if (debug()) std::cout << "relation_ptr::reset() BEGIN" << std::endl;
     destroy();
-    if (debug()) std::cout << "cycles_ptr::reset() END" << std::endl;
+    if (debug()) std::cout << "relation_ptr::reset() END" << std::endl;
   }
 
   // HELPER: is_nullptr, is_root, is_owned
@@ -428,18 +434,18 @@ class cycles_ptr {
       return "is_owned";
   }
 
-  ~cycles_ptr() {
+  ~relation_ptr() {
     if (debug())
-      std::cout << "begin ~cycles_ptr() getType=" << getType() << std::endl;
+      std::cout << "begin ~relation_ptr() getType=" << getType() << std::endl;
     destroy();
-    if (debug()) std::cout << "end ~cycles_ptr()" << std::endl;
+    if (debug()) std::cout << "end ~relation_ptr()" << std::endl;
   }
 
   // =============================
   // this will be owned by 'owner'
   // =============================
 
-  void set_owned_by(const cycles_ptr<T>& owner) {
+  void set_owned_by(const relation_ptr<T>& owner) {
     if (this == &owner) {
       // TODO: this is strange...
       // ... so let's avoid it, for now
@@ -490,9 +496,10 @@ class cycles_ptr {
     bool b2 = (bool)(this->owned_by_node.lock());
     if (b1 && !b2) {
       if (debug())
-        std::cout << "cycle_ptr is_owned() WARNING: is_owned_by_node but owner "
-                     "does not exist!"
-                  << std::endl;
+        std::cout
+            << "relation_ptr is_owned() WARNING: is_owned_by_node but owner "
+               "does not exist!"
+            << std::endl;
     }
     return b1;
   }
@@ -511,10 +518,11 @@ class cycles_ptr {
   // =========================
 
   // new logic here
-  void unsafe_set_owned_by(const cycles_ptr<T>& owner) {
+  void unsafe_set_owned_by(const relation_ptr<T>& owner) {
     //
     if (debug()) {
-      std::cout << std::endl << "cycles_ptr:: unsafe_set_owned_by" << std::endl;
+      std::cout << std::endl
+                << "relation_ptr:: unsafe_set_owned_by" << std::endl;
       std::cout << "TODO: Must register relation of:" << std::endl;
       std::cout << "\tthis=" << this
                 << " this->remote_node=" << this->remote_node.lock() << ") '"
@@ -550,9 +558,9 @@ class cycles_ptr {
   }
 
   // no copy assignment
-  cycles_ptr& operator=(const cycles_ptr& other) = delete;
+  relation_ptr& operator=(const relation_ptr& other) = delete;
 
-  cycles_ptr& operator=(cycles_ptr&& corpse) noexcept {
+  relation_ptr& operator=(relation_ptr&& corpse) noexcept {
     if (debug()) std::cout << "begin operator==(&&)" << std::endl;
     destroy();
     if (debug()) std::cout << "will move assign" << std::endl;
@@ -577,25 +585,25 @@ class cycles_ptr {
   // is created (so as "c owns a",  c->a)
   // - maybe this is a good thing, because we can keep copy constructor
   // - maybe not, but I don't imagine why at this moment...
-  auto copy_owned(const cycles_ptr<T>& owner) {
+  auto copy_owned(const relation_ptr<T>& owner) {
     // C4 constructor
-    return cycles_ptr<T>(*this, owner);
+    return relation_ptr<T>(*this, owner);
   }
 
   // maybe we need an 'owns' method, that does the opposite
   // example: a.owns(b);  will create relationship a->b
-  void owns(const cycles_ptr<T>& owned) { assert(false); }
+  void owns(const relation_ptr<T>& owned) { assert(false); }
 
   // maybe we need an 'removed_owned' method
   // MAYBE NOT! maybe this is just a ctx thing, or maybe we just let variables
   // expire to handle this... I don't really know. example: a.remove_owned(b);
   // will remove relationship a->b (if it exists, it returns true) what to do
   // with opposite relationship? do we let ctx handle all this?
-  bool remove_owned(const cycles_ptr<T>& owned) { assert(false); }
+  bool remove_owned(const relation_ptr<T>& owned) { assert(false); }
 
-  auto get_ctx() -> wptr<cycles_ctx> { return ctx; }
+  auto get_ctx() -> wptr<forest_ctx> { return ctx; }
 
-  bool operator==(const cycles_ptr<T>& other) const {
+  bool operator==(const relation_ptr<T>& other) const {
     // do not comparing null pointers as 'true' (why?)... just feels like
     // right now. (thinking more of refs than pointers) (this->has_get() &&
     // other.has_get()) &&
@@ -636,13 +644,13 @@ class cycles_ptr {
 
  public:
   template <class... Args>
-  static cycles_ptr<T> make(sptr<cycles_ctx> ctx, Args&&... args) {
+  static relation_ptr<T> make(sptr<forest_ctx> ctx, Args&&... args) {
     // NOLINTNEXTLINE
     auto* t = new T(std::forward<Args>(args)...);
-    return cycles_ptr<T>{ctx, t};
+    return relation_ptr<T>{ctx, t};
   }
 };
 
 }  // namespace cycles
 
-#endif  // CYCLES_cycles_ptr_HPP_ // NOLINT
+#endif  // CYCLES_RELATION_PTR_HPP_ // NOLINT

@@ -3,8 +3,8 @@
 #include <iostream>
 //
 #include <catch2/catch_amalgamated.hpp>
-#include <cycles/cycles_ptr.hpp>
 #include <cycles/detail/TNode.hpp>
+#include <cycles/relation_ptr.hpp>
 
 using namespace std;             // NOLINT
 using namespace cycles;          // NOLINT

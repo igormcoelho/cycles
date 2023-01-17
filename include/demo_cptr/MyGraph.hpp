@@ -3,7 +3,7 @@
 // C++
 #include <vector>
 //
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/relation_ptr.hpp>
 //
 // ================== EXAMPLE ================
 
@@ -15,7 +15,7 @@ template <typename X>
 class MyNode {
  public:
   X val;
-  vector<cycles_ptr<MyNode>> neighbors;
+  vector<relation_ptr<MyNode>> neighbors;
   bool debug_flag{false};
 
   explicit MyNode(X _val, bool _debug_flag = false)
@@ -58,13 +58,13 @@ class MyGraph {
   bool debug_flag{false};
 
  private:
-  sptr<cycles_ctx> ctx;
+  sptr<forest_ctx> ctx;
 
  public:
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  cycles_ptr<MyNodeX> entry;
+  relation_ptr<MyNodeX> entry;
 
-  MyGraph() : ctx{new cycles_ctx{}}, entry{make_null_node()} {}
+  MyGraph() : ctx{new forest_ctx{}}, entry{make_null_node()} {}
 
   ~MyGraph() {
     if (debug_flag) std::cout << "~MyGraph" << std::endl;
@@ -72,27 +72,28 @@ class MyGraph {
     // entry.do_reset();
   }
   //
-  auto my_ctx() -> wptr<cycles_ctx> { return this->ctx; }
+  auto my_ctx() -> wptr<forest_ctx> { return this->ctx; }
 
-  auto make_node(X v) -> cycles_ptr<MyNodeX> {
+  auto make_node(X v) -> relation_ptr<MyNodeX> {
     auto* ptr = new MyNodeX(v, debug_flag);  // NOLINT
     int nc1 = tnode_count;
-    cycles_ptr<MyNodeX> cptr(this->ctx, ptr);
+    relation_ptr<MyNodeX> cptr(this->ctx, ptr);
     int nc2 = tnode_count;
     // checking tnode_count against possible (and crazy...) ODR errors
     assert(nc2 == nc1 + 1);
     return cptr;
   }
 
-  auto make_node_owned(X v, const cycles_ptr<MyNodeX>& owner)
-      -> cycles_ptr<MyNodeX> {
-    auto ptr1 = cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag));
+  auto make_node_owned(X v, const relation_ptr<MyNodeX>& owner)
+      -> relation_ptr<MyNodeX> {
+    auto ptr1 = relation_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag));
     return ptr1.copy_owned(owner);
-    // return cycles_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag), owner);
+    // return relation_ptr<MyNodeX>(this->ctx, new MyNodeX(v, debug_flag),
+    // owner);
   }
 
-  auto make_null_node() -> cycles_ptr<MyNodeX> {
-    return cycles_ptr<MyNodeX>(this->ctx, nullptr);
+  auto make_null_node() -> relation_ptr<MyNodeX> {
+    return relation_ptr<MyNodeX>(this->ctx, nullptr);
   }
 
   void print() {
@@ -107,7 +108,7 @@ class MyGraph {
     std::cout << "============================ " << std::endl;
   }
 
-  void printFrom(const cycles_ptr<MyNodeX>& node) {
+  void printFrom(const relation_ptr<MyNodeX>& node) {
     if (node.has_get()) {
       std::cout << "node=" << node.get()
                 << " |neighbors|=" << node.get()->neighbors.size() << std::endl;

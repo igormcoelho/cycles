@@ -8,10 +8,13 @@
 #include <memory>
 #include <vector>
 // lib
-#include <cycles/cycles_ptr.hpp>
+#include <cycles/forest_ctx.hpp>
+#include <cycles/relation_ptr.hpp>
 
 using namespace cycles;  // NOLINT
 using namespace std;     // NOLINT
+
+// FROM: https://github.com/hsutter/gcpp
 
 class Counter {
  public:
@@ -58,206 +61,134 @@ private:
 //--- Solution 2 (deferred_ptr) -----------------------------------------------
 /*/
 
-// static deferred_heap heap;
+static sptr<forest_ctx> ctx;
 
-class MyGraphGCPP {
+class MyGraph {
  public:
   class Node : public Counter {
-    vector<cycles_ptr<Node>> children;  // {heap};
-
-    char c;
+    vector<relation_ptr<Node>> children;
 
    public:
-    explicit Node(char _c) : c{_c} {}
-
-    // no copy here: const cycles_ptr<Node>& node
-    void AddChild(cycles_ptr<Node>&& node) {
+    // child node must be owned before arriving here.
+    void AddChild(relation_ptr<Node> node) {
       children.push_back(std::move(node));
     }
-
-    void RemoveChild(const cycles_ptr<Node>& node) {
+    void RemoveChild(const relation_ptr<Node>& node) {
       auto it = find(children.begin(), children.end(), node);
-      assert(it != children.end());  // NOLINT
-      // children.erase(it);
-      // *it = nullptr;
-      *it = make_null_node_helper(node.get_ctx());
-    }
-
-    auto make_null_node_helper(auto ctx) -> cycles_ptr<Node> {
-      return cycles_ptr<Node>(ctx, nullptr);
+      // Expects(it != children.end() &&
+      //         "trying to remove a child that was never added");
+      //  children.erase(it);
+      //
+      //  *it = nullptr;
+      it->reset();
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Node& me) {
-      os << "Node(" << me.c << ")";
+      os << "Node()";
       return os;
     }
   };
 
-  // no copy here: const cycles_ptr<Node>& node
-  void SetRoot(cycles_ptr<Node>&& node) { root = std::move(node); }
+  // GetRoot changed from const& to copy/move by igormcoelho
+  void SetRoot(relation_ptr<Node> node) { root = std::move(node); }
 
-  // void ShrinkToFit() { heap.collect(); }
-  void ShrinkToFit() {}  // TODO(igormcoelho): allow collection here ???
+  // GetRoot added by igormcoelho
+  relation_ptr<Node>& GetRoot() { return root; }
 
-  // static auto MakeNode() { return heap.make<MyGraph::Node>(); }
+  void ShrinkToFit() { ctx->collect(); }
 
-  auto MakeNode(char c) -> cycles_ptr<Node> {
-    auto* ptr = new Node(c);  // NOLINT
-    // TODO(igormcoelho): create ctx->make<...> and type erase ctx
-    return cycles_ptr<Node>(this->ctx, ptr);
-  }
-
-  // TODO(igormcoelho): remove this helper for null node
-  auto make_null_node() -> cycles_ptr<Node> {
-    return cycles_ptr<Node>(this->ctx, nullptr);
-  }
-  // TODO(igormcoelho): can't this be defaulted somehow?
-  MyGraphGCPP() : ctx{new cycles_ctx<Node>{}}, root{make_null_node()} {}
-
- public:
-  sptr<cycles_ctx<Node>> ctx;
-
-  cycles_ptr<Node>& getRoot() { return root; }
+  static auto MakeNode() { return relation_ptr<Node>::make(::ctx); }
 
  private:
-  cycles_ptr<Node> root;
+  relation_ptr<Node> root;
 };
 
 // ----------------------------------------------------------------------------
 //*/
 
 bool TestCase1() {
-  std::cout << "Initialize graph" << std::endl;
-  MyGraphGCPP g;
-  std::cout << std::endl << "TestCase1: MyGraph created!" << std::endl;
+  MyGraph g;
   {
-    // auto a = MyGraph::MakeNode();
-    std::cout << std::endl << "A" << std::endl;
-    auto a = g.MakeNode('a');
-    std::cout << std::endl << "B" << std::endl;
-    // MUST MOVE, CANNOT COPY! DO IT NOW, OR LATER?
-    g.SetRoot(std::move(a));
-    std::cout << std::endl << "C" << std::endl;
-    auto b = g.MakeNode('b');
-    std::cout << std::endl << "D" << std::endl;
-    // a IS MOVED! replacing by g.getRoot()
-    g.getRoot()->AddChild(b.copy_owned(g.getRoot()));
-    std::cout << std::endl << "E" << std::endl;
-    auto c = g.MakeNode('c');
-    std::cout << std::endl << "F" << std::endl;
+    // auto a = ;
+    g.SetRoot(MyGraph::MakeNode());
+    auto b = MyGraph::MakeNode();
+    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    auto c = MyGraph::MakeNode();
     b->AddChild(c.copy_owned(b));
-    std::cout << std::endl << "G" << std::endl;
-    // a IS MOVED! replacing by g.getRoot()
-    g.getRoot()->RemoveChild(b);
-    std::cout << std::endl << "H" << std::endl;
+    g.GetRoot()->RemoveChild(b);
   }
   g.ShrinkToFit();
-  std::cout << "forest size: " << g.ctx->forest.size() << std::endl;
-  if (Counter::count() == 1) {
-    return true;
-  } else {
-    std::cout << "Counter::count = " << Counter::count() << " (should be 1)"
-              << std::endl;
-    return false;
-  }
+  return Counter::count() == 1;
 }
 
-/*
 bool TestCase2() {
   MyGraph g;
   {
-    // auto a = MyGraph::MakeNode();
-    auto a = g.MakeNode();
-    g.SetRoot(a);
-    auto b = g.MakeNode();
-    a->AddChild(b);
-    auto c = g.MakeNode();
-    b->AddChild(c);
-    auto d = g.MakeNode();
-    b->AddChild(d);
-    d->AddChild(b);
-    a->RemoveChild(b);
+    auto a = MyGraph::MakeNode();
+    g.SetRoot(std::move(a));
+    auto b = MyGraph::MakeNode();
+    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    auto c = MyGraph::MakeNode();
+    b->AddChild(c.copy_owned(b));
+    auto d = MyGraph::MakeNode();
+    b->AddChild(d.copy_owned(b));
+    d->AddChild(b.copy_owned(d));
+    g.GetRoot()->RemoveChild(b);
   }
   g.ShrinkToFit();
-  if (Counter::count() == 1) {
-    return true;
-  } else {
-    std::cout << "Counter::count = " << Counter::count() << " (should be 1)"
-              << std::endl;
-    return false;
-  }
+  return Counter::count() == 1;
 }
 
 bool TestCase3() {
   MyGraph g;
   {
-    // auto a = MyGraph::MakeNode();
-    auto a = g.MakeNode();
-    g.SetRoot(a);
-    auto b = g.MakeNode();
-    a->AddChild(b);
-    auto c = g.MakeNode();
-    b->AddChild(c);
-    auto d = g.MakeNode();
-    b->AddChild(d);
-    d->AddChild(b);
+    // auto a = ;
+    g.SetRoot(MyGraph::MakeNode());
+    auto b = MyGraph::MakeNode();
+    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    auto c = MyGraph::MakeNode();
+    b->AddChild(c.copy_owned(b));
+    auto d = MyGraph::MakeNode();
+    b->AddChild(d.copy_owned(b));
+    d->AddChild(b.copy_owned(d));
   }
   g.ShrinkToFit();
-  if (Counter::count() == 4) {
-    return true;
-  } else {
-    std::cout << "Counter::count = " << Counter::count() << " (should be 4)"
-              << std::endl;
-    return false;
-  }
+  return Counter::count() == 4;
 }
 
 bool TestCase4() {
   MyGraph g;
   {
     // auto a = MyGraph::MakeNode();
-    auto a = g.MakeNode();
-    g.SetRoot(a);
-    auto b = g.MakeNode();
-    a->AddChild(b);
-    auto c = g.MakeNode();
-    b->AddChild(c);
-    auto d = g.MakeNode();
-    b->AddChild(d);
-    d->AddChild(b);
+    g.SetRoot(MyGraph::MakeNode());
+    auto b = MyGraph::MakeNode();
+    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    auto c = MyGraph::MakeNode();
+    b->AddChild(c.copy_owned(b));
+    auto d = MyGraph::MakeNode();
+    b->AddChild(d.copy_owned(b));
+    d->AddChild(b.copy_owned(d));
     d->RemoveChild(b);
   }
   g.ShrinkToFit();
-  if (Counter::count() == 4) {
-    return true;
-  } else {
-    std::cout << "Counter::count = " << Counter::count() << " (should be 1)"
-              << std::endl;
-    return false;
-  }
+  return Counter::count() == 4;
 }
-*/
 
 int main() {
   cout.setf(ios::boolalpha);
+  ::ctx = sptr<forest_ctx>(new forest_ctx{});
 
   bool passed1 = TestCase1();
-  cout << "test1:" << passed1 << endl;
-  if (!passed1) return -1;
+  cout << passed1 << endl;
 
-  /*
-    bool passed2 = TestCase2();
-    cout << "test2:" << passed2 << endl;
-    if (!passed2) return -1;
+  bool passed2 = TestCase2();
+  cout << passed2 << endl;
 
-    bool passed3 = TestCase3();
-    cout << "test3:" << passed3 << endl;
-    if (!passed3) return -1;
+  bool passed3 = TestCase3();
+  cout << passed3 << endl;
 
-    bool passed4 = TestCase4();
-    cout << "test4:" << passed4 << endl;
-    if (!passed4) return -1;
-  */
+  bool passed4 = TestCase4();
+  cout << passed4 << endl;
 
   return 0;
 }
