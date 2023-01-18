@@ -323,7 +323,7 @@ class forest_ctx {
 
  public:
   void print() {
-    std::cout << "print ctx: (forest size=" << forest.size() << ") ["
+    std::cout << "print forest_ctx: (forest size=" << forest.size() << ") ["
               << std::endl;
     for (auto p : forest) {
       std::cout << " ~> ROOT_NODE " << p.first << " as '" << (*p.first)

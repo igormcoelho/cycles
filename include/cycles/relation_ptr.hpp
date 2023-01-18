@@ -138,8 +138,73 @@ class relation_ptr {
       std::cout << " -> finished C1 pointer constructor" << std::endl;
   }
 
-  // NO C2 ANYMORE - CONSTRUCTOR REMOVED!
-  // relation_ptr(wptr<forest_ctx> ctx, T* t, relation_ptr<T>& owner) = 0;
+  // C2 CONSTRUCTOR - EQUIVALENT TO C1+C4
+  relation_ptr(wptr<forest_ctx> ctx, T* t, const relation_ptr<T>& owner)
+      : ctx{owner.ctx} {
+    // context must exist
+    assert(ctx.lock());
+    //
+    this->debug_flag_ptr = get_ctx().lock()->debug;
+    //
+    // KEEP LOCAL!
+    // sptr<T> ref{t};
+    sptr<TNodeData> ref;
+    if (t) ref = TNodeData::make_sptr<T>(t);
+    //
+    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
+    // this 'remote_node' is weak!
+    auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
+    // we only hold weak reference here
+    this->remote_node = sptr_remote_node;
+    // this->is_owned_by_node = false;
+    //
+    this->debug_flag_ptr = get_ctx().lock()->debug;
+    //
+    if (debug()) {
+      std::cout
+          << "C2 pointer constructor: creating NEW relation_ptr (this_new="
+          << this << " to t*=" << t << ") ";
+      if (ref)
+        // if (t)
+        std::cout << "with ref -> " << *ref << std::endl;
+      else
+        std::cout << "with ref -> nullptr" << std::endl;
+    }
+    //
+    if (!ref) {
+      // if (!t) {
+      return;  // SHOULD NOT CREATE A NEW TREE!
+    }
+    if (!(this->remote_node.lock())) {
+      // STRANGE ERROR! SHOULD NEVER OCCUR!
+      std::cout << "ERROR: this should never occur! remote_node is not "
+                   "accessible on C2."
+                << std::endl;
+      assert(false);
+      return;
+    }
+    //
+    // END C1 PART
+    //
+    // BEGIN C4 PART
+    //
+    assert(!owner.is_nullptr());
+    // remember ownership (for future deletion?)
+    this->owned_by_node = owner.remote_node;
+    this->is_owned_by_node = true;
+    // OWNER MUST EXIST... AT LEAST NOW!
+    assert(this->owned_by_node.lock());
+    auto myNewParent = owned_by_node.lock();
+    //
+    // register STRONG ownership in tree
+    //
+    auto sptr_mynode = this->remote_node.lock();
+    sptr_mynode->parent = myNewParent;
+    myNewParent->add_child_strong(sptr_mynode);
+    //
+    if (debug())
+      std::cout << "finish c2: stored owner in owned_by_node" << std::endl;
+  }
 
  private:
   //

@@ -122,23 +122,42 @@ Around 5x slower just to construct 10 million smart pointers.
 
 #### benchmark of deferred destruction of list and tree
 
-```
-UList unique_ptr: 6.561ms
-SList shared_ptr: 10.1938ms
-CList relation_ptr: 163596ms
-```
-
-Around 27266x slower! Just for 100k elements. 
-
-**Terrible, but expected result... can still improve ownership construction!**
+Considering 100k elements:
 
 ```
-UTree with unique_ptr: 3.16638ms
-STree with shared_ptr: 7.86247ms
-CTree with relation_ptr: 228.678ms
+UList unique_ptr: 4.62166ms
+SList shared_ptr: 9.85481ms
+CList relation_ptr: 68.9792ms (15x uptr, 7x sptr)
+CList no auto_collect relation_ptr: 126.484ms
 ```
 
-Around 76x slower! For just 2^15 ~ 32k elements.
+- Around 13x slower than `std::unique_ptr`
+- Around 7x slower than `std::shared_ptr`
+- Worse behavior disabling automatic garbage collection
+
+
+Considering 10M elements (`std::unique_ptr` destructor adapted to prevent stack overflow):
+```
+UList unique_ptr: 406.094ms
+SList shared_ptr: 576.623ms
+CList relation_ptr: 5702.24ms (14x uptr, 10x sptr)
+CList no auto_collect relation_ptr: 9502.88ms
+```
+
+- Around 14x slower than `std::unique_ptr`
+- Around 10x slower than `std::shared_ptr`
+- Worse behavior disabling automatic garbage collection
+
+Tests with trees with 2^15 ~ 32k elements
+```
+UTree with unique_ptr: 1.9145ms
+STree with shared_ptr: 4.38139ms
+CTree with relation_ptr: 285.272ms (150x uptr, 65x sptr)
+CTree with relation_ptr - no auto_collect: 251.257ms (132x uptr, 57x sptr)
+```
+
+- Around 57x slower over `std::shared_ptr`
+- Better behavior when garbage is not collected during operations (only in the end)
 
 
 ## How this works

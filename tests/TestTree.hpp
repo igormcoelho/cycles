@@ -46,9 +46,9 @@ class UTree {
   }
 
   ~UTree() {
-    std::cout << "~UTree BEGIN" << std::endl;
+    // std::cout << "~UTree BEGIN" << std::endl;
     root = nullptr;
-    std::cout << "~UTree END" << std::endl;
+    // std::cout << "~UTree END" << std::endl;
   }
 };
 
@@ -90,9 +90,9 @@ class STree {
   }
 
   ~STree() {
-    std::cout << "~STree BEGIN" << std::endl;
+    // std::cout << "~STree BEGIN" << std::endl;
     root = nullptr;
-    std::cout << "~STree END" << std::endl;
+    // std::cout << "~STree END" << std::endl;
   }
 };
 
@@ -140,9 +140,9 @@ class CTree {
   }
 
   ~CTree() {
-    std::cout << "~CTree BEGIN" << std::endl;
+    // std::cout << "~CTree BEGIN" << std::endl;
     root.reset();
-    std::cout << "~CTree END" << std::endl;
+    // std::cout << "~CTree END" << std::endl;
   }
 };
 

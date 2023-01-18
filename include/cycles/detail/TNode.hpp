@@ -202,10 +202,10 @@ class TNode {
     tnode_count--;
     //
     if (owns.size() > 0)
-      std::cout << "~TNode WARNING: non-zero owns list. |owns|=" << owns.size()
-                << std::endl;
+      std::cout << "~TNode SERIOUS WARNING: non-zero owns list. |owns|="
+                << owns.size() << std::endl;
     if (owned_by.size() > 0)
-      std::cout << "~TNode WARNING: non-zero owned_by list. |owns|="
+      std::cout << "~TNode SERIOUS WARNING: non-zero owned_by list. |owns|="
                 << owned_by.size() << std::endl;
     // =====================================================
     // We should prevent non-empty |owns| and |owned_by|, as

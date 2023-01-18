@@ -87,9 +87,14 @@ class MyGraph {
 
   auto make_node_owned(X v, const relation_ptr<MyNodeX>& owner)
       -> relation_ptr<MyNodeX> {
+#if 0
     auto ptr1 = relation_ptr<MyNodeX>(this->pool.getContext(),
                                       new MyNodeX(v, debug_flag));
     return ptr1.copy_owned(owner);
+#else
+    return relation_ptr<MyNodeX>(this->pool.getContext(),
+                                 new MyNodeX(v, debug_flag), owner);
+#endif
   }
 
   auto make_null_node() -> relation_ptr<MyNodeX> {

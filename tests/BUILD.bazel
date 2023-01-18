@@ -55,6 +55,7 @@ cc_library(
 cc_binary(
     name = "quick_bench_list_tree",
     srcs = ["quick_bench_list_tree.cpp"],
+    copts = ["-DBENCH_LONG_DEFERRED"],
     deps=["//include/cycles:cycles_hpp", ":test_list_test_tree"]
 )
 

@@ -702,3 +702,104 @@ TEST_CASE(
   }
   REQUIRE(mynode_count == 0);
 }
+
+// NOLINTNEXTLINE
+TEST_CASE(
+    "CyclesTestGraph: TEST_CASE 8 - MyGraph 1 2 3 -1 (4) kill 2 but 4 saves 3 "
+    "-1 with C2 constructor") {
+  std::cout << "begin MyGraph 1 2 3 -1 (4) kill 2 but 4 saves 3 "
+               "-1 with C2 constructor"
+            << std::endl;
+  // create context
+  {
+    // THIS CASE FORCES GRAPH TO HAVE USELESS WEAK LINK ON TOP, UNTIL LAST
+    // DESTRUCTION
+    //
+    // THIS TEST 8 IS SAME AS TEST 7, USING make_node_owned INSTEAD OF
+    // copy_owned
+
+    MyGraph<double> G;
+    //
+    // G.debug_flag = true;
+    // G.my_ctx().lock()->debug = true;
+    //
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    //
+    G.entry = G.make_node(-1.0);
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+
+    // make cycle
+    auto ptr1 = G.make_node(1.0);
+    // THE LINE BELOW IS DIFFERENT FROM TEST 7 TO TEST 8 (THIS TEST)
+    ptr1->neighbors.push_back(G.make_node_owned(2.0, ptr1));
+    auto& fake_ptr2 = ptr1->neighbors[0];
+    // THE LINE BELOW IS DIFFERENT FROM TEST 7 TO TEST 8 (THIS TEST)
+    fake_ptr2->neighbors.push_back(G.make_node_owned(3.0, fake_ptr2));
+    auto& fake_ptr3 = fake_ptr2->neighbors[0];
+    fake_ptr3->neighbors.push_back(G.entry.copy_owned(fake_ptr3));
+
+    // force reset: root dies but other refs still on main(), from ptr1
+    G.entry.reset();
+    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(ptr1.is_root());
+    REQUIRE(fake_ptr2.is_owned());
+    REQUIRE(fake_ptr3.is_owned());
+    auto& fake_entry = fake_ptr3->neighbors[0];
+    REQUIRE(fake_entry.is_owned());  // node -1
+    // add node 4 saving 3 and -1
+    auto ptr4 = G.make_node(4.0);
+    ptr4->neighbors.push_back(fake_ptr3.copy_owned(ptr4));
+    auto& fake_ptr3_2 = ptr4->neighbors[0];
+    //
+    // KILL PART!
+    // std::cout << std::endl << "KILL PART!" << std::endl;
+    // node 2 must die
+    // node 3 and node -1 must survive (held by node 4)
+    REQUIRE(fake_ptr2.is_owned());  // node 2
+    // force reset: node 2 is killed together with node 3 and node -1
+    fake_ptr2.reset();
+    // two root survivors (1) and (4) -> 3 -1
+    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    //
+    REQUIRE(ptr1.is_root());
+    REQUIRE(fake_ptr2.is_nullptr());
+    // fake_ptr3 now is bad pointer, inaccessible from fake_ptr2,
+    // but fake_ptr3_2 is accessible from ptr4
+    REQUIRE(fake_ptr3_2.is_owned());
+    //
+    // fake_entry now is bad pointer, inaccessible from fake_ptr3,
+    // but fake_entry_2 is accessible from fake_ptr3_2
+    auto& fake_entry_2 = fake_ptr3_2->neighbors[0];
+    REQUIRE(fake_entry_2.is_owned());
+    //
+    REQUIRE(ptr4.is_root());
+    //
+    // deeper debug
+    //
+    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_ptr2.is_nullptr());
+    // fake_ptr3 is broken now, but fake_ptr3_2 is good
+    REQUIRE(fake_ptr3_2.is_owned());
+    REQUIRE(fake_ptr3_2.remote_node.lock()->has_parent() == true);  // 4
+    REQUIRE(fake_ptr3_2.remote_node.lock()->children.size() == 1);  // -1
+    REQUIRE(fake_ptr3_2.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr3_2.remote_node.lock()->owns.size() == 0);
+    // fake_entry is broken now, but fake_entry_2 is good
+    REQUIRE(fake_entry_2.is_owned());
+    REQUIRE(fake_entry_2.remote_node.lock()->has_parent() == true);  // 3
+    REQUIRE(fake_entry_2.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_entry_2.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_entry_2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr4.is_root());
+    REQUIRE(ptr4.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr4.remote_node.lock()->children.size() == 1);  // 3
+    REQUIRE(ptr4.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr4.remote_node.lock()->owns.size() == 0);
+    // SHOULD NOT LEAK
+  }
+  REQUIRE(mynode_count == 0);
+}
