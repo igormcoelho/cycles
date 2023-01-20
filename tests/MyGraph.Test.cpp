@@ -803,3 +803,78 @@ TEST_CASE(
   }
   REQUIRE(mynode_count == 0);
 }
+
+TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
+  std::cout << "begin MyGraph MultiGraph" << std::endl;
+  // create context
+  {
+    MyGraph<double> G;
+    REQUIRE(!G.my_ctx().lock()->debug);
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+
+    // STEP (A)
+    // creating -1 node
+    G.entry = G.make_node(-1.0);
+    REQUIRE(G.entry.is_root());
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    //
+    // make cycle
+    auto ptr1 = G.make_node(1.0);
+    //
+    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    //
+    ptr1->neighbors.push_back(G.make_node_owned(2.0, ptr1));
+    // auto& fake_ptr2 = ptr1->neighbors[0];
+    //
+    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    //
+    REQUIRE(ptr1.is_root());
+    // check first arc
+    REQUIRE(ptr1->neighbors[0].is_owned());
+    REQUIRE(ptr1->neighbors[0].is_owned_by_node);
+    //
+    // Multi-link between ptr1 and ptr2: (ptr1->ptr2), (ptr1->ptr2)
+    ptr1->neighbors.push_back(ptr1->neighbors[0].copy_owned(ptr1));
+    // scope for two refs
+    {
+      // refs to multiple arcs of same node
+      auto& fake_ptr2_0 = ptr1->neighbors[0];
+      auto& fake_ptr2_1 = ptr1->neighbors[1];
+      // check again the first arc (no corruption should happen)
+      REQUIRE(fake_ptr2_0.is_owned_by_node);
+      REQUIRE(fake_ptr2_0.is_owned());
+      //
+      // check properties of all smart pointers involved
+      REQUIRE(ptr1.is_root());
+      REQUIRE(fake_ptr2_0.is_owned());
+      REQUIRE(fake_ptr2_1.is_owned());
+      // reset first arc (child must not be wiped out)
+      fake_ptr2_0.reset();
+      REQUIRE(fake_ptr2_0.is_nullptr());
+      REQUIRE(fake_ptr2_1.is_owned());
+    }
+    // try three arcs now (remember that first arc neighbors[0] is now nullptr)
+    ptr1->neighbors.push_back(ptr1->neighbors[1].copy_owned(ptr1));
+    ptr1->neighbors.push_back(ptr1->neighbors[1].copy_owned(ptr1));
+    // first is null, rest is owned
+    REQUIRE(ptr1->neighbors.size() == 4);
+    // roots are -1 and 1
+    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    //
+    std::cout << "will reset node -1" << std::endl;
+    //
+    // reset -1 node
+    G.entry.reset();
+    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    // reset ptr1
+    ptr1.reset();
+    REQUIRE(ptr1.is_nullptr());
+
+    if (false) {
+      G.entry.setDebug(true);  // -1
+    }
+  }
+  // SHOULD NOT LEAK
+  REQUIRE(mynode_count == 0);
+}

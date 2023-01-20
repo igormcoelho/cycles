@@ -245,6 +245,8 @@ class relation_ptr {
       : ctx{copy.ctx}, remote_node{copy.remote_node} {
     // context must exist
     assert(ctx.lock());
+    // same pointers
+    assert(ctx.lock().get() == owner.ctx.lock().get());
     //
     this->debug_flag_ptr = get_ctx().lock()->debug;
     if (debug()) std::cout << "c4 constructor for copy_owned" << std::endl;
@@ -260,7 +262,8 @@ class relation_ptr {
     }
     assert(!owner.is_nullptr());
     //
-    // register ownership in tree
+    // both nodes exist already (copy node and owner node)
+    // register WEAK ownership in tree
     this->set_owned_by(owner);
     // remember ownership (for future deletion?)
     this->owned_by_node = owner.remote_node;
@@ -332,8 +335,7 @@ class relation_ptr {
           // CHECK IF OWNER IS MY PARENT...
           if (owner_node == sptr_mynode->parent.lock()) {
             if (debug())
-              std::cout << "DEBUG: OWNER IS MY PARENT! I WILL DIE!"
-                        << std::endl;
+              std::cout << "DEBUG: OWNER IS MY PARENT! I MAY DIE!" << std::endl;
             will_die = true;
           } else {
             if (debug())
@@ -507,35 +509,6 @@ class relation_ptr {
     if (debug()) std::cout << "end ~relation_ptr()" << std::endl;
   }
 
-  // =============================
-  // this will be owned by 'owner'
-  // =============================
-
-  void set_owned_by(const relation_ptr<T>& owner) {
-    if (this == &owner) {
-      // TODO: this is strange...
-      // ... so let's avoid it, for now
-      assert(false);
-    }
-    // guarantee that context is the same
-    assert(this->ctx.lock() == owner.ctx.lock());
-    //
-    // std::cout << "TODO: check if owner ALREADY has a weak or strong link to
-    // this node... don't know what could happen!" << std::endl;
-    if (owner.remote_node.lock()->has_child(this->remote_node)) {
-      if (debug()) {
-        std::cout << "set_owned_by WARNING! prevented double linking child... "
-                     "ALREADY owner!"
-                  << std::endl;
-        std::cout << "TODO: maybe need to allow double linking here..."
-                  << std::endl;
-      }
-      return;
-    }
-    //
-    unsafe_set_owned_by(owner);
-  }
-
   // ========== TWO FUNDAMENTAL PROPERTIES ===========
   // A) is_nullptr
   // B) is_root
@@ -581,7 +554,39 @@ class relation_ptr {
     assert(node_ptr);
     return node_ptr->owned_by[idx].lock();
   }
-  // =========================
+
+  // =============================
+  // this will be owned by 'owner'
+  // =============================
+
+  void set_owned_by(const relation_ptr<T>& owner) {
+    if (this == &owner) {
+      // TODO: this is strange...
+      // ... so let's avoid it, for now
+      assert(false);
+    }
+    // guarantee that context is the same
+    assert(this->ctx.lock() == owner.ctx.lock());
+    //
+    // it seems that best logic is:
+    // - each weak owned_by link corresponds to weak owns link
+    // - each strong child link corresponds to a weak parent link
+    //
+    /*
+    if (owner.remote_node.lock()->has_child(this->remote_node)) {
+      if (true) {
+        std::cout << "set_owned_by WARNING! prevented double linking child... "
+                     "ALREADY owner!"
+                  << std::endl;
+        std::cout << "TODO: maybe need to allow double linking here..."
+                  << std::endl;
+      }
+      return;
+    }
+    */
+    //
+    unsafe_set_owned_by(owner);
+  }
 
   // new logic here
   void unsafe_set_owned_by(const relation_ptr<T>& owner) {
@@ -653,7 +658,15 @@ class relation_ptr {
   // - maybe not, but I don't imagine why at this moment...
   auto copy_owned(const relation_ptr<T>& owner) {
     // C4 constructor
-    return relation_ptr<T>(*this, owner);
+    // NOTE: this cannot be nullptr
+    assert(!this->is_nullptr());
+    // NOTE: owner cannot be nullptr
+    assert(!owner.is_nullptr());
+    int sz_owns = owner.remote_node.lock()->owns.size();
+    auto r = relation_ptr<T>(*this, owner);
+    assert(sz_owns + 1 == owner.remote_node.lock()->owns.size());
+    //
+    return r;
   }
 
   // maybe we need an 'owns' method, that does the opposite
