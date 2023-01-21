@@ -39,11 +39,14 @@ class relation_pool {
   relation_pool() : ctx{new forest_ctx{}} {}
 
   // move only
-  relation_pool(relation_pool&& corpse) noexcept : ctx{std::move(corpse.ctx)} {}
+  relation_pool(relation_pool&& corpse) noexcept : ctx{std::move(corpse.ctx)} {
+    corpse.ctx = nullptr;
+  }
 
   // move only
   relation_pool& operator=(relation_pool&& corpse) noexcept {
     this->ctx = std::move(corpse.ctx);
+    corpse.ctx = nullptr;
     return *this;
   }
 
@@ -53,7 +56,10 @@ class relation_pool {
   // copy disabled
   relation_pool& operator=(const relation_pool& other) = delete;
 
-  ~relation_pool() { clear(); }
+  ~relation_pool() {
+    // std::cout << "~relation_pool: ctx=" << ctx << std::endl;
+    clear();
+  }
 
   void setAutoCollect(bool b) { ctx->auto_collect = b; }
 

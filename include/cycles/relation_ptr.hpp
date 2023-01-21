@@ -698,6 +698,7 @@ class relation_ptr {
   }
 
   sptr<T> get_sptr() const {
+    // assert(!is_nullptr());
     auto sremote_node = this->remote_node.lock();
     if (!sremote_node) {
       return nullptr;
@@ -716,7 +717,13 @@ class relation_ptr {
     }
   }
 
-  T* get() const { return get_sptr().get(); }
+  T* get() const {
+    auto mysptr = get_sptr();
+    if (!mysptr)
+      return nullptr;
+    else
+      return mysptr.get();
+  }
 
   // TODO(igormcoelho): avoid this! but ... WHY?
   T* operator->() const { return get(); }

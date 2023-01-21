@@ -159,6 +159,27 @@ CTree with relation_ptr - no auto_collect: 251.257ms (132x uptr, 57x sptr)
 - Around 57x slower over `std::shared_ptr`
 - Better behavior when garbage is not collected during operations (only in the end)
 
+#### benchmarks against Arena strategies
+
+Considering graph with 500 vertex and 150k edges:
+
+```
+V=500 E=150000
+sptr_example1 (leaks due to cycle in sptr)
+foo: 2
+example1 13.4712ms
+arena_example2 (no leaks due to arena)
+foo: 2
+example2 10.7775ms
+cycles_example3 (no leaks expected (hopefully!) due to relation_ptr)
+foo: 2
+cycles example3 1184.28ms
+```
+
+`relation_ptr` is around 120x slower than pure arena strategy (with vector of unique_ptr).
+
+It means that Arena strategies should be used whenever possible... specially, when
+block allocation is feasible and no partial collection is needed during execution.
 
 ## How this works
 
