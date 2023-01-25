@@ -21,6 +21,12 @@ class MyNode {
 public:
   double val;
   std::vector<relation_ptr<MyNode>> neighbors;
+
+  // TODO: remove the need for this operator<< in debug mode
+  friend std::ostream& operator<<(std::ostream& os, const MyNode& me) {
+    os << "MyNode(" << val << ")";
+    return os;
+  }
 };
 
 
