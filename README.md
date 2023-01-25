@@ -193,6 +193,11 @@ This project can be used to manage cyclic data structures with memory safe.
 
 See https://github.com/hsutter/gcpp and its video from cppcon 2016 [Leak Freedom in C++... by Default](https://www.youtube.com/watch?v=JfmTagWcqoE).
 
+## Acknowledgements
+
+We appreciate the interest of all involved in this project.
+Special thanks to Wang Yong Qiang for early revisions of the ideas behind this project.
+
 ## License
 
 MIT License

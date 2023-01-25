@@ -169,9 +169,57 @@ void test_main_long_rptr(int V, int E, int SEED) {
 
 }  // namespace cycles_example1
 
+namespace cycles_example2_arena {
+
+relation_ptr<Node> init_long_rptr(int v,
+                                  const std::vector<std::vector<int>>& v_index,
+                                  TypedArenaCycles<Node>& arena)  // NOLINT
+{                                                                 // NOLINT
+  //
+  std::vector<relation_ptr<Node>> vertex;
+  for (int i = 0; i < v; i++) {
+    std::string stri = std::to_string(i);
+    // NOLINTNEXTLINE
+    auto* node = new Node(stri);
+    vertex.push_back(arena.alloc(node));
+  }
+  // make mirror experiment with v_index
+  for (int i = 0; i < v; i++) {
+    for (int e = 0; e < v_index[i].size(); e++) {
+      int j = v_index[i][e];
+      vertex[i]->edges.push_back(vertex[j].copy_owned(vertex[i]));
+    }
+  }
+  //
+  // pool.getContext()->debug = true;
+  // root is first vertex only... the rest may die automatically. let's see.
+  return std::move(vertex[0]);
+}
+
+void test_main_long_rptr(int V, int E, int SEED) {
+  std::vector<std::vector<int>> v_index = gen_experiment(V, E, SEED, false);
+  // DEBUG
+  // print_exp(v_index);
+  //
+  auto arena = TypedArenaCycles<Node>{};
+  auto ptr = init_long_rptr(V, v_index, arena);
+  // std::cout << "root = " << gpair.second->datum << std::endl;
+  const auto& gref = *(ptr.get());
+  std::set<std::string> seen;
+  gref.traverse([&](const std::string& d) { std::cout << d; }, seen);
+  if (gref.edges.size() > 0) {
+    Node* f = gref.first();
+    foo(*f);
+  } else {
+    std::cout << "WARNING: no edges to invoke foo()" << std::endl;
+  }
+}
+
+}  // namespace cycles_example2_arena
+
 int main() {
   int V = 500;
-  int E = V * V * 0.6;
+  int E = (int)(V * V * 0.6);  // NOLINT
   int SEED = 999999;
   std::cout << "V=" << V << " E=" << E << std::endl;
   std::cout << "sptr_example1 (leaks due to cycle in sptr)" << std::endl;
@@ -213,6 +261,22 @@ int main() {
   // will not leak
   std::cout
       << "cycles example3 "
+      << duration<double, std::milli>(high_resolution_clock::now() - c).count()
+      << "ms" << std::endl;
+
+  // =====================================
+
+  std::cout << "cycles_example4 with arena (no leaks expected (hopefully!) due "
+               "to relation_ptr)"
+            << std::endl;
+  c = high_resolution_clock::now();
+  {
+    // many things...
+    cycles_example2_arena::test_main_long_rptr(V, E, SEED);
+  }
+  // will not leak
+  std::cout
+      << "cycles example4 "
       << duration<double, std::milli>(high_resolution_clock::now() - c).count()
       << "ms" << std::endl;
 

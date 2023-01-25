@@ -212,3 +212,86 @@ void test_main() {
 }
 
 }  // namespace cycles_example1
+
+namespace cycles_example2_arena {
+// REF graph ARENA
+
+template <class T>
+struct TypedArenaCycles {
+  relation_pool pool;
+  std::vector<cycles::relation_ptr<T>> v;
+  //
+  relation_ptr<T> alloc(T* t) {
+    cycles::relation_ptr<T> ptr{pool.getContext(), t};
+    // observer pointer pattern for relation_ptr
+    cycles::relation_ptr<T> ob_ptr = ptr.copy_owned(ptr);
+    v.push_back(std::move(ptr));
+    return std::move(ob_ptr);
+  }
+};
+
+struct Node {
+  std::string datum;
+  std::vector<relation_ptr<Node>> edges;
+
+  explicit Node(const std::string& datum) : datum{datum}, edges{} {}
+
+  void traverse(std::function<void(const std::string&)> f,
+                std::set<std::string>& seen) const {
+    //
+    if (seen.find(this->datum) == seen.end()) {
+      return;
+    }
+    f(this->datum);
+    seen.insert(this->datum);
+    for (auto& n : this->edges) {
+      n->traverse(f, seen);
+    }
+  }
+
+  // TODO(igormcoelho): this part could be improved with delegated sptr
+  Node* first() const { return this->edges.at(0).get(); }
+
+  friend std::ostream& operator<<(std::ostream& os, const Node& me) {
+    os << "Node(\"" << me.datum << "\")";
+    return os;
+  }
+};
+
+void foo(const Node& node) { std::cout << "foo: " << node.datum << std::endl; }
+
+relation_ptr<Node> init(TypedArenaCycles<Node>& arena)  // NOLINT
+{                                                       // NOLINT
+  auto root = arena.alloc(new Node("A"));               // NOLINT
+  auto b = arena.alloc(new Node("B"));                  // NOLINT
+  auto c = arena.alloc(new Node("C"));                  // NOLINT
+  auto d = arena.alloc(new Node("D"));                  // NOLINT
+  auto e = arena.alloc(new Node("E"));                  // NOLINT
+  auto f = arena.alloc(new Node("F"));                  // NOLINT
+
+  {
+    auto& mut_root = *(root.get());
+    mut_root.edges.push_back(b.copy_owned(root));
+    mut_root.edges.push_back(c.copy_owned(root));
+    mut_root.edges.push_back(d.copy_owned(root));
+
+    auto& mut_c = *(c.get());
+    mut_c.edges.push_back(e.copy_owned(c));
+    mut_c.edges.push_back(f.copy_owned(c));
+    mut_c.edges.push_back(root.copy_owned(c));
+  }
+
+  return std::move(root);
+}
+
+void test_main() {
+  auto arena = TypedArenaCycles<Node>{};
+  auto ptr = init(arena);
+  const auto& gref = *(ptr.get());
+  std::set<std::string> seen;
+  gref.traverse([&](const std::string& d) { std::cout << d; }, seen);
+  Node* f = gref.first();
+  foo(*f);
+}
+
+}  // namespace cycles_example2_arena
