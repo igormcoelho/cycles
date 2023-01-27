@@ -677,6 +677,7 @@ class relation_ptr {
     return r;
   }
 
+  // NOT implemented yet
   auto get_unowned() {
     // cannot get pointer from null
     if (this->is_nullptr()) {
@@ -707,12 +708,14 @@ class relation_ptr {
            (get() == other.get());  //&& (ref == other.ref);
   }
 
+ private:
   // same as operator bool()
   bool has_get() const noexcept {
     // NOLINTNEXTLINE
     return (bool)get();
   }
 
+ public:
   // this typically replaces 'has_get'
   explicit operator bool() const noexcept { return has_get(); }
 

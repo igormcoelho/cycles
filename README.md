@@ -23,30 +23,16 @@ public:
   std::vector<relation_ptr<MyNode>> neighbors;
 };
 
-
 class MyGraph {
 public:
-  relation_pool pool;
-  
-  // Example: graph with entry, similar to a root in trees... but may be cyclic.
-  relation_ptr<MyNode> entry;
+  // Example: graph with entry, similar to a root in trees... but may be cyclic
+  relation_pool pool;          // pool of data, similar to gcpp 'deferred_heap'
+  relation_ptr<MyNode> entry;  // pointer to data, similar to gcpp 'deferred_ptr'
 
-  auto make_node(double v) -> relation_ptr<MyNode>
-  {
+  // helper function to generate new pointers according to same 'pool'
+  auto make_node(double v) -> relation_ptr<MyNode> {
     return relation_ptr<MyNode>(pool.getContext(), new MyNode { .val = v });
   }
-
-  MyGraph()
-      : entry { relation_ptr<MyNode>{} }
-  {
-  }
-
-  ~MyGraph()
-  {
-    // optional, no need to clean anything
-    pool.clear();
-  }
-
 };
 ```
 
@@ -57,20 +43,34 @@ create new relations pointing to the same objects by using helper method `get_ow
 ```{.cpp}
   {
     MyGraph<double> G;
-    G.pool.getContext()->print();
-    //
+
+    // create nodes -1, 1, 2 and 3
     G.entry = G.make_node(-1.0);
-    // make cycle
     relation_ptr<MyNode> ptr1 = G.make_node(1.0);
-    g.entry->neighbors.push_back(ptr1.get_owned(G.entry));
     relation_ptr<MyNode> ptr2 = G.make_node(2.0);
-    ptr1->neighbors.push_back(ptr2.get_owned(ptr1));
     relation_ptr<MyNode> ptr3 = G.make_node(3.0);
-    ptr2->neighbors.push_back(ptr3.get_owned(ptr1));
-    // finish cycle
+
+    // manually generate a cycle: -1 -> 1 -> 2 -> 3 -> -1 -> ...
+    // entry node -1 has neighbor node 1
+    g.entry->neighbors.push_back(ptr1.get_owned(G.entry));
+    // node 1 has neighbor node 2
+    ptr1->neighbors.push_back(ptr2.get_owned(ptr1));
+    // node 2 has neighbor node 3
+    ptr2->neighbors.push_back(ptr3.get_owned(ptr2));
+    // finish cycle: node 3 has neighbor entry node -1
     ptr3->neighbors.push_back(G.entry.get_owned(ptr3));
+
+    // optional, destroy local variables (only keep 'G.entry')
+    ptr1.reset();
+    ptr2.reset();
+    ptr3.reset();
+
+    // nodes 1, 2, 3, -1, 1, 2, 3, -1, 1 ... still reachable from entry node -1
+    assert(-1 == G.entry->val);
+    assert( 2 == G.entry->neighbors[0]->neighbors[0]->val);
+    assert(-1 == G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0]->val);
   }
-  // This will not leak! (even if a cycle exists)
+  // This will not leak! Even when a cycle exists from 'G.entry'
 ```
 
 ### Functions to get internal pointer
