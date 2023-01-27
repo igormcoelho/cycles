@@ -23,7 +23,7 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     //
     L.entry = L.make_node(0);
     L.entry->next = L.make_node_owned(1, L.entry);
-    L.entry->next->prev = L.entry.copy_owned(L.entry->next);
+    L.entry->next->prev = L.entry.get_owned(L.entry->next);
     auto& node1 = L.entry->next;
     //
     L.addNext(2, node1);
@@ -33,8 +33,8 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     L.addNext(4, node3);
     auto& node4 = node3->next;
     // close cycle
-    node4->next = L.entry.copy_owned(node4);
-    L.entry->prev = node4.copy_owned(L.entry);
+    node4->next = L.entry.get_owned(node4);
+    L.entry->prev = node4.get_owned(L.entry);
     //
     // CHECK CYCLE (FOUR TIMES) - next
     auto* ptr = &L.entry;
@@ -105,8 +105,8 @@ TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
 
     //
     L.entry = L.make_node(-1);
-    L.entry->next = L.entry.copy_owned(L.entry);
-    L.entry->prev = L.entry.copy_owned(L.entry);
+    L.entry->next = L.entry.get_owned(L.entry);
+    L.entry->prev = L.entry.get_owned(L.entry);
     //
     // CHECK CYCLE (10 TIMES) - next
     auto* ptr = &L.entry;
@@ -157,7 +157,7 @@ TEST_CASE("CyclesTestMyList: MyList relation_ptr void derived") {
     relation_ptr<void> ptr_base(ctx, nullptr);
     ptr_base = relation_ptr<double>(ctx, new double{1});
     sptr<double> p =
-        std::static_pointer_cast<double, void>(ptr_base.get_sptr());
+        std::static_pointer_cast<double, void>(ptr_base.get_shared());
     REQUIRE(*p == 1);
   }
   // SHOULD NOT LEAK

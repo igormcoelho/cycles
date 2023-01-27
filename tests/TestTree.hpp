@@ -109,7 +109,7 @@ class CTreeNode {
     int hMax = 0;
     for (auto i = 0; i < children.size(); i++) {
       int h = 0;
-      if (children[i].has_get()) h = children[i]->height();
+      if (children[i]) h = children[i]->height();
       if (h > hMax) hMax = h;
     }
     return hMax + 1;
@@ -118,7 +118,7 @@ class CTreeNode {
   void nprint() const {
     std::cout << v << std::endl;
     for (auto i = 0; i < children.size(); i++)
-      if (children[i].has_get()) children[i]->nprint();
+      if (children[i]) children[i]->nprint();
   }
 
   friend std::ostream& operator<<(std::ostream& os, const CTreeNode& me) {
@@ -133,7 +133,7 @@ class CTree {
   cycles::relation_ptr<CTreeNode> root;
 
   int tHeight() const {
-    if (!root.has_get())
+    if (!root)
       return 0;
     else
       return root->height();

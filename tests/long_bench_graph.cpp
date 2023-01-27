@@ -138,7 +138,7 @@ std::pair<relation_pool, relation_ptr<Node>> init_long_rptr(
   for (int i = 0; i < v; i++) {
     for (int e = 0; e < v_index[i].size(); e++) {
       int j = v_index[i][e];
-      vertex[i]->edges.push_back(vertex[j].copy_owned(vertex[i]));
+      vertex[i]->edges.push_back(vertex[j].get_owned(vertex[i]));
     }
   }
   //
@@ -186,7 +186,7 @@ relation_ptr<Node> init_long_rptr(int v,
   for (int i = 0; i < v; i++) {
     for (int e = 0; e < v_index[i].size(); e++) {
       int j = v_index[i][e];
-      vertex[i]->edges.push_back(vertex[j].copy_owned(vertex[i]));
+      vertex[i]->edges.push_back(vertex[j].get_owned(vertex[i]));
     }
   }
   //

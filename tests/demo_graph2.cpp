@@ -6,9 +6,9 @@
 #include <demo_cptr/XNode.hpp>
 
 //
-#include <cycles/relation_ptr.hpp>
 #include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/relation_ptr.hpp>
 #include <demo_cptr/MyGraph.hpp>
 #include <pre-experiments/List.hpp>
 #include <pre-experiments/nodes_exp.hpp>
@@ -62,22 +62,22 @@ int main() {
     //
     // G.entry.get()->neighbors.push_back(ptr1);
     std::cout << "---> setup G.entry" << std::endl;
-    G.entry.get()->neighbors.push_back(ptr1.copy_owned(G.entry));
+    G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
-    ptr1.get()->neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
-    ptr2.get()->neighbors.push_back(ptr3.copy_owned(ptr2));
+    ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
     G.print();
     std::cout << std::endl;
     std::cout << "WILL ADD LAST LINK" << std::endl;
-    ptr3.get()->neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
     std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
               << std::endl;
     assert(G.my_ctx().lock()->forest.size() == 4);  // all independent

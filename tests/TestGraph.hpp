@@ -188,14 +188,14 @@ std::pair<relation_pool, relation_ptr<Node>> init() {
 
   {
     auto& mut_root = *(root.get());
-    mut_root.edges.push_back(b.copy_owned(root));
-    mut_root.edges.push_back(c.copy_owned(root));
-    mut_root.edges.push_back(d.copy_owned(root));
+    mut_root.edges.push_back(b.get_owned(root));
+    mut_root.edges.push_back(c.get_owned(root));
+    mut_root.edges.push_back(d.get_owned(root));
 
     auto& mut_c = *(c.get());
-    mut_c.edges.push_back(e.copy_owned(c));
-    mut_c.edges.push_back(f.copy_owned(c));
-    mut_c.edges.push_back(root.copy_owned(c));
+    mut_c.edges.push_back(e.get_owned(c));
+    mut_c.edges.push_back(f.get_owned(c));
+    mut_c.edges.push_back(root.get_owned(c));
   }
 
   return std::pair<relation_pool, relation_ptr<Node>>{std::move(pool),
@@ -224,7 +224,7 @@ struct TypedArenaCycles {
   relation_ptr<T> alloc(T* t) {
     cycles::relation_ptr<T> ptr{pool.getContext(), t};
     // observer pointer pattern for relation_ptr
-    cycles::relation_ptr<T> ob_ptr = ptr.copy_owned(ptr);
+    cycles::relation_ptr<T> ob_ptr = ptr.get_owned(ptr);
     v.push_back(std::move(ptr));
     return std::move(ob_ptr);
   }
@@ -271,14 +271,14 @@ relation_ptr<Node> init(TypedArenaCycles<Node>& arena)  // NOLINT
 
   {
     auto& mut_root = *(root.get());
-    mut_root.edges.push_back(b.copy_owned(root));
-    mut_root.edges.push_back(c.copy_owned(root));
-    mut_root.edges.push_back(d.copy_owned(root));
+    mut_root.edges.push_back(b.get_owned(root));
+    mut_root.edges.push_back(c.get_owned(root));
+    mut_root.edges.push_back(d.get_owned(root));
 
     auto& mut_c = *(c.get());
-    mut_c.edges.push_back(e.copy_owned(c));
-    mut_c.edges.push_back(f.copy_owned(c));
-    mut_c.edges.push_back(root.copy_owned(c));
+    mut_c.edges.push_back(e.get_owned(c));
+    mut_c.edges.push_back(f.get_owned(c));
+    mut_c.edges.push_back(root.get_owned(c));
   }
 
   return std::move(root);

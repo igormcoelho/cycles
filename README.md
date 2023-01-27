@@ -58,7 +58,7 @@ public:
 
 This example shows that, even for a cyclic graph, no leaks happen!
 Graph stores a `relation_pool` while all `relation_ptr` ensure that no real cycle dependencies exist. The `relation_ptr` has move-only semantics, but it is possible to
-create new relations pointing to the same objects by using helper method `copy_owned`.
+create new relations pointing to the same objects by using helper method `get_owned`.
 
 ```{.cpp}
   {
@@ -68,16 +68,43 @@ create new relations pointing to the same objects by using helper method `copy_o
     G.entry = G.make_node(-1.0);
     // make cycle
     relation_ptr<MyNode> ptr1 = G.make_node(1.0);
-    g.entry->neighbors.push_back(ptr1.copy_owned(G.entry));
+    g.entry->neighbors.push_back(ptr1.get_owned(G.entry));
     relation_ptr<MyNode> ptr2 = G.make_node(2.0);
-    ptr1->neighbors.push_back(ptr2.copy_owned(ptr1));
+    ptr1->neighbors.push_back(ptr2.get_owned(ptr1));
     relation_ptr<MyNode> ptr3 = G.make_node(3.0);
-    ptr2->neighbors.push_back(ptr3.copy_owned(ptr1));
+    ptr2->neighbors.push_back(ptr3.get_owned(ptr1));
     // finish cycle
-    ptr3->neighbors.push_back(G.entry.copy_owned(ptr3));
+    ptr3->neighbors.push_back(G.entry.get_owned(ptr3));
   }
   // This will not leak! (even if a cycle exists)
 ```
+
+### Functions to get internal pointer
+
+`relation_ptr<T>` has four different ways to get pointer:
+
+- `get() -> T*`: returns raw pointer `T*`
+- `get_owned(const relation_ptr<T>& owner) -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting ownership link to the owner**
+- `get_unowned() -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting no ownership link (if possible, otherwise, returns nullptr)**
+- `get_shared() -> std::shared_ptr<T>`: returns data pointer as shared pointer `std::shared_ptr<T>`
+
+All pointer types return `nullptr` if no data exists (or have been collected).
+
+***Note:*** *Current underlying data structure does not allow multiple unowned references (only a single one!)...*
+We believe this could change in the future, with more advances, but for now, **unowned** links are
+supposed to be **unique**.
+*Example:*
+
+```
+relation_ptr<T> unowned{my_pool, new MyData{}};
+relation_ptr<T> unowned2 = unowned.get_unowned();
+assert(unowned);    // exists
+assert(!unowned2);  // does not exist
+```
+
+It is worth mentioning that `get_owned` and `get_unowned` do look like 
+some sort of copy constructors, but in fact, only pointer is "copied"
+and a brand new relation is created (remember that relations are either immutable or null).
 
 ## features
 
@@ -98,7 +125,7 @@ This pointer has disadvantages too:
 - slower performance, compared to `std::shared_ptr` (see benchmarks below)
 - slower performance, compared to `gcpp` (supposed... must validate, yet)
 - likely thread unsafe (must investigate deeper)
-- does not support copy semantics, only move semantics and a `copy_owned` method as helper
+- does not support copy semantics, only move semantics and a `get_owned` method as helper
 - (planned feature) no support for delegated construction of smart pointer (such as in `std::shared_ptr` two parameter constructor)
 
 ## Typical use cases

@@ -90,7 +90,7 @@ class MyGraph {
 #if 0
     auto ptr1 = relation_ptr<MyNodeX>(this->pool.getContext(),
                                       new MyNodeX(v, debug_flag));
-    return ptr1.copy_owned(owner);
+    return ptr1.get_owned(owner);
 #else
     return relation_ptr<MyNodeX>(this->pool.getContext(),
                                  new MyNodeX(v, debug_flag), owner);
@@ -104,17 +104,17 @@ class MyGraph {
   void print() {
     std::cout << "============================ " << std::endl
               << "MyGraph::print() => root.has_get() = "
-              << (entry.has_get() ? "true" : "false") << std::endl;
+              << (entry ? "true" : "false") << std::endl;
     // std::cout << "MyGraph::ctx (pointer) ~> " << ctx << std::endl;
     // if (ctx) ctx->print();
     // std::cout << "MyGraph::finished ctx print" << std::endl;
-    if (entry.has_get()) printFrom(entry);
+    if (entry) printFrom(entry);
     std::cout << "MyGraph::finished PRINT" << std::endl;
     std::cout << "============================ " << std::endl;
   }
 
   void printFrom(const relation_ptr<MyNodeX>& node) {
-    if (node.has_get()) {
+    if (node) {
       std::cout << "node=" << node.get()
                 << " |neighbors|=" << node.get()->neighbors.size() << std::endl;
 

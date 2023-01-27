@@ -105,7 +105,7 @@ int main() {
       auto* node_next = new CListNode{.v = n++};  // NOLINT
 
       // (*current)->next =
-      //    cycles::relation_ptr<CListNode>{list.ctx, node_next}.copy_owned(
+      //    cycles::relation_ptr<CListNode>{list.ctx, node_next}.get_owned(
       //        *current);
 
       (*current)->next =
@@ -146,7 +146,7 @@ int main() {
       auto* node_next = new CListNode{.v = n++};  // NOLINT
 #if 0
       (*current)->next =
-          cycles::relation_ptr<CListNode>{list.ctx, node_next}.copy_owned(
+          cycles::relation_ptr<CListNode>{list.ctx, node_next}.get_owned(
               *current);
 #else
       (*current)->next =
@@ -299,7 +299,7 @@ int main() {
 
 #if 0
         (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node1}.copy_owned(*target));
+            relation_ptr<CTreeNode>{tree.ctx, node1}.get_owned(*target));
 #else
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node1, *target});
@@ -309,7 +309,7 @@ int main() {
 
 #if 0
         (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node2}.copy_owned(*target));
+            relation_ptr<CTreeNode>{tree.ctx, node2}.get_owned(*target));
 #else
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node2, *target});
@@ -370,7 +370,7 @@ int main() {
 
 #if 0
         (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node1}.copy_owned(*target));
+            relation_ptr<CTreeNode>{tree.ctx, node1}.get_owned(*target));
 #else
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node1, *target});
@@ -380,7 +380,7 @@ int main() {
 
 #if 0
         (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node2}.copy_owned(*target));
+            relation_ptr<CTreeNode>{tree.ctx, node2}.get_owned(*target));
 #else
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node2, *target});

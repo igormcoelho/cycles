@@ -115,9 +115,9 @@ bool TestCase1() {
     // auto a = ;
     g.SetRoot(MyGraph::MakeNode());
     auto b = MyGraph::MakeNode();
-    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    g.GetRoot()->AddChild(b.get_owned(g.GetRoot()));
     auto c = MyGraph::MakeNode();
-    b->AddChild(c.copy_owned(b));
+    b->AddChild(c.get_owned(b));
     g.GetRoot()->RemoveChild(b);
   }
   g.ShrinkToFit();
@@ -130,12 +130,12 @@ bool TestCase2() {
     auto a = MyGraph::MakeNode();
     g.SetRoot(std::move(a));
     auto b = MyGraph::MakeNode();
-    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    g.GetRoot()->AddChild(b.get_owned(g.GetRoot()));
     auto c = MyGraph::MakeNode();
-    b->AddChild(c.copy_owned(b));
+    b->AddChild(c.get_owned(b));
     auto d = MyGraph::MakeNode();
-    b->AddChild(d.copy_owned(b));
-    d->AddChild(b.copy_owned(d));
+    b->AddChild(d.get_owned(b));
+    d->AddChild(b.get_owned(d));
     g.GetRoot()->RemoveChild(b);
   }
   g.ShrinkToFit();
@@ -148,12 +148,12 @@ bool TestCase3() {
     // auto a = ;
     g.SetRoot(MyGraph::MakeNode());
     auto b = MyGraph::MakeNode();
-    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    g.GetRoot()->AddChild(b.get_owned(g.GetRoot()));
     auto c = MyGraph::MakeNode();
-    b->AddChild(c.copy_owned(b));
+    b->AddChild(c.get_owned(b));
     auto d = MyGraph::MakeNode();
-    b->AddChild(d.copy_owned(b));
-    d->AddChild(b.copy_owned(d));
+    b->AddChild(d.get_owned(b));
+    d->AddChild(b.get_owned(d));
   }
   g.ShrinkToFit();
   return Counter::count() == 4;
@@ -165,12 +165,12 @@ bool TestCase4() {
     // auto a = MyGraph::MakeNode();
     g.SetRoot(MyGraph::MakeNode());
     auto b = MyGraph::MakeNode();
-    g.GetRoot()->AddChild(b.copy_owned(g.GetRoot()));
+    g.GetRoot()->AddChild(b.get_owned(g.GetRoot()));
     auto c = MyGraph::MakeNode();
-    b->AddChild(c.copy_owned(b));
+    b->AddChild(c.get_owned(b));
     auto d = MyGraph::MakeNode();
-    b->AddChild(d.copy_owned(b));
-    d->AddChild(b.copy_owned(d));
+    b->AddChild(d.get_owned(b));
+    d->AddChild(b.get_owned(d));
     d->RemoveChild(b);
   }
   g.ShrinkToFit();

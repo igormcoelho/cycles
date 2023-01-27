@@ -249,7 +249,7 @@ class relation_ptr {
     assert(ctx.lock().get() == owner.ctx.lock().get());
     //
     this->debug_flag_ptr = get_ctx().lock()->debug;
-    if (debug()) std::cout << "c4 constructor for copy_owned" << std::endl;
+    if (debug()) std::cout << "c4 constructor for get_owned" << std::endl;
     if (this == &copy) {
       // TODO: self assignment breaks nothing here, in this case...
       // ... but let's avoid it, for now
@@ -274,8 +274,10 @@ class relation_ptr {
       std::cout << "finish c4: stored owner in owned_by_node" << std::endl;
   }
 
-  int get_ref_use_count() const { return this->get_sptr().use_count(); }
+ private:
+  int get_ref_use_count() const { return this->get_shared().use_count(); }
 
+ public:
   void destroy() {
     if (debug()) std::cout << "destroy: BEGIN" << std::endl;
     // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
@@ -655,16 +657,14 @@ class relation_ptr {
 
   // =============== BASE OPERATIONS ===============
 
-  // returns a self-copy and setup ownership relationship to 'owner'
+  // get_owned: returns a relation_ptr pointing to owner's data and setup
+  // ownership relationship to 'owner'
   //
-  // important: (this is an idea)
-  // - if you copy pointer again (with regular copy constructor),
-  // ownership relationship will be kept on ctx
-  // example: b = a.copy_owned(c); // b is a copy of a, and relationship c->b
-  // is created (so as "c owns a",  c->a)
-  // - maybe this is a good thing, because we can keep copy constructor
-  // - maybe not, but I don't imagine why at this moment...
-  auto copy_owned(const relation_ptr<T>& owner) {
+  // example: b = a.get_owned(c);
+  // b is a copy of a's pointer, and relationship c->b is created
+  // (so relation "c owns a", c->a, is kept on object b)
+  //
+  auto get_owned(const relation_ptr<T>& owner) {
     // C4 constructor
     // NOTE: this cannot be nullptr
     assert(!this->is_nullptr());
@@ -677,16 +677,23 @@ class relation_ptr {
     return r;
   }
 
-  // maybe we need an 'owns' method, that does the opposite
-  // example: a.owns(b);  will create relationship a->b
-  void owns(const relation_ptr<T>& owned) { assert(false); }
-
-  // maybe we need an 'removed_owned' method
-  // MAYBE NOT! maybe this is just a ctx thing, or maybe we just let variables
-  // expire to handle this... I don't really know. example: a.remove_owned(b);
-  // will remove relationship a->b (if it exists, it returns true) what to do
-  // with opposite relationship? do we let ctx handle all this?
-  bool remove_owned(const relation_ptr<T>& owned) { assert(false); }
+  auto get_unowned() {
+    // cannot get pointer from null
+    if (this->is_nullptr()) {
+      // return null
+      return relation_ptr<T>{};
+    }
+    // cannot currently make copies of unowned
+    if (this->is_root()) {
+      // return null
+      return relation_ptr<T>{};
+    }
+    // this must be owned
+    assert(this->is_owned());
+    std::cout << "ERROR: must implement unowned from owned logic!" << std::endl;
+    assert(false);
+    return relation_ptr<T>{};
+  }
 
   auto get_ctx() -> wptr<forest_ctx> { return ctx; }
 
@@ -700,17 +707,23 @@ class relation_ptr {
            (get() == other.get());  //&& (ref == other.ref);
   }
 
-  bool has_get() const {
+  // same as operator bool()
+  bool has_get() const noexcept {
     // NOLINTNEXTLINE
     return (bool)get();
   }
 
-  sptr<T> get_sptr() const {
+  // this typically replaces 'has_get'
+  explicit operator bool() const noexcept { return has_get(); }
+
+  sptr<T> get_shared() const {
     // assert(!is_nullptr());
     auto sremote_node = this->remote_node.lock();
     if (!sremote_node) {
       return nullptr;
     } else {
+      // TODO: how to make this simpler?
+      //
       // return sremote_node->value;
       //
       /*
@@ -721,19 +734,19 @@ class relation_ptr {
       // delegate liveness of sptr<TNodeData> to sptr<T>
       //
       // NOLINTNEXTLINE
-      return {sremote_node->value, (T*)(sremote_node->value->p)};
+      return sptr<T>{sremote_node->value, (T*)(sremote_node->value->p)};
     }
   }
 
   T* get() const {
-    auto mysptr = get_sptr();
+    auto mysptr = get_shared();
     if (!mysptr)
       return nullptr;
     else
       return mysptr.get();
   }
 
-  // TODO(igormcoelho): avoid this! but ... WHY?
+  // typical navigation operator
   T* operator->() const { return get(); }
 
  public:
