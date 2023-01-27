@@ -22,9 +22,8 @@ std::vector<std::vector<int>> gen_experiment(int v, int e, int seed,
   std::vector<std::vector<int>> v_index(v);
   for (int c = 0; c < e; c++) {
     int i = ::rand() % v;
-    // NO LOOPS (for now...)
-    int j = i;
-    while (j == i) j = ::rand() % v;
+    int j = ::rand() % v;
+    // loops are allowed with i==j
     v_index[i].push_back(j);
   }
   // remove edge duplicates (or leave as multigraph)

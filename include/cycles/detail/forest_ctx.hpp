@@ -247,6 +247,15 @@ class forest_ctx {
           if (debug) std::cout << "DEBUG: child found new parent!" << std::endl;
           auto sptr_new_parent = sptr_child->owned_by[k].lock();
           //
+          if (sptr_new_parent.get() == sptr_child.get()) {
+            if (debug) {
+              std::cout
+                  << "Found new parent to own child but it's loop! Ignoring! k="
+                  << k << std::endl;
+            }
+            continue;
+          }
+          //
           if (debug)
             std::cout << "DEBUG: sptr_new_parent="
                       << sptr_new_parent->value_to_string() << std::endl;

@@ -878,3 +878,74 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
   // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);
 }
+
+TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
+  std::cout << "begin MyGraph unowned and self-owned" << std::endl;
+  // create context
+  {
+    MyGraph<double> G;
+    // create unowned node
+    G.entry = G.make_node(-1.0);
+    // create copy of self-owned node
+    auto entry2 = G.entry.copy_owned(G.entry);
+    // check self-descendency here (TODO move for TNodeHelper tests)
+    REQUIRE(TNodeHelper<>::isDescendent(entry2.remote_node.lock(),
+                                        G.entry.remote_node.lock()));
+    //
+    // THIS IS A SELF-LINK... SOME DISCUSSIONS BELOW TO UNDERSTAND ITS MEANING.
+    //
+    // MEANING of is_root():
+    //  - data IS DIRECTLY REACHABLE (unowned)
+    //
+    // MEANING of is_owned():
+    //  - data is reachable though the OWNER node...
+    //     if OWNER disappears, data may be freed.
+    //
+    // MEANING of is_nullptr():
+    //  - no data is present or data is no longer reachable (or already
+    //  collected).
+    //
+
+    // INTERPRETATION: This relation_ptr represents a loop arrow
+    // from MyNode(G.entry) to MyNode(G.entry)... However, it does
+    // not add anything else regarding reachability. As soon as
+    // MyNode(G.entry) is no longer reachable (by some root path)
+    // it WILL be collected, regardless of this loop link.
+    // Note that this link cannot be "converted" to other link kind,
+    // for example, from "A to A" to "root to A"... every link is
+    // immutable on relation_ptr, so this SHOULD behave as some
+    // sort of "weak pointer", that does not increase data liveness.
+
+    // check value
+    REQUIRE(G.entry->val == -1);
+    REQUIRE(entry2->val == -1);
+    // change value
+    entry2->val = 2;
+    // check value again
+    REQUIRE(G.entry->val == 2);
+    REQUIRE(entry2->val == 2);
+    // check status
+    REQUIRE(G.entry.is_root());
+    REQUIRE(entry2.is_owned());
+    // check forest structure
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    //
+    // destroy unowned/root reference
+    //
+    G.entry.reset();
+    //
+    // 'entry2' is now unreachable (only way was through G.entry),
+    //   so both 'entry2' and 'G.entry' should be null now.
+    //
+    // check forest structure
+    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    // all cleared up already
+    REQUIRE(mynode_count == 0);
+
+    // both should be null
+    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(entry2.is_nullptr());
+  }
+  // SHOULD NOT LEAK
+  REQUIRE(mynode_count == 0);
+}

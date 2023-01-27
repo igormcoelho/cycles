@@ -441,6 +441,9 @@ class TNodeHelper {
   // ================================================================
   static bool isDescendent(sptr<TNode<T>> myNewParent,
                            sptr<TNode<T>> sptr_mynode) {
+    // self-check
+    if (myNewParent.get() == sptr_mynode.get()) return true;
+    //
     bool isDescendent = false;
     auto parentsParent = myNewParent->parent;
     while (auto sptrPP = parentsParent.lock()) {

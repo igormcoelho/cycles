@@ -377,6 +377,14 @@ class relation_ptr {
         }
         // new parent must exist
         assert(myNewParent);
+        if (myNewParent.get() == sptr_mynode.get()) {
+          if (debug()) {
+            std::cout
+                << "Found new parent to own me but it's loop! Ignoring! k=" << k
+                << std::endl;
+          }
+          continue;
+        }
         if (debug()) {
           std::cout
               << "Found new parent to own me (will check if not on subtree): "

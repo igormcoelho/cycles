@@ -1,4 +1,5 @@
 vgcore.*
+bugreport.*
 app_*
 a.out
 build/*
