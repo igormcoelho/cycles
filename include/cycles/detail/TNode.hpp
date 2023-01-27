@@ -45,19 +45,32 @@ class TNodeData {
   const void* p;
   // raw pointer to a type-erased destructor function
   void (*destroy)(const void*);
+
+#ifdef CYCLES_TOSTRING
   // debug only: raw pointer to a type-erased toString function
   std::string (*toString)(const void*);
+#endif
 
+#ifdef CYCLES_TOSTRING
   TNodeData(void* _p, void (*_destroy)(const void*),
             std::string (*_toString)(const void*))
       : p{_p}, destroy{_destroy}, toString{_toString} {}
+#else
+  TNodeData(void* _p, void (*_destroy)(const void*))
+      : p{_p}, destroy{_destroy} {}
+#endif
 
   // no copy allowed here
   TNodeData(const TNodeData&) = delete;
 
   // move is allowed
+#ifdef CYCLES_TOSTRING
   TNodeData(TNodeData&& corpse) noexcept
       : p{corpse.p}, destroy{corpse.destroy}, toString{corpse.toString} {}
+#else
+  TNodeData(TNodeData&& corpse) noexcept
+      : p{corpse.p}, destroy{corpse.destroy} {}
+#endif
 
   ~TNodeData() {
     // std::cout << "~TNodeData(" << toString(p) << ")" << std::endl;
@@ -66,7 +79,12 @@ class TNodeData {
   }
 
   friend std::ostream& operator<<(std::ostream& os, const TNodeData& me) {
+#ifdef CYCLES_TOSTRING
     os << "TNodeData(" << me.toString(me.p) << ")";
+#else
+    os << "TNodeData(undefined CYCLES_TOSTRING)";
+#endif
+
     return os;
   }
 
@@ -82,7 +100,9 @@ class TNodeData {
                      //
                      // NOLINTNEXTLINE
                      if (x) delete static_cast<const T*>(x);
-                   },
+                   }
+#ifdef CYCLES_TOSTRING
+                   ,
                    [](const void* x) {
                      std::stringstream ss;
                      if (x)
@@ -90,7 +110,9 @@ class TNodeData {
                      else
                        ss << "NULL";
                      return ss.str();
-                   }};
+                   }
+#endif
+    };
     return data;
   }
 
@@ -112,7 +134,9 @@ class TNodeData {
                                    //
                                    // NOLINTNEXTLINE
                                    if (x) delete static_cast<const T*>(x);
-                                 },
+                                 }
+#ifdef CYCLES_TOSTRING
+                                 ,
                                  [](const void* x) {
                                    std::stringstream ss;
                                    if (x)
@@ -120,7 +144,9 @@ class TNodeData {
                                    else
                                      ss << "NULL";
                                    return ss.str();
-                                 }};
+                                 }
+#endif
+      };
 
       return sptr<TNodeData>{data};
     }
