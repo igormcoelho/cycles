@@ -678,6 +678,12 @@ class relation_ptr {
     return r;
   }
 
+  // create self-owned reference (similar to "weak reference")
+  auto get_self_owned() const {
+    auto self_ptr = this->get_owned(*this);
+    return self_ptr;
+  }
+
   // NOT implemented yet
   auto get_unowned() {
     // cannot get pointer from null

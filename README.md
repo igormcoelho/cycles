@@ -11,27 +11,30 @@ These structures have cycle-breaking properties, thus allowing usage when `std::
 
 ## Motivation: implementing a Graph
 
-Consider node structure:
+### Example 1
+
+Consider node structure (see [src/examples/app_example1.cpp](src/examples/app_example1.cpp)):
 
 ```{.cpp}
 using cycles::relation_ptr;
 using cycles::relation_pool;
 
+
 class MyNode {
-public:
+ public:
   double val;
   std::vector<relation_ptr<MyNode>> neighbors;
 };
 
 class MyGraph {
-public:
+ public:
   // Example: graph with entry, similar to a root in trees... but may be cyclic
-  relation_pool pool;          // pool of data, similar to gcpp 'deferred_heap'
-  relation_ptr<MyNode> entry;  // pointer to data, similar to gcpp 'deferred_ptr'
+  relation_pool pool;          // pool of data, similar to 'deferred_heap'
+  relation_ptr<MyNode> entry;  // pointer to data, similar to 'deferred_ptr'
 
   // helper function to generate new pointers according to same 'pool'
   auto make_node(double v) -> relation_ptr<MyNode> {
-    return relation_ptr<MyNode>(pool.getContext(), new MyNode { .val = v });
+    return relation_ptr<MyNode>(pool.getContext(), new MyNode{.val = v});
   }
 };
 ```
@@ -67,7 +70,7 @@ create new relations pointing to the same objects by using helper method `get_ow
 
     // nodes 1, 2, 3, -1, 1, 2, 3, -1, 1 ... still reachable from entry node -1
     assert(-1 == G.entry->val);
-    assert( 2 == G.entry->neighbors[0]->neighbors[0]->val);
+    assert(2 == G.entry->neighbors[0]->neighbors[0]->val);
     assert(-1 == G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0]->val);
   }
   // This will not leak! Even when a cycle exists from 'G.entry'
@@ -75,14 +78,21 @@ create new relations pointing to the same objects by using helper method `get_ow
 
 ### Functions to get internal pointer
 
-`relation_ptr<T>` has four different ways to get pointer:
+`relation_ptr<T>` is **move-only**, thus **no object copy** is possible. 
+It is either **immutable** or **null** (when data is collected or after `.reset()`).
+
+`relation_ptr<T>` offers two main ways to **get** its internal pointer:
 
 - `get() -> T*`: returns raw pointer `T*`
 - `get_owned(const relation_ptr<T>& owner) -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting ownership link to the owner**
-- `get_unowned() -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting no ownership link (if possible, otherwise, returns nullptr)**
-- `get_shared() -> std::shared_ptr<T>`: returns data pointer as shared pointer `std::shared_ptr<T>`
 
-All pointer types return `nullptr` if no data exists (or have been collected).
+One may also need one of the following three extra **get** patterns:
+
+- `get_unowned() -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting no ownership link (similar to a "strong pointer")**
+- `get_self_owned() -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting self ownership link (similar to a "weak pointer")**
+- `get_shared() -> std::shared_ptr<T>`: returns data pointer as standard shared pointer `std::shared_ptr<T>` (for compatibility reasons)
+
+All `get` functions may return `nullptr` (if no data exists or have been collected).
 
 ***Note:*** *Current underlying data structure does not allow multiple unowned references (only a single one!)...*
 We believe this could change in the future, with more advances, but for now, **unowned** links are
@@ -99,6 +109,79 @@ assert(!unowned2);  // does not exist
 It is worth mentioning that `get_owned` and `get_unowned` do look like 
 some sort of copy constructors, but in fact, only pointer is "copied"
 and a brand new relation is created (remember that relations are either immutable or null).
+
+
+### Example 2
+
+Consider node structure (see [src/examples/app_example2.cpp](src/examples/app_example2.cpp)):
+
+```{.cpp}
+using cycles::relation_ptr;
+using cycles::relation_pool;
+
+class MyNode {
+ public:
+  relation_ptr<MyNode> self;  // self-ownership pattern
+
+  double val;
+  std::vector<relation_ptr<MyNode>> neighbors;
+
+  void add_neighbor(const relation_ptr<MyNode>& node) {
+    self->neighbors.push_back(node.get_owned(self));
+  }
+};
+
+class MyGraph {
+ public:
+  // Example: graph with entry, similar to a root in trees... but may be cyclic
+  relation_pool pool;          // pool of data, similar to 'deferred_heap'
+  relation_ptr<MyNode> entry;  // pointer to data, similar to 'deferred_ptr'
+
+  // helper function to generate new pointers according to same 'pool'
+  auto make_self_node(double v) -> relation_ptr<MyNode> {
+    relation_ptr<MyNode> node{pool.getContext(), new MyNode{.val = v}};
+    node->self = node.get_owned(node);  // self-ownership pattern
+    return node;
+  }
+};
+```
+
+This example demonstrates how **self-ownership** can be a useful pattern to create helpers, such as `add_neighbor`.
+This way, each node has some sort of "weak reference to itself", that makes everything easier!
+
+```{.cpp}
+  {
+    MyGraph G;
+
+    // create nodes -1, 1, 2 and 3
+    G.entry = G.make_self_node(-1.0);
+    relation_ptr<MyNode> ptr1 = G.make_self_node(1.0);
+    relation_ptr<MyNode> ptr2 = G.make_self_node(2.0);
+    relation_ptr<MyNode> ptr3 = G.make_self_node(3.0);
+
+    // manually generate a cycle: -1 -> 1 -> 2 -> 3 -> -1 -> ...
+    // entry node -1 has neighbor node 1
+    G.entry->add_neighbor(ptr1);
+    // node 1 has neighbor node 2
+    ptr1->add_neighbor(ptr2);
+    // node 2 has neighbor node 3
+    ptr2->add_neighbor(ptr3);
+    // finish cycle: node 3 has neighbor entry node -1
+    ptr3->add_neighbor(G.entry);
+
+    // optional, destroy local variables (only keep 'G.entry')
+    ptr1.reset();
+    ptr2.reset();
+    ptr3.reset();
+
+    // nodes 1, 2, 3, -1, 1, 2, 3, -1, 1 ... still reachable from entry node
+    // -1
+    assert(-1 == G.entry->val);
+    assert(2 == G.entry->neighbors[0]->neighbors[0]->val);
+    assert(-1 == G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0]->val);
+  }
+  // This will not leak! Even when a cycle exists from 'G.entry'
+```
 
 ## features
 
@@ -224,6 +307,8 @@ See https://github.com/hsutter/gcpp and its video from cppcon 2016 [Leak Freedom
 
 We appreciate the interest of all involved in this project.
 Special thanks to Wang Yong Qiang for early revisions of the ideas behind this project.
+Thanks to Fellipe Pessanha e Mateus Nazário for fruitful discussions on design, applications and
+possible extensions of this project to other programming languages.
 
 ## License
 

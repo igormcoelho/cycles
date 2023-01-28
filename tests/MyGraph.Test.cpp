@@ -935,6 +935,14 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     // check forest structure
     REQUIRE(G.my_ctx().lock()->forest.size() == 1);
     //
+    // create one more self-owned reference
+    auto entry3 = entry2.get_self_owned();
+    REQUIRE(G.entry.is_root());
+    REQUIRE(entry2.is_owned());
+    REQUIRE(entry3.is_owned());
+    // check forest structure
+    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    //
     // destroy unowned/root reference
     //
     G.entry.reset();
@@ -950,6 +958,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     // both should be null
     REQUIRE(G.entry.is_nullptr());
     REQUIRE(entry2.is_nullptr());
+    REQUIRE(entry3.is_nullptr());
   }
   // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);
