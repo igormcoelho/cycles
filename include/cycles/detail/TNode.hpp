@@ -482,11 +482,20 @@ class TNodeHelper {
     return isDescendent;
   }
 
-  static bool cleanOwnsAndOwnedByLists(sptr<TNode<T>> sptr_mynode) {
+  static bool cleanOwnsAndOwnedByLists(sptr<TNode<T>> sptr_mynode,
+                                       bool unchecked = false) {
     //
-    // force clean owned_by list before continuing... should be good!
+    // clean owns and owned_by list before continuing
     //
-    // for (unsigned i = 0; i < sptr_mynode->owned_by.size(); i++) {
+    if (unchecked) {
+      // this is faster: will not respect possibly broken weak links
+      sptr_mynode->owned_by.clear();
+      sptr_mynode->owns.clear();
+      return true;
+    }
+    //
+    // this is slower... will need to re-check every removed link
+    //
     while (sptr_mynode->owned_by.size() > 0) {
       // std::cout << "owned_by loop i=" << i << std::endl;
       auto sptr_owner = sptr_mynode->owned_by[0].lock();

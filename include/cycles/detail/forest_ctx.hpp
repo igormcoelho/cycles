@@ -56,24 +56,25 @@ class forest_ctx {
     if (debug) std::cout << "forest_ctx created!" << std::endl;
   }
 
-  ~forest_ctx() {
-    if (debug)
-      std::cout << "~forest_ctx() forest_size =" << forest.size() << std::endl;
-    for (auto p : forest) {
+  // quickly destroy all forest roots
+  void destroyForestRoots() {
+    for (const auto& p : forest) {
       if (debug)
-        std::cout << " clearing root of ~> " << p.first << "'" << (*p.first)
-                  << "' -> " << p.second << " TREE" << std::endl;
+        std::cout << "destroyForestRoots: clearing root of ~> " << p.first
+                  << "'" << (*p.first) << "' -> " << p.second << " TREE"
+                  << std::endl;
+      // NOLINTNEXTLINE
       assert(p.second->root);  // root must never be nullptr
       if (debug)
-        std::cout
-            << "CTX: move tree root node to garbage for deferred destruction"
-            << std::endl;
+        std::cout << "destroyForestRoots: move tree root node to garbage for "
+                     "deferred destruction"
+                  << std::endl;
       // ===============================
       // DO NOT DESTROY RECURSIVELY HERE
       // p.second->root = nullptr;  // clear root BEFORE CHILDREN
       //
-      // force clean both lists: owned_by and owns
-      bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(p.second->root);
+      // force clean both lists: owned_by and owns (UNCHECKED/FASTER)
+      bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(p.second->root, true);
       assert(b1);
       //
       // move to pending
@@ -92,12 +93,21 @@ class forest_ctx {
       p.second->root = nullptr;  // clear root
       */
     }
-    if (debug) std::cout << "~forest_ctx: final clear forest" << std::endl;
+    if (debug)
+      std::cout << "destroyForestRoots: final clear forest" << std::endl;
     forest.clear();  // is it necessary??
+  }
+
+  ~forest_ctx() {
+    if (debug)
+      std::cout << "~forest_ctx() forest_size =" << forest.size() << std::endl;
+    destroyForestRoots();
     if (debug)
       std::cout << "~forest_ctx: final cleanup on pending" << std::endl;
     assert(!is_destroying);
-    collect();
+    // NOTE: collect is slower than destroy_pending with unchecked=true
+    // collect();
+    destroy_pending(true);
     if (debug) std::cout << "~forest_ctx: finished final collect" << std::endl;
   }
 
@@ -151,7 +161,16 @@ class forest_ctx {
   bool is_destroying{false};
 
  public:
-  void collect() {
+  // public method to manually invoke collection, if 'auto_collect' is not true
+  void collect() { destroy_pending(false); }
+
+ private:
+  // destroy_pending(unchecked) performs destruction, with two modes:
+  // - unchecked==false: cleans respecting/updating owns and owned_by lists
+  // - unchecked==true:  cleans trees much faster, only destroying children
+  // Internally, 'unchecked=false' should be always used, except on forest
+  //   destructor, that allows reckless and faster destruction of everything.
+  void destroy_pending(bool unchecked = false) {
     if (is_destroying) {
       if (debug)
         std::cout << "WARNING: collect() already executing!" << std::endl;
@@ -161,6 +180,8 @@ class forest_ctx {
         std::cout << "CTX: NOT DESTROYING! BEGIN PROCESS!" << std::endl;
     }
     is_destroying = true;
+    if (debug)
+      std::cout << "CTX: destroy_pending. unchecked=" << unchecked << std::endl;
     if (debug)
       std::cout << "CTX: destroy_pending. |pending|=" << pending.size()
                 << std::endl;
@@ -202,8 +223,9 @@ class forest_ctx {
           std::cout << "CTX WARNING: owned_by but dying... must be some cycle!"
                     << std::endl;
       }
-      // force clean both lists: owned_by and owns
-      bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_delete);
+      // force clean both lists: owned_by and owns (CHECKED OR UNCHECKED)
+      bool b1 =
+          TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_delete, unchecked);
       assert(b1);
       //
       assert(sptr_delete->owned_by.size() == 0);
@@ -243,6 +265,12 @@ class forest_ctx {
         children.erase(children.begin() + 0);
         // I THINK THAT WE NEED TO CHECK isDescendent HERE BECAUSE MY CHILD
         // CANNOT OWN ME
+        //
+        if (unchecked) {
+          // no solution for this child in UNCHECKED mode
+          TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_child, true);
+        }
+
         for (unsigned k = 0; k < sptr_child->owned_by.size(); k++) {
           if (debug) std::cout << "DEBUG: child found new parent!" << std::endl;
           auto sptr_new_parent = sptr_child->owned_by[k].lock();

@@ -73,7 +73,8 @@ class relation_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  relation_ptr(wptr<forest_ctx> ctx, T* t) : ctx{ctx} {
+  relation_ptr(wptr<forest_ctx> _ctx, T* t) : ctx{_ctx} {
+    assert(ctx.lock());
     // KEEP LOCAL!
     // sptr<T> ref{t};
     sptr<TNodeData> ref;
@@ -664,7 +665,7 @@ class relation_ptr {
   // b is a copy of a's pointer, and relationship c->b is created
   // (so relation "c owns a", c->a, is kept on object b)
   //
-  auto get_owned(const relation_ptr<T>& owner) {
+  auto get_owned(const relation_ptr<T>& owner) const {
     // C4 constructor
     // NOTE: this cannot be nullptr
     assert(!this->is_nullptr());

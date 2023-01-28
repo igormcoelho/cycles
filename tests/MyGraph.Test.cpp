@@ -866,7 +866,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
     // roots are -1 and 1
     REQUIRE(G.my_ctx().lock()->forest.size() == 2);
     //
-    std::cout << "will reset node -1" << std::endl;
+    // std::cout << "will reset node -1" << std::endl;
     //
     // reset -1 node
     G.entry.reset();

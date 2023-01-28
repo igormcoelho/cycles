@@ -42,7 +42,7 @@ create new relations pointing to the same objects by using helper method `get_ow
 
 ```{.cpp}
   {
-    MyGraph<double> G;
+    MyGraph G;
 
     // create nodes -1, 1, 2 and 3
     G.entry = G.make_node(-1.0);
@@ -52,7 +52,7 @@ create new relations pointing to the same objects by using helper method `get_ow
 
     // manually generate a cycle: -1 -> 1 -> 2 -> 3 -> -1 -> ...
     // entry node -1 has neighbor node 1
-    g.entry->neighbors.push_back(ptr1.get_owned(G.entry));
+    G.entry->neighbors.push_back(ptr1.get_owned(G.entry));
     // node 1 has neighbor node 2
     ptr1->neighbors.push_back(ptr2.get_owned(ptr1));
     // node 2 has neighbor node 3
