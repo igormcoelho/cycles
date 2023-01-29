@@ -66,7 +66,7 @@ class relation_pool {
   void setDebug(bool b) { ctx->debug = b; }
 
   // internal structure... TODO(igormcoelho): provide this as wptr or sptr?
-  auto getContext() { return ctx; }
+  auto getContext() const { return ctx; }
 
   void clear() {
     // clear context

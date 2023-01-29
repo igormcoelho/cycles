@@ -129,3 +129,54 @@ class MyGraph {
   }
   //
 };
+
+// ============= EXPERIMENTAL ==============
+
+/*
+//
+// NO C[-1] Constructor!! Too buggy, risky (but likely beautiful!)
+//
+class MyNodeLoop {
+ private:
+  relation_ptr<MyNodeLoop> self;
+
+ public:
+  double val;
+  vector<relation_ptr<MyNodeLoop>> neighbors;
+
+  bool debug_flag{false};
+
+  explicit MyNodeLoop(const relation_pool& pool, double _val,
+                      bool _debug_flag = false)
+      : self{relation_ptr<MyNodeLoop>(pool.getContext(), this,
+                                      cycles::weak_self{})},
+        val{_val},
+        debug_flag{_debug_flag} {
+    mynode_count++;
+    if (debug_flag)
+      std::cout << "MyNodeLoop mynode_count=" << mynode_count << std::endl;
+  }
+
+  ~MyNodeLoop() {
+    mynode_count--;
+    if (debug_flag) {
+      std::cout << "~MyNodeLoop(" << val << ") mynode_count=" << mynode_count
+                << std::endl;
+      std::cout << "~MyNodeLoop: |neighbors|=" << neighbors.size() << std::endl;
+      if (neighbors.size() > 0) {
+        std::cout << "~MyNodeLoop: WILL CLEAR MY NEIGHBORS!" << std::endl;
+        for (unsigned i = 0; i < neighbors.size(); i++)
+          std::cout << "  MyNodeLoop neighbor i=" << i
+                    << " => type: " << neighbors[i].getType() << std::endl;
+        neighbors.clear();
+      }
+      std::cout << "~MyNodeLoop(" << val << "): FINISHED!" << std::endl;
+    }
+  }
+  //
+  friend ostream& operator<<(ostream& os, const MyNodeLoop& node) {
+    os << "MyNodeLoop(" << node.val << ")";
+    return os;
+  }
+};
+*/

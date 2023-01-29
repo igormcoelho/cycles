@@ -63,6 +63,88 @@ class relation_ptr {
 
   bool debug() const { return debug_flag_ptr; }
 
+  // C[-1] constructor for Strong Self links is a terrible idea...
+  // 1) because it breaks many things! (with no much promising gains)
+  // 2) it makes many things unsecure and changes basic assumptions (like no
+  // strong loops!)
+  // 3) it is interesting! but, maybe needs to improve current basic things
+  // first
+  /*
+  // flag for C[-1] constructor...
+  struct weak_self {};
+
+  // ======= C[-1] constructor (weak self) ======
+  // Maybe this is a bad idea, but seems interesting to try...
+  // 1. will store T* t owned by ITSELF
+  // 2. will create a new TNode
+  // 3. will NOT create a Tree... it's all alone!
+  relation_ptr(wptr<forest_ctx> _ctx, T* t, weak_self flag) : ctx{_ctx} {
+    assert(ctx.lock());
+    // KEEP LOCAL!
+    // sptr<T> ref{t};
+    sptr<TNodeData> ref;
+    if (t) ref = TNodeData::make_sptr<T>(t);
+    //
+    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
+    // this 'remote_node' is weak!
+    auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
+    // we only hold weak reference here
+    this->remote_node = sptr_remote_node;
+    this->is_owned_by_node = false;
+    //
+    this->debug_flag_ptr = get_ctx().lock()->debug;
+    //
+    if (debug()) {
+      std::cout
+          << "C[-1] pointer constructor: creating NEW relation_ptr (this_new="
+          << this << " to t*=" << t << ") ";
+      if (ref)
+        // if (t)
+        std::cout << "with ref -> " << *ref << std::endl;
+      else
+        std::cout << "with ref -> nullptr" << std::endl;
+    }
+    //
+    if (!ref) {
+      // if (!t) {
+      return;  // SHOULD NOT CREATE A NEW TREE!
+    }
+    if (!(this->remote_node.lock())) {
+      // STRANGE ERROR! SHOULD NEVER OCCUR!
+      std::cout << "ERROR: this should never occur! remote_node is not "
+                   "accessible on C[-1]."
+                << std::endl;
+      assert(false);
+      return;
+    }
+    //
+    if (debug()) {
+      std::cout << "=> C[-1] pointer constructor: Registering self relation "
+                   "without any Tree!"
+                << std::endl;
+    }
+    //
+    // register STRONG ownership in tree
+    // THIS IS COMPLETELY CRAZY... LET'S DO IT!
+
+    this->owned_by_node = this->remote_node;
+    this->is_owned_by_node = true;
+    // OWNER MUST EXIST... AT LEAST NOW!
+    assert(this->owned_by_node.lock());
+    auto myNewParent = owned_by_node.lock();
+    //
+    // register STRONG ownership in tree
+    //
+    auto sptr_mynode = this->remote_node.lock();
+    sptr_mynode->parent = myNewParent;
+    myNewParent->add_child_strong(sptr_mynode);
+    //
+    if (debug()) ctx.lock()->print();
+    if (debug())
+      std::cout << " -> finished C[-1] pointer constructor" << std::endl;
+  }
+  */
+
   // ======= C0 nullptr ===============
   relation_ptr() {
     this->is_owned_by_node = false;
@@ -446,6 +528,9 @@ class relation_ptr {
           std::cout << "DEBUG: is_owned. owner_node->remove_child(...)"
                     << std::endl;
         bool r = owner_node->remove_child(sptr_mynode.get());
+
+        if (!r)
+          std::cout << "SERIOUS WARNING: is this a LOOP node?" << std::endl;
         assert(r);
       }
       // final check: if will_die, send to pending list (FAST)
@@ -583,22 +668,10 @@ class relation_ptr {
     // - each weak owned_by link corresponds to weak owns link
     // - each strong child link corresponds to a weak parent link
     //
-    /*
-    if (owner.remote_node.lock()->has_child(this->remote_node)) {
-      if (true) {
-        std::cout << "set_owned_by WARNING! prevented double linking child... "
-                     "ALREADY owner!"
-                  << std::endl;
-        std::cout << "TODO: maybe need to allow double linking here..."
-                  << std::endl;
-      }
-      return;
-    }
-    */
-    //
     unsafe_set_owned_by(owner);
   }
 
+ private:
   // new logic here
   void unsafe_set_owned_by(const relation_ptr<T>& owner) {
     //
@@ -642,6 +715,7 @@ class relation_ptr {
   // no copy assignment
   relation_ptr& operator=(const relation_ptr& other) = delete;
 
+ public:
   relation_ptr& operator=(relation_ptr&& corpse) noexcept {
     if (debug()) std::cout << "begin operator==(&&)" << std::endl;
     destroy();

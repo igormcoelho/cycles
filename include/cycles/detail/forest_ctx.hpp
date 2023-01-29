@@ -125,8 +125,8 @@ class forest_ctx {
  private:
   std::pair<int, int> debug_count_owns_owned_by(sptr<TNode<T>> node) {
     std::pair<int, int> p{0, 0};
-    p.first += node->owns.size();
-    p.second += node->owned_by.size();
+    p.first += static_cast<int>(node->owns.size());
+    p.second += static_cast<int>(node->owned_by.size());
     for (unsigned i = 0; i < node->children.size(); i++) {
       auto p1 = debug_count_owns_owned_by(node->children[i]);
       p.first += p1.first;
