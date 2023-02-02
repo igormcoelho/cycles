@@ -109,6 +109,30 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     myNewParent->add_child_strong(sptr_mynode);
   }
 
+  void op3_weakSetOwnedBy(sptr<DynowNodeType> this_remote_node,
+                          sptr<DynowNodeType> owner_remote_node) override {
+    //
+    if (debug()) {
+      std::cout << std::endl
+                << "relation_ptr:: unsafe_set_owned_by" << std::endl;
+      std::cout << "TODO: Must register relation of:" << std::endl;
+      std::cout << " this->remote_node=" << this_remote_node << ") '"
+                << (this_remote_node->value.get())
+                << "' owned_by:" << std::endl;
+      std::cout << "\t"
+                << " '" << (owner_remote_node->value.get()) << std::endl;
+    }
+
+    DynowNodeType::add_weak_link_owned(this_remote_node, owner_remote_node);
+    //
+    if (debug())
+      std::cout << "owner |children|=" << this_remote_node->children.size()
+                << std::endl;
+    //
+    if (debug()) this->print();
+    //
+  }
+
  private:
   // quickly destroy all forest roots
   void destroyForestRoots() {

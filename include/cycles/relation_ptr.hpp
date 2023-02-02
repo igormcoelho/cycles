@@ -352,7 +352,7 @@ class relation_ptr {
     //
     // both nodes exist already (copy node and owner node)
     // register WEAK ownership in tree
-    this->set_owned_by(owner);
+    this->set_owned_by(owner);  // invokes 'op3_weakSetOwnedBy'
     // remember ownership (for future deletion?)
     this->owned_by_node = owner.remote_node;
     this->is_owned_by_node = true;
@@ -692,50 +692,12 @@ class relation_ptr {
     // - each weak owned_by link corresponds to weak owns link
     // - each strong child link corresponds to a weak parent link
     //
-    unsafe_set_owned_by(owner);
+    // unsafe_set_owned_by(owner);
+    ctx.lock()->op3_weakSetOwnedBy(this->remote_node.lock(),
+                                   owner.remote_node.lock());
   }
 
  private:
-  // new logic here
-  void unsafe_set_owned_by(const relation_ptr<T>& owner) {
-    //
-    if (debug()) {
-      std::cout << std::endl
-                << "relation_ptr:: unsafe_set_owned_by" << std::endl;
-      std::cout << "TODO: Must register relation of:" << std::endl;
-      std::cout << "\tthis=" << this
-                << " this->remote_node=" << this->remote_node.lock() << ") '"
-                << (this->get()) << "' owned_by:" << std::endl;
-      std::cout << "\t&owner=" << &owner << " '" << (owner.get())
-                << "'  owner.is_root()=" << owner.is_root() << std::endl;
-    }
-    // I think previous DEPRECATED logic is messed up... trying again!
-    //
-    // Properties:
-    // X0: Owner and I are different! (no self arc here)
-    // X1: this never creates strong links (only destruction/deletion does
-    // that)
-    //     Note that the Strong maintainance of the forest is kept by parent
-    //     and child nodes, thus all extra connections are weak links.
-    //
-    // It seems that only one case must exist here
-    //   => SOLUTION: Owner will add a weak link to Me.
-
-    // TODO(igormcoelho): Maybe... check if it's not yet child?
-    // OLD:
-    // this->remote_node.lock()->add_weak_link_owned(owner.remote_node);
-    // NEW:
-    TNode<X>::add_weak_link_owned(this->remote_node.lock(),
-                                  owner.remote_node.lock());
-    //
-    if (debug())
-      std::cout << "owner |children|="
-                << this->remote_node.lock()->children.size() << std::endl;
-    //
-    if (debug()) ctx.lock()->print();
-    //
-  }
-
   // no copy assignment
   relation_ptr& operator=(const relation_ptr& other) = delete;
 
