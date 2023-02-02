@@ -11,6 +11,8 @@
 #include <vector>
 
 //
+#include <cycles/detail/IDynowForest.hpp>
+//
 #include <cycles/detail/TNode.hpp>
 #include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
@@ -29,7 +31,7 @@ namespace cycles {
 namespace detail {
 
 // NOLINTNEXTLINE
-class forest_ctx {
+class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
   // forest_ctx is now type-erased, using T=TNodeData
   using T = TNodeData;
 
@@ -37,12 +39,12 @@ class forest_ctx {
   // collect strategy parameters
   //
   bool _auto_collect{true};
-  bool autoCollect() { return _auto_collect; }
-  void setAutoCollect(bool ac) { _auto_collect = ac; }
+  bool autoCollect() override { return _auto_collect; }
+  void setAutoCollect(bool ac) override { _auto_collect = ac; }
   //
   bool _debug{false};
-  bool debug() { return _debug; }
-  void setDebug(bool d) { _debug = d; }
+  bool debug() override { return _debug; }
+  void setDebug(bool d) override { _debug = d; }
 
   // Forest management system comes here (default is sptr)
   using NodeType = sptr<TNode<TNodeData>>;
@@ -51,8 +53,11 @@ class forest_ctx {
   // using NodeType = sptr<TNode<sptr<T>>>;
   // using TreeType = sptr<Tree<sptr<T>>>;
 
+ private:
   // Forest: every Tree is identified by its Root node in map system
   map<NodeType, TreeType> forest;
+
+ public:
   // pending deletions of nodes
   vector<NodeType> pending;
 
@@ -64,8 +69,38 @@ class forest_ctx {
     if (debug()) std::cout << "forest_ctx created!" << std::endl;
   }
 
-  int getForestSize() { return static_cast<int>(forest.size()); }
+  int getForestSize() override { return static_cast<int>(forest.size()); }
 
+  bool opx_hasParent(sptr<DynowNodeType> node_ptr) override {
+    return node_ptr->has_parent();
+  }
+
+  int opx_countOwnedBy(sptr<DynowNodeType> node_ptr) override {
+    return static_cast<int>(node_ptr->owned_by.size());
+  }
+
+  sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType> node_ptr,
+                                     int idx) override {
+    return node_ptr->owned_by[idx].lock();
+  }
+
+ public:
+  // main operations
+  void op1_addNodeToNewTree(sptr<DynowNodeType> sptr_remote_node) override {
+    auto stree = sptr<DynowTreeType>(new DynowTreeType{});
+    if (debug()) {
+      std::cout << "tree ~> ";
+      stree->print();
+      std::cout << "Printed Tree!" << std::endl;
+    }
+
+    // STRONG storage of remote node pointer
+    stree->set_root(sptr_remote_node);
+    this->forest[sptr_remote_node] = stree;
+    if (debug()) this->print();
+  }
+
+ private:
   // quickly destroy all forest roots
   void destroyForestRoots() {
     for (const auto& p : forest) {
@@ -108,7 +143,8 @@ class forest_ctx {
     forest.clear();  // is it necessary??
   }
 
-  ~forest_ctx() {
+ public:
+  ~forest_ctx() override {
     if (debug())
       std::cout << "~forest_ctx() forest_size =" << forest.size() << std::endl;
     destroyForestRoots();
@@ -170,7 +206,7 @@ class forest_ctx {
 
  public:
   // public method to manually invoke collection, if 'auto_collect' is not true
-  void collect() { destroy_pending(false); }
+  void collect() override { destroy_pending(false); }
 
  private:
   // destroy_pending(unchecked) performs destruction, with two modes:
@@ -368,7 +404,7 @@ class forest_ctx {
   }
 
  public:
-  void print() {
+  void print() override {
     std::cout << "print forest_ctx: (forest size=" << forest.size() << ") ["
               << std::endl;
     for (const auto& p : forest) {

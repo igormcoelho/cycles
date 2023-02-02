@@ -200,23 +200,25 @@ class relation_ptr {
                    "Context!"
                 << std::endl;
     }
-    // auto node_new = sptr<TNode<X>>(new TNode<X> { ref });
-    // this->remote_node = node_new;
     //
-    auto stree = sptr<Tree<X>>(new Tree<X>{});
-    if (debug()) {
-      std::cout << "tree ~> ";
-      stree->print();
-      std::cout << "Printed Tree!" << std::endl;
-    }
     // TODO: how could this fail? IMPORTANT test!
     assert(sptr_remote_node);
-    // STRONG storage of remote node pointer
-    stree->set_root(sptr_remote_node);
-    ctx.lock()->forest[sptr_remote_node] = stree;
+    // using op1
+    ctx.lock()->op1_addNodeToNewTree(sptr_remote_node);
+    /*
+      auto stree = sptr<Tree<X>>(new Tree<X>{});
+      if (debug()) {
+        std::cout << "tree ~> ";
+        stree->print();
+        std::cout << "Printed Tree!" << std::endl;
+      }
+      // STRONG storage of remote node pointer
+      stree->set_root(sptr_remote_node);
+      ctx.lock()->forest[sptr_remote_node] = stree;
+    */
+    //
     if (debug()) ctx.lock()->print();
-    // stree.root = sptr<TNode<X>>(new TNode<X>(val, stree));
-    // forest[ref] = stree;
+    //
     if (debug())
       std::cout << " -> finished C1 pointer constructor" << std::endl;
   }
