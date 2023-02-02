@@ -398,9 +398,12 @@ class relation_ptr {
       auto sptr_mynode = this->remote_node.lock();
       auto owner_node = this->owned_by_node.lock();
       //
+      // AVOID Using TNode here...
+      //    sptr_mynode->owned_by.size()
       if (debug())
         std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
-                  << " |owned_by|=" << sptr_mynode->owned_by.size()
+                  << " |owned_by|="
+                  << this->ctx.lock()->opx_countOwnedBy(sptr_mynode)
                   << std::endl;
       //
       // check situation of node (if dying or not)
@@ -457,8 +460,12 @@ class relation_ptr {
             << "DEBUG: FIND OWNED_BY. NODE WILL DIE IF NOT FIND REPLACEMENT!"
             << std::endl;
       // find new owner, otherwise will die
-      for (unsigned k = 0; k < sptr_mynode->owned_by.size(); k++) {
-        auto myNewParent = sptr_mynode->owned_by[k].lock();
+      //
+      // AVOID using TNode here...
+      //   sptr_mynode->owned_by.size()
+      //   sptr_mynode->owned_by[k].lock()
+      for (unsigned k = 0; k < ctx.lock()->opx_countOwnedBy(sptr_mynode); k++) {
+        auto myNewParent = ctx.lock()->opx_getOwnedBy(sptr_mynode, k);
         if (!myNewParent) {
           std::cout << "ERROR! no new parent! how??" << std::endl;
         }
@@ -504,7 +511,8 @@ class relation_ptr {
             TNodeHelper<X>::removeFromOwnsList(myNewParent, sptr_mynode);
         assert(removed);
         // delete myself from owned_by (now I'm strong child)
-        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() + k);
+        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() +
+                                    k);  // TODO: terrible TNode here...
         // add myself as myNewParent child
         sptr_mynode->parent = myNewParent;
         myNewParent->add_child_strong(sptr_mynode);
@@ -542,18 +550,22 @@ class relation_ptr {
                     << std::endl;
         // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
         assert(ctx.lock()->pending.size() == 0);
+        // AVOID TNode here...
+        // sptr_mynode->owned_by.size()
+        //
         if (debug()) {
           std::cout
               << "destroy: moving to pending list with these properties: ";
           std::cout << "node |owns|=" << sptr_mynode->owns.size()
-                    << " |owned_by|=" << sptr_mynode->owned_by.size()
-                    << std::endl;
+                    << " |owned_by|="
+                    << ctx.lock()->opx_countOwnedBy(sptr_mynode) << std::endl;
         }
         ctx.lock()->pending.push_back(std::move(sptr_mynode));
         int sz_pending = ctx.lock()->pending.size();
         if (debug())
           std::cout << "DEBUG: sz_pending=" << sz_pending << std::endl;
         sptr_mynode = nullptr;  // NO EFFECT!
+        //
         if (debug()) {
           std::cout << "destroy: in pending list with these properties: ";
           std::cout << "node |owns|="
@@ -647,13 +659,17 @@ class relation_ptr {
   int count_owned_by() const {
     auto node_ptr = this->remote_node.lock();
     assert(node_ptr);
-    return node_ptr->owned_by.size();
+    // AVOID direct usage of TNode here...
+    //   return node_ptr->owned_by.size();
+    return this->ctx.lock()->opx_countOwnedBy(node_ptr);
   }
 
   auto getOwnedBy(int idx) const {
     auto node_ptr = this->remote_node.lock();
     assert(node_ptr);
-    return node_ptr->owned_by[idx].lock();
+    // AVOID direct usage of TNode here...
+    // return node_ptr->owned_by[idx].lock();
+    return this->ctx.lock()->opx_getOwnedBy(node_ptr, idx);
   }
 
   // =============================
