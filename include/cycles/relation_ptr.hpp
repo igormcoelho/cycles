@@ -428,68 +428,18 @@ class relation_ptr {
 #endif
 
 #if 0
+      // THIS IS THE BUGGY ONE!!
+      assert(false);
       myctx->op4x_clearAndCollect(will_die, sptr_mynode, owner_node, isRoot,
                                   isOwned);
 #else
-      // prepare final destruction
-      if (debug())
-        std::cout << "DEBUG: will check situation: either is_root or is_owned"
-                  << std::endl;
-      if (isRoot) {
-        if (debug())
-          std::cout << "DEBUG: is_root. destroy_tree(...)" << std::endl;
-        myctx->destroy_tree(sptr_mynode);
-      }
-      if (isOwned) {
-        if (debug())
-          std::cout << "DEBUG: is_owned. owner_node->remove_child(...)"
-                    << std::endl;
-        bool r = owner_node->remove_child(sptr_mynode.get());
+      myctx->op4x_prepareDestruction(sptr_mynode, owner_node, isRoot, isOwned);
 
-        if (!r)
-          std::cout << "SERIOUS WARNING: is this a LOOP node?" << std::endl;
-        assert(r);
-      }
       // final check: if will_die, send to pending list (FAST)
       if (will_die) {
-        if (debug())
-          std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE."
-                    << std::endl;
-        // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
-        assert(myctx->pending.size() == 0);
-        // AVOID TNode here...
-        // sptr_mynode->owned_by.size()
-        //
-        if (debug()) {
-          std::cout
-              << "destroy: moving to pending list with these properties: ";
-          std::cout << "node |owns|=" << sptr_mynode->owns.size()
-                    << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
-                    << std::endl;
-        }
-        myctx->pending.push_back(std::move(sptr_mynode));
-        int sz_pending = myctx->pending.size();
-        if (debug())
-          std::cout << "DEBUG: sz_pending=" << sz_pending << std::endl;
-        sptr_mynode = nullptr;  // NO EFFECT!
-        //
-        if (debug()) {
-          std::cout << "destroy: in pending list with these properties: ";
-          std::cout << "node |owns|="
-                    << myctx->pending[sz_pending - 1]->owns.size()
-                    << " |owned_by|="
-                    << myctx->pending[sz_pending - 1]->owned_by.size()
-                    << std::endl;
-        }
+        myctx->op4x_destroyNode(sptr_mynode);
       }
-      // last holding reference to node is on pending list
-      if (myctx->autoCollect()) {
-        if (debug()) {
-          std::cout << "DEBUG: begin auto_collect. |pending|="
-                    << myctx->pending.size() << std::endl;
-        }
-        myctx->collect();
-      }
+
 #endif
 
       //

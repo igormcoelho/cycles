@@ -62,10 +62,15 @@ class IDynowForest {
   virtual bool op4x_checkSituation(sptr<DynowNodeType> sptr_mynode,
                                    sptr<DynowNodeType> owner_node, bool isRoot,
                                    bool isOwned) = 0;
+  // this is the buggy one!!
   virtual void op4x_clearAndCollect(bool will_die,
                                     sptr<DynowNodeType> sptr_mynode,
                                     sptr<DynowNodeType> owner_node, bool isRoot,
                                     bool isOwned) = 0;
+  virtual void op4x_prepareDestruction(sptr<DynowNodeType> sptr_mynode,
+                                       sptr<DynowNodeType> owner_node,
+                                       bool isRoot, bool isOwned) = 0;
+  virtual void op4x_destroyNode(sptr<DynowNodeType>& sptr_mynode) = 0;
 };
 
 }  // namespace detail
