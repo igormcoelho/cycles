@@ -284,8 +284,11 @@ class relation_ptr {
     // register STRONG ownership in tree
     //
     auto sptr_mynode = this->remote_node.lock();
+    ctx.lock()->op2_addChildStrong(myNewParent, sptr_mynode);
+    /*
     sptr_mynode->parent = myNewParent;
     myNewParent->add_child_strong(sptr_mynode);
+    */
     //
     if (debug())
       std::cout << "finish c2: stored owner in owned_by_node" << std::endl;

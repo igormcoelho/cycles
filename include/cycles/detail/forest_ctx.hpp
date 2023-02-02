@@ -100,6 +100,15 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     if (debug()) this->print();
   }
 
+  void op2_addChildStrong(sptr<DynowNodeType> myNewParent,
+                          sptr<DynowNodeType> sptr_mynode) override {
+    //
+    // register STRONG ownership in tree
+    //
+    sptr_mynode->parent = myNewParent;
+    myNewParent->add_child_strong(sptr_mynode);
+  }
+
  private:
   // quickly destroy all forest roots
   void destroyForestRoots() {

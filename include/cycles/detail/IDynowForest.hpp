@@ -50,8 +50,8 @@ class IDynowForest {
                                              int idx) = 0;  // useless?
   // main methods
   virtual void op1_addNodeToNewTree(sptr<DynowNodeType>) = 0;
-  /*
   virtual void op2_addChildStrong(sptr<DynowNodeType>, sptr<DynowNodeType>) = 0;
+  /*
   virtual void op3_weakSetOwnedBy(sptr<DynowNodeType>, sptr<DynowNodeType>) = 0;
   virtual void op4_remove(sptr<DynowNodeType>, sptr<DynowNodeType>, bool,
                           bool) = 0;
