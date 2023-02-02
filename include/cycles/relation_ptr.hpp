@@ -620,10 +620,13 @@ class relation_ptr {
   // check if this pointer is root (in tree/forest universe)
   bool is_root() const {
     // IMPORTANT! DO NOT REMOVE is_owned() check from here!!
-    if (is_nullptr() || is_owned())
+    if (is_nullptr() || is_owned()) {
       return false;
-    else
-      return (!this->remote_node.lock()->has_parent());
+    } else {
+      // AVOID direct usage of TNode features here... prefer ctx methods:
+      //   return (!this->remote_node.lock()->has_parent());
+      return !(this->ctx.lock()->opx_hasParent(this->remote_node.lock()));
+    }
   }
 
   // check if this pointer is already owned by someone
