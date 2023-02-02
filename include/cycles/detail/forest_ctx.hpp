@@ -134,8 +134,8 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
   }
 
   //
-  void opx_clearWeakLinks(sptr<DynowNodeType> owner_node,
-                          sptr<DynowNodeType> sptr_mynode) override {
+  void op4x_clearWeakLinks(sptr<DynowNodeType> owner_node,
+                           sptr<DynowNodeType> sptr_mynode) {
     // remove my weak link from owner
     bool r0 = TNodeHelper<>::removeFromOwnsList(owner_node, sptr_mynode);
     assert(r0);
@@ -144,7 +144,7 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     assert(r1);
   }
 
-  bool opx_setNewOwner(sptr<DynowNodeType> sptr_mynode) override {
+  bool op4x_setNewOwner(sptr<DynowNodeType> sptr_mynode) {
     bool will_die = true;  // default
     auto myctx = this;
     if (debug())
@@ -212,7 +212,7 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
 
   bool op4x_checkSituation(sptr<DynowNodeType> sptr_mynode,
                            sptr<DynowNodeType> owner_node, bool isRoot,
-                           bool isOwned) override {
+                           bool isOwned) {
     bool will_die = false;
     auto myctx = this;
     //
@@ -250,77 +250,16 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
                       << std::endl;
           // my node will stay alive since my parent still holds me strong
           will_die = false;
-          myctx->opx_clearWeakLinks(owner_node, sptr_mynode);
+          myctx->op4x_clearWeakLinks(owner_node, sptr_mynode);
         }
       }
     }  // end is_owned
     return will_die;
   }
 
-  void op4x_clearAndCollect(bool will_die, sptr<DynowNodeType> sptr_mynode,
-                            sptr<DynowNodeType> owner_node, bool isRoot,
-                            bool isOwned) override {
-    auto myctx = this;
-    // prepare final destruction
-    if (debug())
-      std::cout << "DEBUG: will check situation: either is_root or is_owned"
-                << std::endl;
-    if (isRoot) {
-      if (debug())
-        std::cout << "DEBUG: is_root. destroy_tree(...)" << std::endl;
-      myctx->destroy_tree(sptr_mynode);
-    }
-    if (isOwned) {
-      if (debug())
-        std::cout << "DEBUG: is_owned. owner_node->remove_child(...)"
-                  << std::endl;
-      bool r = owner_node->remove_child(sptr_mynode.get());
-
-      if (!r) std::cout << "SERIOUS WARNING: is this a LOOP node?" << std::endl;
-      assert(r);
-    }
-    // final check: if will_die, send to pending list (FAST)
-    if (will_die) {
-      if (debug())
-        std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE." << std::endl;
-      // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
-      assert(myctx->pending.size() == 0);
-      // AVOID TNode here...
-      // sptr_mynode->owned_by.size()
-      //
-      if (debug()) {
-        std::cout << "destroy: moving to pending list with these properties: ";
-        std::cout << "node |owns|=" << sptr_mynode->owns.size()
-                  << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
-                  << std::endl;
-      }
-      myctx->pending.push_back(std::move(sptr_mynode));
-      int sz_pending = myctx->pending.size();
-      if (debug()) std::cout << "DEBUG: sz_pending=" << sz_pending << std::endl;
-      sptr_mynode = nullptr;  // NO EFFECT!
-      //
-      if (debug()) {
-        std::cout << "destroy: in pending list with these properties: ";
-        std::cout << "node |owns|="
-                  << myctx->pending[sz_pending - 1]->owns.size()
-                  << " |owned_by|="
-                  << myctx->pending[sz_pending - 1]->owned_by.size()
-                  << std::endl;
-      }
-    }
-    // last holding reference to node is on pending list
-    if (myctx->autoCollect()) {
-      if (debug()) {
-        std::cout << "DEBUG: begin auto_collect. |pending|="
-                  << myctx->pending.size() << std::endl;
-      }
-      myctx->collect();
-    }
-  }
-
   void op4x_prepareDestruction(sptr<DynowNodeType> sptr_mynode,
                                sptr<DynowNodeType> owner_node, bool isRoot,
-                               bool isOwned) override {
+                               bool isOwned) {
     auto myctx = this;
     // prepare final destruction
     if (debug())
@@ -342,7 +281,9 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     }
   }
 
-  void op4x_destroyNode(sptr<DynowNodeType>& sptr_mynode) override {
+  // NOTE: 'sptr_mynode' is reference... Don't know why!
+  // NOLINTNEXTLINE
+  void op4x_destroyNode(sptr<DynowNodeType>& sptr_mynode) {
     auto myctx = this;
     if (debug())
       std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE." << std::endl;
@@ -378,192 +319,38 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     }
   }
 
-  void op4_remove(sptr<DynowNodeType> sptr_mynode,
+  void op4_remove(sptr<DynowNodeType>& sptr_mynode,
                   sptr<DynowNodeType> owner_node, bool isRoot,
                   bool isOwned) override {
     auto myctx = this;
     //
-    bool will_die = false;
-    //
-    // AVOID Using TNode here...
-    //    sptr_mynode->owned_by.size()
-    if (debug())
-      std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
-                << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
-                << std::endl;
-    //
-    // check situation of node (if dying or not)
-    //
-    if (isRoot) {
-      // this node is root in tree!
-      if (debug()) std::cout << "DEBUG: I AM ROOT! I WILL DIE!" << std::endl;
-      will_die = true;
-    }  // is_root
-    //
-    if (isOwned) {
-      // check if owner still exists
-      if (debug()) std::cout << "DEBUG: I AM OWNED!" << std::endl;
-      if (!owner_node) {
-        // SHOULD THIS BEHAVE AS is_nullptr?
-        if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
-        will_die = false;
-      } else {
-        // CHECK IF OWNER IS MY PARENT...
-        if (owner_node == sptr_mynode->parent.lock()) {
-          if (debug())
-            std::cout << "DEBUG: OWNER IS MY PARENT! I MAY DIE!" << std::endl;
-          will_die = true;
-        } else {
-          if (debug())
-            std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
-                      << std::endl;
-          // my node will stay alive since my parent still holds me strong
-          will_die = false;
-          // remove my weak link from owner
-          bool r0 = TNodeHelper<>::removeFromOwnsList(owner_node, sptr_mynode);
-          assert(r0);
-          // remove owner from my weak link list
-          bool r1 =
-              TNodeHelper<>::removeFromOwnedByList(owner_node, sptr_mynode);
-          assert(r1);
-        }
-      }
-    }  // end is_owned
+    bool will_die =
+        myctx->op4x_checkSituation(sptr_mynode, owner_node, isRoot, isOwned);
     //
     if (!will_die) {
       if (debug())
         std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
       // FORCE CLEAR
       /*
-      this->remote_node = wptr<TNode<>>();    // clear
-      this->owned_by_node = wptr<TNode<>>();  // clear
+      this->remote_node = wptr<TNode<X>>();    // clear
+      this->owned_by_node = wptr<TNode<X>>();  // clear
       this->is_owned_by_node = false;
       */
       return;
     }
     assert(will_die);
-    if (debug())
-      std::cout
-          << "DEBUG: FIND OWNED_BY. NODE WILL DIE IF NOT FIND REPLACEMENT!"
-          << std::endl;
-    // find new owner, otherwise will die
-    //
-    // AVOID using TNode here...
-    //   sptr_mynode->owned_by.size()
-    //   sptr_mynode->owned_by[k].lock()
-    for (unsigned k = 0; k < myctx->opx_countOwnedBy(sptr_mynode); k++) {
-      auto myNewParent = myctx->opx_getOwnedBy(sptr_mynode, k);
-      if (!myNewParent) {
-        std::cout << "ERROR! no new parent! how??" << std::endl;
-      }
-      // new parent must exist
-      assert(myNewParent);
-      if (myNewParent.get() == sptr_mynode.get()) {
-        if (debug()) {
-          std::cout << "Found new parent to own me but it's loop! Ignoring! k="
-                    << k << std::endl;
-        }
-        continue;
-      }
-      if (debug()) {
-        std::cout
-            << "Found new parent to own me (will check if not on subtree): "
-            << myNewParent->value_to_string() << std::endl;
-      }
-      // NOTE: costly O(tree_size)=O(N) test in worst case for 'isDescendent'
-      bool _isDescendent =
-          TNodeHelper<>::isDescendent(myNewParent, sptr_mynode);
-      //
-      if (debug())
-        std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
-                  << std::endl;
-      if (_isDescendent) {
-        if (debug())
-          std::cout << "WARNING: owned_by is already my descendent! Discard. "
-                    << "Will try next k!"
-                    << "k=" << k << std::endl;
-        // k++
-        continue;
-      }
-      // found some good k!
-      // assume this will not die (for this 'k'). FOUND some good owner!
-      will_die = false;
-      if (debug()) {
-        std::cout << "Found new VALID parent to own me: "
-                  << myNewParent->value_to_string() << std::endl;
-      }
-      // COSTLY. Remove me from the 'owns' list of my owner
-      bool removed =
-          TNodeHelper<>::removeFromOwnsList(myNewParent, sptr_mynode);
-      assert(removed);
-      // delete myself from owned_by (now I'm strong child)
-      sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() +
-                                  k);  // TODO: terrible TNode here...
-      // add myself as myNewParent child
-      sptr_mynode->parent = myNewParent;
-      myNewParent->add_child_strong(sptr_mynode);
-      // will_die should be False, at this point
-      if (!will_die) break;
-    }  // end for k
+    // invoke expensive 'setNewOwner' operation
+    will_die = myctx->op4x_setNewOwner(sptr_mynode);
     //
     // CLEAR!
     if (debug())
       std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
 
-    // prepare final destruction
-    if (debug())
-      std::cout << "DEBUG: will check situation: either is_root or is_owned"
-                << std::endl;
-    if (isRoot) {
-      if (debug())
-        std::cout << "DEBUG: is_root. destroy_tree(...)" << std::endl;
-      myctx->destroy_tree(sptr_mynode);
-    }
-    if (isOwned) {
-      if (debug())
-        std::cout << "DEBUG: is_owned. owner_node->remove_child(...)"
-                  << std::endl;
-      bool r = owner_node->remove_child(sptr_mynode.get());
+    myctx->op4x_prepareDestruction(sptr_mynode, owner_node, isRoot, isOwned);
 
-      if (!r) std::cout << "SERIOUS WARNING: is this a LOOP node?" << std::endl;
-      assert(r);
-    }
     // final check: if will_die, send to pending list (FAST)
     if (will_die) {
-      if (debug())
-        std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE." << std::endl;
-      // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
-      assert(myctx->pending.size() == 0);
-      // AVOID TNode here...
-      // sptr_mynode->owned_by.size()
-      //
-      if (debug()) {
-        std::cout << "destroy: moving to pending list with these properties: ";
-        std::cout << "node |owns|=" << sptr_mynode->owns.size()
-                  << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
-                  << std::endl;
-      }
-      myctx->pending.push_back(std::move(sptr_mynode));
-      int sz_pending = myctx->pending.size();
-      if (debug()) std::cout << "DEBUG: sz_pending=" << sz_pending << std::endl;
-      sptr_mynode = nullptr;  // NO EFFECT!
-      //
-      if (debug()) {
-        std::cout << "destroy: in pending list with these properties: ";
-        std::cout << "node |owns|="
-                  << myctx->pending[sz_pending - 1]->owns.size()
-                  << " |owned_by|="
-                  << myctx->pending[sz_pending - 1]->owned_by.size()
-                  << std::endl;
-      }
-    }
-    // last holding reference to node is on pending list
-    if (myctx->autoCollect()) {
-      if (debug()) {
-        std::cout << "DEBUG: begin auto_collect. |pending|="
-                  << myctx->pending.size() << std::endl;
-      }
-      myctx->collect();
+      myctx->op4x_destroyNode(sptr_mynode);
     }
   }
 

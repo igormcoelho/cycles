@@ -401,46 +401,8 @@ class relation_ptr {
 
       auto sptr_mynode = this->remote_node.lock();
       auto owner_node = this->owned_by_node.lock();
-      auto myctx = this->ctx.lock();  // TODO: replace by 'this' elsewhere...
-#if 0
-      myctx->op4_remove(sptr_mynode, owner_node, isRoot, isOwned);
-#else
-      // bool will_die = false;
-      bool will_die =
-          myctx->op4x_checkSituation(sptr_mynode, owner_node, isRoot, isOwned);
-      //
-      if (!will_die) {
-        if (debug())
-          std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
-        // FORCE CLEAR
-        this->remote_node = wptr<TNode<X>>();    // clear
-        this->owned_by_node = wptr<TNode<X>>();  // clear
-        this->is_owned_by_node = false;
-        return;
-      }
-      assert(will_die);
-      // invoke expensive 'setNewOwner' operation
-      will_die = myctx->opx_setNewOwner(sptr_mynode);
-      //
-      // CLEAR!
-      if (debug())
-        std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
-#endif
-
-#if 0
-      // THIS IS THE BUGGY ONE!!
-      assert(false);
-      myctx->op4x_clearAndCollect(will_die, sptr_mynode, owner_node, isRoot,
-                                  isOwned);
-#else
-      myctx->op4x_prepareDestruction(sptr_mynode, owner_node, isRoot, isOwned);
-
-      // final check: if will_die, send to pending list (FAST)
-      if (will_die) {
-        myctx->op4x_destroyNode(sptr_mynode);
-      }
-
-#endif
+      // NOTE: 'sptr_mynode' is reference... don't know exactly why!
+      this->ctx.lock()->op4_remove(sptr_mynode, owner_node, isRoot, isOwned);
 
       //
       // end-if is_root || is_owned
