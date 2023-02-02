@@ -52,10 +52,20 @@ class IDynowForest {
   virtual void op1_addNodeToNewTree(sptr<DynowNodeType>) = 0;
   virtual void op2_addChildStrong(sptr<DynowNodeType>, sptr<DynowNodeType>) = 0;
   virtual void op3_weakSetOwnedBy(sptr<DynowNodeType>, sptr<DynowNodeType>) = 0;
-  /*
-  virtual void op4_remove(sptr<DynowNodeType>, sptr<DynowNodeType>, bool,
-                          bool) = 0;
-                          */
+  virtual void op4_remove(sptr<DynowNodeType> sptr_mynode,
+                          sptr<DynowNodeType> owner_node, bool isRoot,
+                          bool isOwned) = 0;
+  // strange helpers for op4_remove
+  virtual void opx_clearWeakLinks(sptr<DynowNodeType> owner_node,
+                                  sptr<DynowNodeType> sptr_mynode) = 0;
+  virtual bool opx_setNewOwner(sptr<DynowNodeType> sptr_mynode) = 0;
+  virtual bool op4x_checkSituation(sptr<DynowNodeType> sptr_mynode,
+                                   sptr<DynowNodeType> owner_node, bool isRoot,
+                                   bool isOwned) = 0;
+  virtual void op4x_clearAndCollect(bool will_die,
+                                    sptr<DynowNodeType> sptr_mynode,
+                                    sptr<DynowNodeType> owner_node, bool isRoot,
+                                    bool isOwned) = 0;
 };
 
 }  // namespace detail

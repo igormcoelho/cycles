@@ -395,58 +395,19 @@ class relation_ptr {
       assert(isRoot || isOwned);
       //
       if (debug()) std::cout << "destroy: is_root() || is_owned()" << std::endl;
+
       // must find someone to strongly own me, otherwise node may die!
       // First:  find someone in my 'owned_by' list
-      bool will_die = false;
+
       auto sptr_mynode = this->remote_node.lock();
       auto owner_node = this->owned_by_node.lock();
-      //
-      // AVOID Using TNode here...
-      //    sptr_mynode->owned_by.size()
-      if (debug())
-        std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
-                  << " |owned_by|="
-                  << this->ctx.lock()->opx_countOwnedBy(sptr_mynode)
-                  << std::endl;
-      //
-      // check situation of node (if dying or not)
-      //
-      if (isRoot) {
-        // this node is root in tree!
-        if (debug()) std::cout << "DEBUG: I AM ROOT! I WILL DIE!" << std::endl;
-        will_die = true;
-      }  // is_root
-      //
-      if (isOwned) {
-        // check if owner still exists
-        if (debug()) std::cout << "DEBUG: I AM OWNED!" << std::endl;
-        if (!owner_node) {
-          // SHOULD THIS BEHAVE AS is_nullptr?
-          if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
-          will_die = false;
-        } else {
-          // CHECK IF OWNER IS MY PARENT...
-          if (owner_node == sptr_mynode->parent.lock()) {
-            if (debug())
-              std::cout << "DEBUG: OWNER IS MY PARENT! I MAY DIE!" << std::endl;
-            will_die = true;
-          } else {
-            if (debug())
-              std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
-                        << std::endl;
-            // my node will stay alive since my parent still holds me strong
-            will_die = false;
-            // remove my weak link from owner
-            bool r0 =
-                TNodeHelper<X>::removeFromOwnsList(owner_node, sptr_mynode);
-            assert(r0);
-            // remove owner from my weak link list
-            bool r1 =
-                TNodeHelper<X>::removeFromOwnedByList(owner_node, sptr_mynode);
-            assert(r1);
-          }
-        }
-      }  // end is_owned
+      auto myctx = this->ctx.lock();  // TODO: replace by 'this' elsewhere...
+#if 0
+      myctx->op4_remove(sptr_mynode, owner_node, isRoot, isOwned);
+#else
+      // bool will_die = false;
+      bool will_die =
+          myctx->op4x_checkSituation(sptr_mynode, owner_node, isRoot, isOwned);
       //
       if (!will_die) {
         if (debug())
@@ -458,75 +419,18 @@ class relation_ptr {
         return;
       }
       assert(will_die);
-      if (debug())
-        std::cout
-            << "DEBUG: FIND OWNED_BY. NODE WILL DIE IF NOT FIND REPLACEMENT!"
-            << std::endl;
-      // find new owner, otherwise will die
-      //
-      // AVOID using TNode here...
-      //   sptr_mynode->owned_by.size()
-      //   sptr_mynode->owned_by[k].lock()
-      for (unsigned k = 0; k < ctx.lock()->opx_countOwnedBy(sptr_mynode); k++) {
-        auto myNewParent = ctx.lock()->opx_getOwnedBy(sptr_mynode, k);
-        if (!myNewParent) {
-          std::cout << "ERROR! no new parent! how??" << std::endl;
-        }
-        // new parent must exist
-        assert(myNewParent);
-        if (myNewParent.get() == sptr_mynode.get()) {
-          if (debug()) {
-            std::cout
-                << "Found new parent to own me but it's loop! Ignoring! k=" << k
-                << std::endl;
-          }
-          continue;
-        }
-        if (debug()) {
-          std::cout
-              << "Found new parent to own me (will check if not on subtree): "
-              << myNewParent->value_to_string() << std::endl;
-        }
-        // NOTE: costly O(tree_size)=O(N) test in worst case for 'isDescendent'
-        bool _isDescendent =
-            TNodeHelper<X>::isDescendent(myNewParent, sptr_mynode);
-        //
-        if (debug())
-          std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
-                    << std::endl;
-        if (_isDescendent) {
-          if (debug())
-            std::cout << "WARNING: owned_by is already my descendent! Discard. "
-                      << "Will try next k!"
-                      << "k=" << k << std::endl;
-          // k++
-          continue;
-        }
-        // found some good k!
-        // assume this will not die (for this 'k'). FOUND some good owner!
-        will_die = false;
-        if (debug()) {
-          std::cout << "Found new VALID parent to own me: "
-                    << myNewParent->value_to_string() << std::endl;
-        }
-        // COSTLY. Remove me from the 'owns' list of my owner
-        bool removed =
-            TNodeHelper<X>::removeFromOwnsList(myNewParent, sptr_mynode);
-        assert(removed);
-        // delete myself from owned_by (now I'm strong child)
-        sptr_mynode->owned_by.erase(sptr_mynode->owned_by.begin() +
-                                    k);  // TODO: terrible TNode here...
-        // add myself as myNewParent child
-        sptr_mynode->parent = myNewParent;
-        myNewParent->add_child_strong(sptr_mynode);
-        // will_die should be False, at this point
-        if (!will_die) break;
-      }  // end for k
+      // invoke expensive 'setNewOwner' operation
+      will_die = myctx->opx_setNewOwner(sptr_mynode);
       //
       // CLEAR!
       if (debug())
         std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
+#endif
 
+#if 0
+      myctx->op4x_clearAndCollect(will_die, sptr_mynode, owner_node, isRoot,
+                                  isOwned);
+#else
       // prepare final destruction
       if (debug())
         std::cout << "DEBUG: will check situation: either is_root or is_owned"
@@ -534,7 +438,7 @@ class relation_ptr {
       if (isRoot) {
         if (debug())
           std::cout << "DEBUG: is_root. destroy_tree(...)" << std::endl;
-        ctx.lock()->destroy_tree(sptr_mynode);
+        myctx->destroy_tree(sptr_mynode);
       }
       if (isOwned) {
         if (debug())
@@ -552,7 +456,7 @@ class relation_ptr {
           std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE."
                     << std::endl;
         // MOVE NODE TO GARBAGE (DO NOT FIX CHILDREN NOW) - THIS MUST BE FAST
-        assert(ctx.lock()->pending.size() == 0);
+        assert(myctx->pending.size() == 0);
         // AVOID TNode here...
         // sptr_mynode->owned_by.size()
         //
@@ -560,11 +464,11 @@ class relation_ptr {
           std::cout
               << "destroy: moving to pending list with these properties: ";
           std::cout << "node |owns|=" << sptr_mynode->owns.size()
-                    << " |owned_by|="
-                    << ctx.lock()->opx_countOwnedBy(sptr_mynode) << std::endl;
+                    << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
+                    << std::endl;
         }
-        ctx.lock()->pending.push_back(std::move(sptr_mynode));
-        int sz_pending = ctx.lock()->pending.size();
+        myctx->pending.push_back(std::move(sptr_mynode));
+        int sz_pending = myctx->pending.size();
         if (debug())
           std::cout << "DEBUG: sz_pending=" << sz_pending << std::endl;
         sptr_mynode = nullptr;  // NO EFFECT!
@@ -572,20 +476,22 @@ class relation_ptr {
         if (debug()) {
           std::cout << "destroy: in pending list with these properties: ";
           std::cout << "node |owns|="
-                    << ctx.lock()->pending[sz_pending - 1]->owns.size()
+                    << myctx->pending[sz_pending - 1]->owns.size()
                     << " |owned_by|="
-                    << ctx.lock()->pending[sz_pending - 1]->owned_by.size()
+                    << myctx->pending[sz_pending - 1]->owned_by.size()
                     << std::endl;
         }
       }
       // last holding reference to node is on pending list
-      if (ctx.lock()->autoCollect()) {
+      if (myctx->autoCollect()) {
         if (debug()) {
           std::cout << "DEBUG: begin auto_collect. |pending|="
-                    << ctx.lock()->pending.size() << std::endl;
+                    << myctx->pending.size() << std::endl;
         }
-        ctx.lock()->collect();
+        myctx->collect();
       }
+#endif
+
       //
       // end-if is_root || is_owned
     }
