@@ -73,7 +73,9 @@ class MyGraph {
     // entry.reset();
   }
   //
-  auto my_ctx() -> wptr<forest_ctx> { return this->pool.getContext(); }
+  auto my_ctx() -> wptr<relation_pool::pool_type> {
+    return this->pool.getContext();
+  }
 
   auto make_node(X v) -> relation_ptr<MyNodeX> {
     auto* ptr = new MyNodeX(v, debug_flag);  // NOLINT

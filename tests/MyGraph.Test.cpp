@@ -17,18 +17,18 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 1 - MyGraph Single") {
   // create context
   {
     MyGraph<double> G;
-    REQUIRE(!G.my_ctx().lock()->debug);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(!G.my_ctx().lock()->debug());
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
 
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
     REQUIRE(G.entry.is_root());
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // reset -1 node
     G.entry.reset();
     REQUIRE(G.entry.is_nullptr());
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
 
     if (false) {
       G.entry.setDebug(true);  // -1
@@ -43,7 +43,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
   // create context
   {
     MyGraph<double> G;
-    REQUIRE(!G.my_ctx().lock()->debug);
+    REQUIRE(!G.my_ctx().lock()->debug());
     // G.debug_flag = true;
     // G.my_ctx().lock()->debug = true;
 
@@ -146,7 +146,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
   // create context
   {
     MyGraph<double> G;
-    REQUIRE(!G.my_ctx().lock()->debug);
+    REQUIRE(!G.my_ctx().lock()->debug());
 
     // STEP (A)
     // creating -1 node
@@ -247,12 +247,12 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
   // create context
   {
     MyGraph<double> G;
-    REQUIRE(!G.my_ctx().lock()->debug);
+    REQUIRE(!G.my_ctx().lock()->debug());
     // G.debug_flag = true;
     // G.my_ctx().lock()->debug = true;
 
     // context should not have created Tree for nullptr node
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
     // creating -1 node
 
     G.entry = G.make_node(-1.0);
@@ -267,7 +267,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
 
     // forest size is 1
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // no need for this check, anymore... too much like sptr!
     // REQUIRE(G.entry.get_ref_use_count() == 2);
     //  => alternative check:
@@ -281,19 +281,19 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     auto ptr1 = G.make_node(1.0);
     REQUIRE(mynode_count == 2);
     REQUIRE(tnode_count == 2);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     REQUIRE(ptr1.is_root());
     //
     auto ptr2 = G.make_node(2.0);
     REQUIRE(mynode_count == 3);
     REQUIRE(tnode_count == 3);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
     REQUIRE(ptr2.is_root());
     //
     auto ptr3 = G.make_node(3.0);
     REQUIRE(mynode_count == 4);
     REQUIRE(tnode_count == 4);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
     REQUIRE(ptr3.is_root());
 
     //
@@ -303,7 +303,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     // field
     // G.my_ctx().lock()->debug = true;
     G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
     REQUIRE(ptr1.is_root());
     REQUIRE(G.entry.get()->neighbors[0].is_owned());
     // CHECKS (B) - node 1 is owned by -1
@@ -319,14 +319,14 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
 
     //
     ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
     REQUIRE(ptr1.is_root());
     REQUIRE(ptr1.get()->neighbors[0].is_owned());
     // will destroy ptr1 from this context...
     // it still exists as G.entry.get()->neighbors[0]
     ptr1.reset();
     REQUIRE(ptr1.is_nullptr());
-    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
     REQUIRE(G.entry.get()->neighbors[0].is_owned());
     auto& fake_ptr1 = G.entry.get()->neighbors[0];
     // CHECKS (C) - ptr1 is deleted
@@ -346,10 +346,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(ptr2.remote_node.lock()->owns.size() == 0);
     //
     ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
     //
     ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 3);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
     // CHECKS (D) - ptr2 and ptr3 are added as owners
     REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
     REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
@@ -378,7 +378,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     ptr3.reset();
     REQUIRE(ptr3.is_nullptr());
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     auto& fake_ptr2 = fake_ptr1.get()->neighbors[0];
     auto& fake_ptr3 = fake_ptr2.get()->neighbors[0];
     // CHECKS (E) - ptr2 and ptr3 are removed
@@ -442,7 +442,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
                 ->neighbors[0]
                 ->val == 1);
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // make everyone verbose
     if (false) {
       G.entry->neighbors[0].setDebug(true);                              // -1
@@ -457,7 +457,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     auto lsptr = G.my_ctx().lock();
     if (lsptr) lsptr->collect();
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);  // NO COLLECTION??
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);  // NO COLLECTION??
     //
     // G.my_ctx().lock()->debug = true;
     // G.entry.setDebug(true);
@@ -477,29 +477,29 @@ TEST_CASE(
     // DESTRUCTION
 
     MyGraph<double> G;
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
     //
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
 
     // make cycle
     auto ptr1 = G.make_node(1.0);
     auto ptr2 = G.make_node(2.0);
     auto ptr3 = G.make_node(3.0);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
     G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     //
     ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     //
     ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     //
     ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
-    REQUIRE(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     //
     auto lsptr = G.my_ctx().lock();
     if (lsptr) lsptr->collect();
@@ -510,7 +510,7 @@ TEST_CASE(
     ptr2.reset();
     REQUIRE(ptr1->neighbors[0]->val == 2);
     // two root survivors
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
     auto& fake_ptr2 = ptr1->neighbors[0];
     auto& fake_entry = ptr3->neighbors[0];
@@ -567,10 +567,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 6 - MyGraph 1 2 3 -1 kill 2") {
     // DESTRUCTION
 
     MyGraph<double> G;
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
     //
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
 
     // make cycle
     auto ptr1 = G.make_node(1.0);
@@ -593,7 +593,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 6 - MyGraph 1 2 3 -1 kill 2") {
     // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
     // only one root survivor (1)
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     REQUIRE(fake_ptr2.is_nullptr());
 
@@ -629,10 +629,10 @@ TEST_CASE(
     // G.debug_flag = true;
     // G.my_ctx().lock()->debug = true;
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
     //
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
 
     // make cycle
     auto ptr1 = G.make_node(1.0);
@@ -663,7 +663,7 @@ TEST_CASE(
     // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
     // two root survivors (1) and (4) -> 3 -1
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
     REQUIRE(ptr1.is_root());
     REQUIRE(fake_ptr2.is_nullptr());
@@ -728,10 +728,10 @@ TEST_CASE(
     // G.debug_flag = true;
     // G.my_ctx().lock()->debug = true;
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
     //
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
 
     // make cycle
     auto ptr1 = G.make_node(1.0);
@@ -764,7 +764,7 @@ TEST_CASE(
     // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
     // two root survivors (1) and (4) -> 3 -1
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
     REQUIRE(ptr1.is_root());
     REQUIRE(fake_ptr2.is_nullptr());
@@ -814,24 +814,24 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
   // create context
   {
     MyGraph<double> G;
-    REQUIRE(!G.my_ctx().lock()->debug);
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(!G.my_ctx().lock()->debug());
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
 
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
     REQUIRE(G.entry.is_root());
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     // make cycle
     auto ptr1 = G.make_node(1.0);
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
     ptr1->neighbors.push_back(G.make_node_owned(2.0, ptr1));
     // auto& fake_ptr2 = ptr1->neighbors[0];
     //
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
     REQUIRE(ptr1.is_root());
     // check first arc
@@ -864,14 +864,14 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
     // first is null, rest is owned
     REQUIRE(ptr1->neighbors.size() == 4);
     // roots are -1 and 1
-    REQUIRE(G.my_ctx().lock()->forest.size() == 2);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
     // std::cout << "will reset node -1" << std::endl;
     //
     // reset -1 node
     G.entry.reset();
     REQUIRE(G.entry.is_nullptr());
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // reset ptr1
     ptr1.reset();
     REQUIRE(ptr1.is_nullptr());
@@ -933,7 +933,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     REQUIRE(G.entry.is_root());
     REQUIRE(entry2.is_owned());
     // check forest structure
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     // create one more self-owned reference
     auto entry3 = entry2.get_self_owned();
@@ -941,7 +941,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     REQUIRE(entry2.is_owned());
     REQUIRE(entry3.is_owned());
     // check forest structure
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     // destroy unowned/root reference
     //
@@ -951,7 +951,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     //   so both 'entry2' and 'G.entry' should be null now.
     //
     // check forest structure
-    REQUIRE(G.my_ctx().lock()->forest.size() == 0);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
     // all cleared up already
     REQUIRE(mynode_count == 0);
 
@@ -983,7 +983,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 11 - MyGraph get_unowned") {
     REQUIRE(G.entry.is_root());
     REQUIRE(entry2.is_nullptr());
     // check forest structure
-    REQUIRE(G.my_ctx().lock()->forest.size() == 1);
+    REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     // destroy unowned/root reference
     //

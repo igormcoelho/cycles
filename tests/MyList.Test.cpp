@@ -3,6 +3,9 @@
 #include <iostream>
 //
 #include <catch2/catch_amalgamated.hpp>
+//
+// #include <cycles/detail/IDynowForest.hpp>
+#include <cycles/relation_ptr.hpp>
 #include <demo_cptr/MyList.hpp>
 
 using namespace std;     // NOLINT
@@ -18,7 +21,7 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
   {
     MyList L;
     // L.my_ctx().lock()->debug = true;
-    REQUIRE(!L.my_ctx().lock()->debug);
+    REQUIRE(!L.my_ctx().lock()->debug());
 
     //
     L.entry = L.make_node(0);
@@ -50,6 +53,10 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     }
     //
     auto p = L.my_ctx().lock()->debug_count_ownership_links();
+    //
+    // auto* idyn = L.my_ctx().lock().get();
+    // auto* v1dyn = (V1_DynowForest*)(idyn);  // NOLINT
+    // auto p = v1dyn->debug_count_ownership_links();
     REQUIRE(p.first == p.second);  // IMPORTANT CHECK!
     //
     //  double => is strong link (parent link not shown)
@@ -101,7 +108,7 @@ TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
   {
     MyList L;
     // L.my_ctx().lock()->debug = true;
-    REQUIRE(!L.my_ctx().lock()->debug);
+    REQUIRE(!L.my_ctx().lock()->debug());
 
     //
     L.entry = L.make_node(-1);
@@ -153,9 +160,9 @@ TEST_CASE("CyclesTestMyList: MyList relation_ptr void derived") {
   std::cout << "begin MyList relation_ptr void derived" << std::endl;
   // create context
   {
-    sptr<forest_ctx> ctx{new forest_ctx{}};
-    relation_ptr<void> ptr_base(ctx, nullptr);
-    ptr_base = relation_ptr<double>(ctx, new double{1});
+    relation_pool pool;
+    relation_ptr<void> ptr_base(pool.getContext(), nullptr);
+    ptr_base = relation_ptr<double>(pool.getContext(), new double{1});
     sptr<double> p =
         std::static_pointer_cast<double, void>(ptr_base.get_shared());
     REQUIRE(*p == 1);

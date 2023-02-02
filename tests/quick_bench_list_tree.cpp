@@ -128,7 +128,7 @@ int main() {
   if (true) {
     CList list;
     list.ctx = sptr<forest_ctx>{new forest_ctx{}};
-    list.ctx->auto_collect = false;
+    list.ctx->setAutoCollect(false);
 
     //
     int n = 0;
@@ -343,7 +343,7 @@ int main() {
     std::queue<relation_ptr<CTreeNode>*> temp;
     CTree tree;
     tree.ctx = sptr<forest_ctx>{new forest_ctx{}};
-    tree.ctx->auto_collect = false;
+    tree.ctx->setAutoCollect(false);
     // DO NOT PUT 2^29... too much memory!
 
     int n = 0;

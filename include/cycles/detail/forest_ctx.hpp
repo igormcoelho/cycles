@@ -35,9 +35,14 @@ class forest_ctx {
 
  public:
   // collect strategy parameters
-  bool auto_collect{true};
-
-  bool debug{false};
+  //
+  bool _auto_collect{true};
+  bool autoCollect() { return _auto_collect; }
+  void setAutoCollect(bool ac) { _auto_collect = ac; }
+  //
+  bool _debug{false};
+  bool debug() { return _debug; }
+  void setDebug(bool d) { _debug = d; }
 
   // Forest management system comes here (default is sptr)
   using NodeType = sptr<TNode<TNodeData>>;
@@ -51,21 +56,26 @@ class forest_ctx {
   // pending deletions of nodes
   vector<NodeType> pending;
 
+ private:
+  bool is_destroying{false};
+
  public:
   forest_ctx() {
-    if (debug) std::cout << "forest_ctx created!" << std::endl;
+    if (debug()) std::cout << "forest_ctx created!" << std::endl;
   }
+
+  int getForestSize() { return static_cast<int>(forest.size()); }
 
   // quickly destroy all forest roots
   void destroyForestRoots() {
     for (const auto& p : forest) {
-      if (debug)
+      if (debug())
         std::cout << "destroyForestRoots: clearing root of ~> " << p.first
                   << "'" << (*p.first) << "' -> " << p.second << " TREE"
                   << std::endl;
       // NOLINTNEXTLINE
       assert(p.second->root);  // root must never be nullptr
-      if (debug)
+      if (debug())
         std::cout << "destroyForestRoots: move tree root node to garbage for "
                      "deferred destruction"
                   << std::endl;
@@ -84,31 +94,32 @@ class forest_ctx {
       if (true)
         std::cout << "TODO: must remove weak links from root Tree node:"
                   << p.second->root->owned_by.size() << std::endl;
-      if (debug)
+      if (debug())
         std::cout << " clearing children of Tree node:  root.|children|="
                   << p.second->root->children.size() << std::endl;
       p.second->root->children.clear();  // clear children. IS THIS NECESSARY???
-      if (debug)
+      if (debug())
         std::cout << " clearing root with root = nullptr " << std::endl;
       p.second->root = nullptr;  // clear root
       */
     }
-    if (debug)
+    if (debug())
       std::cout << "destroyForestRoots: final clear forest" << std::endl;
     forest.clear();  // is it necessary??
   }
 
   ~forest_ctx() {
-    if (debug)
+    if (debug())
       std::cout << "~forest_ctx() forest_size =" << forest.size() << std::endl;
     destroyForestRoots();
-    if (debug)
+    if (debug())
       std::cout << "~forest_ctx: final cleanup on pending" << std::endl;
     assert(!is_destroying);
     // NOTE: collect is slower than destroy_pending with unchecked=true
     // collect();
     destroy_pending(true);
-    if (debug) std::cout << "~forest_ctx: finished final collect" << std::endl;
+    if (debug())
+      std::cout << "~forest_ctx: finished final collect" << std::endl;
   }
 
  public:
@@ -137,7 +148,7 @@ class forest_ctx {
 
  public:
   void destroy_tree(sptr<TNode<T>> sptr_mynode) {
-    if (debug) std::cout << "destroy: will destroy my tree." << std::endl;
+    if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
     // find my tree
     auto tree_it = this->forest.find(sptr_mynode);
     if (tree_it == this->forest.end()) {
@@ -145,20 +156,17 @@ class forest_ctx {
       std::cout << "ERROR! COULD NOT FIND MY TREE!" << std::endl;
       assert(false);
     } else {
-      if (debug) {
+      if (debug()) {
         std::cout << " ~~~> OK FOUND MY TREE. Delete it." << std::endl;
       }
       // clear tree
       this->forest.erase(tree_it);
 
-      if (debug) {
+      if (debug()) {
         std::cout << " ~~~> OK DELETED MY TREE." << std::endl;
       }
     }
   }
-
- private:
-  bool is_destroying{false};
 
  public:
   // public method to manually invoke collection, if 'auto_collect' is not true
@@ -172,17 +180,17 @@ class forest_ctx {
   //   destructor, that allows reckless and faster destruction of everything.
   void destroy_pending(bool unchecked = false) {
     if (is_destroying) {
-      if (debug)
+      if (debug())
         std::cout << "WARNING: collect() already executing!" << std::endl;
       return;
     } else {
-      if (debug)
+      if (debug())
         std::cout << "CTX: NOT DESTROYING! BEGIN PROCESS!" << std::endl;
     }
     is_destroying = true;
-    if (debug)
+    if (debug())
       std::cout << "CTX: destroy_pending. unchecked=" << unchecked << std::endl;
-    if (debug)
+    if (debug())
       std::cout << "CTX: destroy_pending. |pending|=" << pending.size()
                 << std::endl;
     if (pending.size() == 0) {
@@ -198,7 +206,7 @@ class forest_ctx {
 
     // TODO(igormcoelho): make queue?
     while (pending.size() > 0) {
-      if (debug) {
+      if (debug()) {
         std::cout << std::endl;
         std::cout << "CTX: WHILE processing pending list. |pending|="
                   << pending.size() << std::endl;
@@ -206,11 +214,11 @@ class forest_ctx {
       sptr<TNode<T>> sptr_delete = std::move(pending[0]);
       pending.erase(pending.begin() + 0);
       //
-      if (debug) {
+      if (debug()) {
         std::cout << "CTX: sptr_delete is: " << sptr_delete->value_to_string()
                   << std::endl;
       }
-      if (debug) {
+      if (debug()) {
         std::cout << "CTX: sptr_delete with these properties: ";
         std::cout << "node |owns|=" << sptr_delete->owns.size()
                   << " |owned_by|=" << sptr_delete->owned_by.size()
@@ -219,7 +227,7 @@ class forest_ctx {
       // this must be clean, regarding external (Except for cycles, maybe...)
       if (sptr_delete->owned_by.size() > 0) {
         // assert(sptr_delete->owned_by.size() == 0);
-        if (debug)
+        if (debug())
           std::cout << "CTX WARNING: owned_by but dying... must be some cycle!"
                     << std::endl;
       }
@@ -233,16 +241,16 @@ class forest_ctx {
       //
       // get its children
       auto children = std::move(sptr_delete->children);
-      if (debug)
+      if (debug())
         std::cout << "destroy_pending: found |children|=" << children.size()
                   << std::endl;
-      if (debug)
+      if (debug())
         std::cout << "destroy_pending: destroy node (move to vdata)"
                   << std::endl;
-      if (debug) {
+      if (debug()) {
         sptr_delete->debug_flag = true;
       }
-      if (debug) {
+      if (debug()) {
         std::cout << "CTX: will destroy EMPTY node: "
                   << sptr_delete->value_to_string() << std::endl;
       }
@@ -251,17 +259,17 @@ class forest_ctx {
       // IMPORTANT: destroy node (without any data)
       sptr_delete = nullptr;
       //
-      if (debug)
+      if (debug())
         std::cout << "destroy_pending: check children of node" << std::endl;
       // check if children can be saved
       while (children.size() > 0) {
         bool will_die = true;
-        if (debug) std::cout << "DEBUG: will move child!" << std::endl;
+        if (debug()) std::cout << "DEBUG: will move child!" << std::endl;
         auto sptr_child = std::move(children[0]);
-        if (debug)
+        if (debug())
           std::cout << "DEBUG: child is " << sptr_child->value_to_string()
                     << std::endl;
-        if (debug) std::cout << "DEBUG: will erase empty child!" << std::endl;
+        if (debug()) std::cout << "DEBUG: will erase empty child!" << std::endl;
         children.erase(children.begin() + 0);
         // I THINK THAT WE NEED TO CHECK isDescendent HERE BECAUSE MY CHILD
         // CANNOT OWN ME
@@ -272,11 +280,12 @@ class forest_ctx {
         }
 
         for (unsigned k = 0; k < sptr_child->owned_by.size(); k++) {
-          if (debug) std::cout << "DEBUG: child found new parent!" << std::endl;
+          if (debug())
+            std::cout << "DEBUG: child found new parent!" << std::endl;
           auto sptr_new_parent = sptr_child->owned_by[k].lock();
           //
           if (sptr_new_parent.get() == sptr_child.get()) {
-            if (debug) {
+            if (debug()) {
               std::cout
                   << "Found new parent to own child but it's loop! Ignoring! k="
                   << k << std::endl;
@@ -284,7 +293,7 @@ class forest_ctx {
             continue;
           }
           //
-          if (debug)
+          if (debug())
             std::cout << "DEBUG: sptr_new_parent="
                       << sptr_new_parent->value_to_string() << std::endl;
           // NOTE: costly O(tree_size)=O(N) test in worst case for
@@ -292,11 +301,11 @@ class forest_ctx {
           bool _isDescendent =
               TNodeHelper<T>::isDescendent(sptr_new_parent, sptr_child);
           //
-          if (debug)
+          if (debug())
             std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
                       << std::endl;
           if (_isDescendent) {
-            if (debug)
+            if (debug())
               std::cout
                   << "CTX DEBUG: owned_by is already my descendent! Discard. "
                   << "Will try next k!"
@@ -312,9 +321,9 @@ class forest_ctx {
           sptr_new_parent->add_child_strong(sptr_child);
         }
         // kill if not held by anyone now
-        if (debug) std::cout << "DEBUG: may kill child!" << std::endl;
+        if (debug()) std::cout << "DEBUG: may kill child!" << std::endl;
         if (will_die) {
-          if (debug)
+          if (debug())
             std::cout << "DEBUG: child will be send to pending list: "
                       << sptr_child->value_to_string() << std::endl;
           //
@@ -323,12 +332,12 @@ class forest_ctx {
           assert(b1);
           //
           pending.push_back(std::move(sptr_child));
-          if (debug)
+          if (debug())
             std::cout << "DEBUG: child sent to pending list! |pending|="
                       << pending.size() << std::endl;
         } else {
-          if (debug) std::cout << "DEBUG: child is saved!" << std::endl;
-          if (debug) {
+          if (debug()) std::cout << "DEBUG: child is saved!" << std::endl;
+          if (debug()) {
             std::cout << "CTX: child with these properties: ";
             std::cout << "node |owns|=" << sptr_child->owns.size()
                       << " |owned_by|=" << sptr_child->owned_by.size()
@@ -338,16 +347,16 @@ class forest_ctx {
       }  // while children exists
       //
     }  // while pending list > 0
-    if (debug)
+    if (debug())
       std::cout << "destroy_pending: finished pending list |pending|="
                 << pending.size() << std::endl;
     //
-    if (debug)
+    if (debug())
       std::cout << "destroy_pending: final clear vdata. |vdata|="
                 << vdata.size() << std::endl;
     vdata.clear();
     //
-    if (debug)
+    if (debug())
       std::cout << "destroy_pending: assert no more pending. |pending|="
                 << pending.size() << std::endl;
     // IF THIS FAILS, WE MAY NEED TO INTRODUCE ANOTHER WHILE LOOP HERE,
@@ -355,14 +364,14 @@ class forest_ctx {
     assert(pending.size() == 0);
 
     is_destroying = false;
-    if (debug) std::cout << "destroy_pending: finished!" << std::endl;
+    if (debug()) std::cout << "destroy_pending: finished!" << std::endl;
   }
 
  public:
   void print() {
     std::cout << "print forest_ctx: (forest size=" << forest.size() << ") ["
               << std::endl;
-    for (auto p : forest) {
+    for (const auto& p : forest) {
       std::cout << " ~> ROOT_NODE " << p.first << " as '" << (*p.first)
                 << "' -> TREE " << p.second << ": ";
       p.second->print();

@@ -408,7 +408,7 @@ int main() {
     // G.my_ctx().lock()->collect();
     std::cout << "FINAL PRINT!" << std::endl;
     G.print();
-    std::cout << "forest size = " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size = " << G.my_ctx().lock()->getForestSize()
               << std::endl;
   }  // WILL LEAK
 

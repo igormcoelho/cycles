@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 //
+// #include <cycles/detail/IDynowForest.hpp>
 #include <cycles/relation_ptr.hpp>
 //
 // ================== EXAMPLE ================
@@ -32,13 +33,13 @@ class MyList {
     }
   };
 
-  sptr<forest_ctx> ctx;
+  sptr<relation_pool::pool_type> ctx;
 
  public:
   bool debug_flag{false};
   relation_ptr<MyListNode> entry;
 
-  MyList() : ctx{new forest_ctx{}}, entry{make_null_node()} {}
+  MyList() : ctx{new relation_pool::pool_type{}}, entry{make_null_node()} {}
 
   ~MyList() {
     if (debug_flag) std::cout << "~MyList" << std::endl;
@@ -54,7 +55,7 @@ class MyList {
 
   // HELPERS FOR CTX
 
-  auto my_ctx() -> wptr<forest_ctx> { return this->ctx; }
+  auto my_ctx() -> wptr<relation_pool::pool_type> { return this->ctx; }
 
   auto make_node(double v) -> relation_ptr<MyListNode> {
     auto* ptr =

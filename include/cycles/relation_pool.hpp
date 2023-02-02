@@ -28,6 +28,9 @@ using namespace detail;
 
 // NOLINTNEXTLINE
 class relation_pool {
+ public:
+  using pool_type = forest_ctx;
+
  private:
   // TODO(igormcoelho): ensure ctx behaves like "unique_ptr"? or allow this to
   // live as long as dependent relation_ptr exists?
@@ -61,9 +64,9 @@ class relation_pool {
     clear();
   }
 
-  void setAutoCollect(bool b) { ctx->auto_collect = b; }
+  void setAutoCollect(bool b) { ctx->setAutoCollect(b); }
 
-  void setDebug(bool b) { ctx->debug = b; }
+  void setDebug(bool b) { ctx->setDebug(b); }
 
   // internal structure... TODO(igormcoelho): provide this as wptr or sptr?
   auto getContext() const { return ctx; }

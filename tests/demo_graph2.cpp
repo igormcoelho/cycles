@@ -29,9 +29,9 @@ int main() {
     MyGraph<double> G;
     std::cout << "CONTEXT SHOULD NOT HAVE CREATED Tree for nullptr node"
               << std::endl;
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 0);
+    assert(G.my_ctx().lock()->getForestSize() == 0);
     G.my_ctx().lock()->print();
     //
     G.print();
@@ -39,9 +39,9 @@ int main() {
     std::cout << "WILL MAKE NODE -1" << std::endl;
     G.entry = G.make_node(-1.0);
     std::cout << "CONTEXT SHOULD HAVE CREATED Tree for -1 node" << std::endl;
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 1);
+    assert(G.my_ctx().lock()->getForestSize() == 1);
 
     //
     std::cout << "FIRST PRINT!" << std::endl;
@@ -55,37 +55,37 @@ int main() {
     auto ptr3 = G.make_node(3.0);
     std::cout << "CONTEXT SHOULD HAVE CREATED Trees for nodes 1, 2 and 3"
               << std::endl;
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 4);
+    assert(G.my_ctx().lock()->getForestSize() == 4);
     // -1/HEAD -> 1 -> 2 -> 3 -> (-1/HEAD)
     //
     // G.entry.get()->neighbors.push_back(ptr1);
     std::cout << "---> setup G.entry" << std::endl;
     G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    assert(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    assert(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    assert(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     G.print();
     std::cout << std::endl;
     std::cout << "WILL ADD LAST LINK" << std::endl;
     ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
-    std::cout << "forest size: " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size: " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 4);  // all independent
+    assert(G.my_ctx().lock()->getForestSize() == 4);  // all independent
     //
     std::cout << std::endl;
     std::cout << "after setup!" << std::endl;
     G.print();
-    std::cout << "forest size = " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size = " << G.my_ctx().lock()->getForestSize()
               << std::endl;
     //
     auto lsptr = G.my_ctx().lock();
@@ -95,7 +95,7 @@ int main() {
     std::cout << std::endl;
     std::cout << "FINAL PRINT!" << std::endl;
     G.print();
-    std::cout << "forest size = " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size = " << G.my_ctx().lock()->getForestSize()
               << std::endl;
     // =======================
     // return 0;
@@ -109,9 +109,9 @@ int main() {
     ptr2.reset();
     assert(ptr1->neighbors[0]->val == 2);
     // two root survivors
-    std::cout << "forest size = " << G.my_ctx().lock()->forest.size()
+    std::cout << "forest size = " << G.my_ctx().lock()->getForestSize()
               << std::endl;
-    assert(G.my_ctx().lock()->forest.size() == 2);
+    assert(G.my_ctx().lock()->getForestSize() == 2);
     //
     auto& fake_ptr2 = ptr1->neighbors[0];
     auto& fake_entry = ptr3->neighbors[0];
@@ -157,7 +157,7 @@ int main() {
     ptr1.setDebug(true);
     ptr2.setDebug(true);
     ptr3.setDebug(true);
-    G.my_ctx().lock()->debug = true;
+    G.my_ctx().lock()->setDebug(true);
 
     // MANUAL DESTRUCTION (NATURALLY OCCURRING IN THIS ORDER...)
     //

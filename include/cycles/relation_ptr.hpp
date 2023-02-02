@@ -92,7 +92,7 @@ class relation_ptr {
     this->remote_node = sptr_remote_node;
     this->is_owned_by_node = false;
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug();
     //
     if (debug()) {
       std::cout
@@ -169,7 +169,7 @@ class relation_ptr {
     this->remote_node = sptr_remote_node;
     this->is_owned_by_node = false;
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug();
     //
     if (debug()) {
       std::cout
@@ -227,7 +227,7 @@ class relation_ptr {
     // context must exist
     assert(ctx.lock());
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug();
     //
     // KEEP LOCAL!
     // sptr<T> ref{t};
@@ -241,7 +241,7 @@ class relation_ptr {
     this->remote_node = sptr_remote_node;
     // this->is_owned_by_node = false;
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug();
     //
     if (debug()) {
       std::cout
@@ -312,7 +312,7 @@ class relation_ptr {
     corpse.remote_node.reset();
     corpse.owned_by_node.reset();
     corpse.is_owned_by_node = false;
-    this->debug_flag_ptr = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug();
   }
 
  public:
@@ -331,7 +331,7 @@ class relation_ptr {
     // same pointers
     assert(ctx.lock().get() == owner.ctx.lock().get());
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug;
+    this->debug_flag_ptr = get_ctx().lock()->debug();
     if (debug()) std::cout << "c4 constructor for get_owned" << std::endl;
     if (this == &copy) {
       // TODO: self assignment breaks nothing here, in this case...
@@ -562,7 +562,7 @@ class relation_ptr {
         }
       }
       // last holding reference to node is on pending list
-      if (ctx.lock()->auto_collect) {
+      if (ctx.lock()->autoCollect()) {
         if (debug()) {
           std::cout << "DEBUG: begin auto_collect. |pending|="
                     << ctx.lock()->pending.size() << std::endl;
