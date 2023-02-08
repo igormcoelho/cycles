@@ -155,72 +155,36 @@ class relation_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  relation_ptr(wptr<forest_ctx> _ctx, T* t) : ctx{_ctx} {
-    assert(ctx.lock());
+  relation_ptr(wptr<forest_ctx> _ctx, T* t)
+      : ctx{_ctx}, is_owned_by_node{false} {
+    assert(ctx.lock());  // REMOVE! (allow with better logic than assert)
+    //
+    this->debug_flag_ptr = get_ctx().lock()->debug();
     // KEEP LOCAL!
-    // sptr<T> ref{t};
     sptr<TNodeData> ref;
     if (t) ref = TNodeData::make_sptr<T>(t);
     //
-    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
-    // this 'remote_node' is weak!
-    auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
-    // we only hold weak reference here
-    this->remote_node = sptr_remote_node;
-    this->is_owned_by_node = false;
-    //
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+    if (!ref) return;  // SHOULD NOT CREATE A NEW TREE!
+
     //
     if (debug()) {
       std::cout
           << "C1 pointer constructor: creating NEW relation_ptr (this_new="
           << this << " to t*=" << t << ") ";
       if (ref)
-        // if (t)
         std::cout << "with ref -> " << *ref << std::endl;
       else
         std::cout << "with ref -> nullptr" << std::endl;
     }
     //
-    if (!ref) {
-      // if (!t) {
-      return;  // SHOULD NOT CREATE A NEW TREE!
-    }
-    if (!(this->remote_node.lock())) {
-      // STRANGE ERROR! SHOULD NEVER OCCUR!
-      std::cout << "ERROR: this should never occur! remote_node is not "
-                   "accessible on C1."
-                << std::endl;
-      assert(false);
-      return;
-    }
+    // using op1: we only store weak reference here
+    auto [orig, target] = ctx.lock()->op1_addNodeToNewTree(ref);
+    this->remote_node = target;
     //
     if (debug()) {
-      std::cout << "=> C1 pointer constructor: Registering this in new Tree on "
-                   "Context!"
-                << std::endl;
-    }
-    //
-    // TODO: how could this fail? IMPORTANT test!
-    assert(sptr_remote_node);
-    // using op1
-    ctx.lock()->op1_addNodeToNewTree(sptr_remote_node);
-    /*
-      auto stree = sptr<Tree<X>>(new Tree<X>{});
-      if (debug()) {
-        std::cout << "tree ~> ";
-        stree->print();
-        std::cout << "Printed Tree!" << std::endl;
-      }
-      // STRONG storage of remote node pointer
-      stree->set_root(sptr_remote_node);
-      ctx.lock()->forest[sptr_remote_node] = stree;
-    */
-    //
-    if (debug()) ctx.lock()->print();
-    //
-    if (debug())
+      ctx.lock()->print();
       std::cout << " -> finished C1 pointer constructor" << std::endl;
+    }
   }
 
   // C2 CONSTRUCTOR - EQUIVALENT TO C1+C4
@@ -232,42 +196,31 @@ class relation_ptr {
     this->debug_flag_ptr = get_ctx().lock()->debug();
     //
     // KEEP LOCAL!
-    // sptr<T> ref{t};
     sptr<TNodeData> ref;
     if (t) ref = TNodeData::make_sptr<T>(t);
     //
-    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
-    // this 'remote_node' is weak!
-    auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
-    // we only hold weak reference here
-    this->remote_node = sptr_remote_node;
-    // this->is_owned_by_node = false;
-    //
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+
     //
     if (debug()) {
       std::cout
           << "C2 pointer constructor: creating NEW relation_ptr (this_new="
           << this << " to t*=" << t << ") ";
       if (ref)
-        // if (t)
         std::cout << "with ref -> " << *ref << std::endl;
       else
         std::cout << "with ref -> nullptr" << std::endl;
     }
     //
-    if (!ref) {
-      // if (!t) {
-      return;  // SHOULD NOT CREATE A NEW TREE!
-    }
-    if (!(this->remote_node.lock())) {
-      // STRANGE ERROR! SHOULD NEVER OCCUR!
-      std::cout << "ERROR: this should never occur! remote_node is not "
-                   "accessible on C2."
-                << std::endl;
-      assert(false);
-      return;
-    }
+    if (!ref) return;  // SHOULD NOT CREATE A NEW TREE!
+
+    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
+    // this 'remote_node' is weak!
+    // auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
+    // we only hold weak reference here
+    // this->remote_node = sptr_remote_node;
+    // this->is_owned_by_node = false;
+    //
+
     //
     // END C1 PART
     //
@@ -275,20 +228,21 @@ class relation_ptr {
     //
     assert(!owner.is_nullptr());
     // remember ownership (for future deletion?)
-    this->owned_by_node = owner.remote_node;
-    this->is_owned_by_node = true;
+    // this->owned_by_node = owner.remote_node;
+    //     this->is_owned_by_node = true;
     // OWNER MUST EXIST... AT LEAST NOW!
-    assert(this->owned_by_node.lock());
-    auto myNewParent = owned_by_node.lock();
+    // assert(this->owned_by_node.lock());
+    // auto myNewParent = owned_by_node.lock();
     //
     // register STRONG ownership in tree
     //
-    auto sptr_mynode = this->remote_node.lock();
-    ctx.lock()->op2_addChildStrong(myNewParent, sptr_mynode);
-    /*
-    sptr_mynode->parent = myNewParent;
-    myNewParent->add_child_strong(sptr_mynode);
-    */
+    // auto sptr_mynode = this->remote_node.lock();
+    auto [orig, target] =
+        ctx.lock()->op2_addChildStrong(owner.remote_node.lock(), ref);
+    // TODO(igormcoelho): no errors possible in op2?
+    this->is_owned_by_node = true;
+    this->owned_by_node = orig;
+    this->remote_node = target;
     //
     if (debug())
       std::cout << "finish c2: stored owner in owned_by_node" << std::endl;
@@ -330,34 +284,39 @@ class relation_ptr {
   // cptr2
   //
   relation_ptr(const relation_ptr<T>& copy, const relation_ptr<T>& owner)
-      : ctx{copy.ctx}, remote_node{copy.remote_node} {
+      : ctx{copy.ctx}  //, remote_node{copy.remote_node} {
+  {
     // context must exist
-    assert(ctx.lock());
-    // same pointers
+    assert(ctx.lock());  // TODO: avoid assert here
+    // same pointers on ctx
+    // TODO: this assert could be necessary indeed...
     assert(ctx.lock().get() == owner.ctx.lock().get());
     //
     this->debug_flag_ptr = get_ctx().lock()->debug();
     if (debug()) std::cout << "c4 constructor for get_owned" << std::endl;
-    if (this == &copy) {
-      // TODO: self assignment breaks nothing here, in this case...
-      // ... but let's avoid it, for now
-      assert(false);
-    }
-    if (this == &owner) {
-      // TODO: this is strange...
-      // ... so let's avoid it, for now
-      assert(false);
-    }
-    assert(!owner.is_nullptr());
+    assert(this != &copy);   // IMPOSSIBLE
+    assert(this != &owner);  // IMPOSSIBLE
+    //
+    assert(!owner.is_nullptr());  // TODO: avoid assert here
     //
     // both nodes exist already (copy node and owner node)
     // register WEAK ownership in tree
-    this->set_owned_by(owner);  // invokes 'op3_weakSetOwnedBy'
+    // this->set_owned_by(owner);  // invokes 'op3_weakSetOwnedBy'
+
+    // it seems that best logic is:
+    // - each weak owned_by link corresponds to weak owns link
+    // - each strong child link corresponds to a weak parent link
+    //
+    auto [orig, target] = ctx.lock()->op3_weakSetOwnedBy(
+        copy.remote_node.lock(), owner.remote_node.lock());
+
     // remember ownership (for future deletion?)
-    this->owned_by_node = owner.remote_node;
+    this->remote_node = target;
+    this->owned_by_node = orig;
+    // this->owned_by_node = owner.remote_node;
     this->is_owned_by_node = true;
     // OWNER MUST EXIST... AT LEAST NOW!
-    assert(this->owned_by_node.lock());
+    assert(this->owned_by_node.lock());  // TODO: crazy test.. why?
     if (debug())
       std::cout << "finish c4: stored owner in owned_by_node" << std::endl;
   }
@@ -399,10 +358,23 @@ class relation_ptr {
       // must find someone to strongly own me, otherwise node may die!
       // First:  find someone in my 'owned_by' list
 
+      // -------
       auto sptr_mynode = this->remote_node.lock();
       auto owner_node = this->owned_by_node.lock();
       // NOTE: 'sptr_mynode' is reference... don't know exactly why!
       this->ctx.lock()->op4_remove(sptr_mynode, owner_node, isRoot, isOwned);
+      // -------
+
+      // ========
+      // TODO: must have this arc ready... to make sense!
+      auto myarc = std::pair<wptr<TNode<X>>, wptr<TNode<X>>>{
+          this->remote_node, this->owned_by_node};
+      // this->ctx.lock()->op4_remove(myarc, isRoot, isOwned);
+      //
+      // MANUAL CLEANUP! TODO: FIX!!
+      // this->remote_node.reset();
+      // this->owned_by_node.reset();
+      // ========
 
       //
       // end-if is_root || is_owned

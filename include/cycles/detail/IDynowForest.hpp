@@ -31,6 +31,7 @@ class IDynowForest {
  public:
   using DynowNodeType = XNode;
   using DynowTreeType = XTree;
+  using DynowArrowType = std::pair<wptr<XNode>, wptr<XNode>>;
 
   virtual ~IDynowForest() = default;
 
@@ -48,15 +49,24 @@ class IDynowForest {
   virtual int opx_countOwnedBy(sptr<DynowNodeType>) = 0;  // useless?
   virtual sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType>,
                                              int idx) = 0;  // useless?
-  // main methods
-  virtual void op1_addNodeToNewTree(sptr<DynowNodeType>) = 0;
-  virtual void op2_addChildStrong(sptr<DynowNodeType>, sptr<DynowNodeType>) = 0;
-  virtual void op3_weakSetOwnedBy(sptr<DynowNodeType>, sptr<DynowNodeType>) = 0;
+                                                            // main methods
+  // op1: give 'data' and get arrow type (two weak pointers)
+  virtual DynowArrowType op1_addNodeToNewTree(sptr<TNodeData>) = 0;
+  // op2: give 'node locator' (weak or strong?) and 'data... returns 'arc'
+  virtual DynowArrowType op2_addChildStrong(sptr<DynowNodeType>,
+                                            sptr<TNodeData>) = 0;
+  // op3: give two 'node locators' and get 'arc'
+  virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType>,
+                                            sptr<DynowNodeType>) = 0;
   // NOTE: 'sptr_mynode' is reference... don't know why!
   // NOLINTNEXTLINE
   virtual void op4_remove(sptr<DynowNodeType>& sptr_mynode,
                           sptr<DynowNodeType> owner_node, bool isRoot,
                           bool isOwned) = 0;
+
+  // NOLINTNEXTLINE
+  // virtual void op4_remove(DynowArrowType& arrow, bool isRoot, bool isOwned) =
+  // 0;
 };
 
 }  // namespace detail

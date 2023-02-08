@@ -49,6 +49,7 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
   // Forest management system comes here (default is sptr)
   using NodeType = sptr<TNode<TNodeData>>;
   using TreeType = sptr<Tree<TNodeData>>;
+  using ArrowType = std::pair<wptr<DynowNodeType>, wptr<DynowNodeType>>;
   //
   // using NodeType = sptr<TNode<sptr<T>>>;
   // using TreeType = sptr<Tree<sptr<T>>>;
@@ -81,12 +82,20 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
 
   sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType> node_ptr,
                                      int idx) override {
-    return node_ptr->owned_by[idx].lock();
+    return node_ptr->owned_by.at(idx).lock();
   }
 
  public:
   // main operations
-  void op1_addNodeToNewTree(sptr<DynowNodeType> sptr_remote_node) override {
+
+  ArrowType op1_addNodeToNewTree(sptr<TNodeData> ref) override {
+    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
+    sptr<TNode<TNodeData>> sptr_remote_node{new TNode<TNodeData>{ref}};
+    //
+    if (debug()) {
+      std::cout << "=> C1 constructor: Registering this in new Tree!"
+                << std::endl;
+    }
     auto stree = sptr<DynowTreeType>(new DynowTreeType{});
     if (debug()) {
       std::cout << "tree ~> ";
@@ -97,20 +106,29 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     // STRONG storage of remote node pointer
     stree->set_root(sptr_remote_node);
     this->forest[sptr_remote_node] = stree;
+    // OK: 'sptr_remote_node' is free to go now
     if (debug()) this->print();
+    //
+    return ArrowType{wptr<DynowNodeType>{}, sptr_remote_node};
   }
 
-  void op2_addChildStrong(sptr<DynowNodeType> myNewParent,
-                          sptr<DynowNodeType> sptr_mynode) override {
+  // ArrowType op2_addChildStrong(sptr<DynowNodeType> myNewParent,
+  //                              sptr<DynowNodeType> sptr_mynode) override {
+  ArrowType op2_addChildStrong(sptr<DynowNodeType> myNewParent,
+                               sptr<TNodeData> ref) override {
+    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
+    sptr<TNode<TNodeData>> sptr_mynode{new TNode<TNodeData>{ref}};
     //
     // register STRONG ownership in tree
     //
     sptr_mynode->parent = myNewParent;
     myNewParent->add_child_strong(sptr_mynode);
+
+    return ArrowType{myNewParent, sptr_mynode};
   }
 
-  void op3_weakSetOwnedBy(sptr<DynowNodeType> this_remote_node,
-                          sptr<DynowNodeType> owner_remote_node) override {
+  ArrowType op3_weakSetOwnedBy(sptr<DynowNodeType> this_remote_node,
+                               sptr<DynowNodeType> owner_remote_node) override {
     //
     if (debug()) {
       std::cout << std::endl
@@ -131,6 +149,7 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     //
     if (debug()) this->print();
     //
+    return ArrowType{owner_remote_node, this_remote_node};
   }
 
   //
@@ -152,7 +171,9 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
           << "DEBUG: FIND OWNED_BY. NODE WILL DIE IF NOT FIND REPLACEMENT!"
           << std::endl;
     // find new owner, otherwise will die
-    for (unsigned k = 0; k < myctx->opx_countOwnedBy(sptr_mynode); k++) {
+    int owned_by_count = myctx->opx_countOwnedBy(sptr_mynode);
+    //
+    for (unsigned k = 0; k < owned_by_count; k++) {
       auto myNewParent = myctx->opx_getOwnedBy(sptr_mynode, k);
       if (!myNewParent) {
         std::cout << "ERROR! no new parent! how??" << std::endl;
@@ -320,8 +341,18 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
   }
 
   void op4_remove(sptr<DynowNodeType>& sptr_mynode,
-                  sptr<DynowNodeType> owner_node, bool isRoot,
-                  bool isOwned) override {
+                  sptr<DynowNodeType> owner_node,
+                  // NOLINTNEXTLINE
+                  // void op4_remove(ArrowType& arc,
+                  bool isRoot, bool isOwned) override {
+    /*
+sptr<DynowNodeType> owner_node = arc.first.lock();
+sptr<DynowNodeType> sptr_mynode = arc.second.lock();
+// clear arc (???)
+arc.first.reset();
+arc.second.reset();
+*/
+    //
     auto myctx = this;
     //
     bool will_die =
