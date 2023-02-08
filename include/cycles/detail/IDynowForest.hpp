@@ -26,12 +26,13 @@ namespace cycles {
 
 namespace detail {
 
-template <class XNode, class XTree>
+template <class XNode, class XTree, class XArrow>
 class IDynowForest {
  public:
   using DynowNodeType = XNode;
   using DynowTreeType = XTree;
-  using DynowArrowType = std::pair<wptr<XNode>, wptr<XNode>>;
+  using DynowArrowType = XArrow;
+  // using DynowArrowType = std::pair<wptr<XNode>, wptr<XNode>>;
 
   virtual ~IDynowForest() = default;
 

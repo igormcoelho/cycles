@@ -77,23 +77,28 @@ TEST_CASE("CyclesTestMyList: MyList 5") {
     // deeper debug
     //
     REQUIRE(L.entry.is_root());
-    REQUIRE(L.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(L.entry.remote_node.lock()->children.size() == 1);  // node 1
-    REQUIRE(L.entry.remote_node.lock()->owned_by.size() ==
+    REQUIRE(L.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry.arrow.remote_node.lock()->children.size() == 1);  // node 1
+    REQUIRE(L.entry.arrow.remote_node.lock()->owned_by.size() ==
             2);  // node 1 and node 4 ??
-    REQUIRE(L.entry.remote_node.lock()->owns.size() == 1);  // node 4
+    REQUIRE(L.entry.arrow.remote_node.lock()->owns.size() == 1);  // node 4
     //
     REQUIRE(L.entry->next.is_owned());
-    REQUIRE(L.entry->next.remote_node.lock()->has_parent() == true);  // node 0
-    REQUIRE(L.entry->next.remote_node.lock()->children.size() == 1);  // node 2
-    REQUIRE(L.entry->next.remote_node.lock()->owned_by.size() == 1);  // node 2
-    REQUIRE(L.entry->next.remote_node.lock()->owns.size() == 1);      // node 0
-                                                                      //
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->has_parent() ==
+            true);  // node 0
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->children.size() ==
+            1);  // node 2
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->owned_by.size() ==
+            1);  // node 2
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->owns.size() ==
+            1);  // node 0
+                 //
     REQUIRE(node4.is_owned());
-    REQUIRE(node4.remote_node.lock()->has_parent() == true);  // node 3
-    REQUIRE(node4.remote_node.lock()->children.size() == 0);
-    REQUIRE(node4.remote_node.lock()->owned_by.size() == 1);  // node 0
-    REQUIRE(node4.remote_node.lock()->owns.size() == 2);  // node 3 and node 0
+    REQUIRE(node4.arrow.remote_node.lock()->has_parent() == true);  // node 3
+    REQUIRE(node4.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(node4.arrow.remote_node.lock()->owned_by.size() == 1);  // node 0
+    REQUIRE(node4.arrow.remote_node.lock()->owns.size() ==
+            2);  // node 3 and node 0
     //
     // std::cout << std::endl << "DESTRUCTION!" << std::endl;
     // L.my_ctx().lock()->debug = true;
@@ -131,22 +136,24 @@ TEST_CASE("CyclesTestMyList: MyList Single Cycle") {
     // deeper debug
     //
     REQUIRE(L.entry.is_root());
-    REQUIRE(L.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(L.entry.remote_node.lock()->children.size() == 0);
-    REQUIRE(L.entry.remote_node.lock()->owned_by.size() == 2);  // self?
-    REQUIRE(L.entry.remote_node.lock()->owns.size() == 2);      // self?
+    REQUIRE(L.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(L.entry.arrow.remote_node.lock()->owned_by.size() == 2);  // self?
+    REQUIRE(L.entry.arrow.remote_node.lock()->owns.size() == 2);      // self?
     //
     REQUIRE(L.entry->next.is_owned());
-    REQUIRE(L.entry->next.remote_node.lock()->has_parent() == false);
-    REQUIRE(L.entry->next.remote_node.lock()->children.size() == 0);
-    REQUIRE(L.entry->next.remote_node.lock()->owned_by.size() == 2);  // self?
-    REQUIRE(L.entry->next.remote_node.lock()->owns.size() == 2);      // self?
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->owned_by.size() ==
+            2);                                                         // self?
+    REQUIRE(L.entry->next.arrow.remote_node.lock()->owns.size() == 2);  // self?
     //
     REQUIRE(L.entry->prev.is_owned());
-    REQUIRE(L.entry->prev.remote_node.lock()->has_parent() == false);
-    REQUIRE(L.entry->prev.remote_node.lock()->children.size() == 0);
-    REQUIRE(L.entry->prev.remote_node.lock()->owned_by.size() == 2);  // self?
-    REQUIRE(L.entry->prev.remote_node.lock()->owns.size() == 2);      // self?
+    REQUIRE(L.entry->prev.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(L.entry->prev.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(L.entry->prev.arrow.remote_node.lock()->owned_by.size() ==
+            2);                                                         // self?
+    REQUIRE(L.entry->prev.arrow.remote_node.lock()->owns.size() == 2);  // self?
 
     //
     // std::cout << std::endl << "DESTRUCTION!" << std::endl;

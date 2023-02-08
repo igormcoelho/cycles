@@ -101,10 +101,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
                   << std::endl;
     }
     // node 2 should point to node 3
-    REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 0);  // no one
-    REQUIRE(ptr2.remote_node.lock()->owns.size() == 1);      // 3
-    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 1);  // 2
-    REQUIRE(ptr3.remote_node.lock()->owns.size() == 1);      // -1
+    REQUIRE(ptr2.arrow.remote_node.lock()->owned_by.size() == 0);  // no one
+    REQUIRE(ptr2.arrow.remote_node.lock()->owns.size() == 1);      // 3
+    REQUIRE(ptr3.arrow.remote_node.lock()->owned_by.size() == 1);  // 2
+    REQUIRE(ptr3.arrow.remote_node.lock()->owns.size() == 1);      // -1
 
     // CHECKS (E') - ptr2 and ptr3 are removed
     //
@@ -112,8 +112,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     // std::cout << std::endl << "WILL RESET ptr2" << std::endl << std::endl;
     ptr2.reset();
     // node 2 should not point to node 3 anymore
-    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(ptr3.remote_node.lock()->owns.size() == 1);
+    REQUIRE(ptr3.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr3.arrow.remote_node.lock()->owns.size() == 1);
     //
     REQUIRE(G.entry.is_root());
     REQUIRE(ptr3.is_root());
@@ -186,28 +186,32 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
     ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
     // CHECKS
-    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->has_parent() ==
-            true);
-    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->children.size() ==
-            0);
-    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->owned_by.size() ==
-            0);
-    REQUIRE(G.entry.get()->neighbors[0].remote_node.lock()->owns.size() == 1);
+    REQUIRE(
+        G.entry.get()->neighbors[0].arrow.remote_node.lock()->has_parent() ==
+        true);
+    REQUIRE(
+        G.entry.get()->neighbors[0].arrow.remote_node.lock()->children.size() ==
+        0);
+    REQUIRE(
+        G.entry.get()->neighbors[0].arrow.remote_node.lock()->owned_by.size() ==
+        0);
+    REQUIRE(G.entry.get()->neighbors[0].arrow.remote_node.lock()->owns.size() ==
+            1);
     //
-    REQUIRE(ptr2.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr2.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(ptr2.remote_node.lock()->owns.size() == 1);
+    REQUIRE(ptr2.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr2.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr2.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr2.arrow.remote_node.lock()->owns.size() == 1);
     //
-    REQUIRE(ptr3.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr3.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(ptr3.remote_node.lock()->owns.size() == 1);
+    REQUIRE(ptr3.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr3.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr3.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr3.arrow.remote_node.lock()->owns.size() == 1);
     //
     // CHECKS (E) - ptr2 and ptr3 are removed
     //
@@ -261,10 +265,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
 
     // check few things on 'entry'... Parent, Children, Owned and Owns
     // CHECKS (A) - just -1 node
-    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(G.entry.remote_node.lock()->children.size() == 0);
-    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owns.size() == 0);
 
     // forest size is 1
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
@@ -307,15 +311,15 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(ptr1.is_root());
     REQUIRE(G.entry.get()->neighbors[0].is_owned());
     // CHECKS (B) - node 1 is owned by -1
-    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(G.entry.remote_node.lock()->children.size() == 0);
-    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(G.entry.remote_node.lock()->owns.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owns.size() == 1);
     //
-    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
 
     //
     ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
@@ -330,20 +334,20 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(G.entry.get()->neighbors[0].is_owned());
     auto& fake_ptr1 = G.entry.get()->neighbors[0];
     // CHECKS (C) - ptr1 is deleted
-    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(fake_ptr1.remote_node.lock()->has_parent() == true);
-    REQUIRE(fake_ptr1.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_ptr1.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr1.remote_node.lock()->owns.size() == 1);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->owns.size() == 1);
     //
-    REQUIRE(ptr2.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr2.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(ptr2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr2.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr2.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr2.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr2.arrow.remote_node.lock()->owns.size() == 0);
     //
     ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
     REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
@@ -351,25 +355,25 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
     REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
     // CHECKS (D) - ptr2 and ptr3 are added as owners
-    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(fake_ptr1.remote_node.lock()->has_parent() == true);
-    REQUIRE(fake_ptr1.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_ptr1.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr1.remote_node.lock()->owns.size() == 1);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->owns.size() == 1);
     //
-    REQUIRE(ptr2.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr2.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr2.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(ptr2.remote_node.lock()->owns.size() == 1);
+    REQUIRE(ptr2.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr2.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr2.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr2.arrow.remote_node.lock()->owns.size() == 1);
     //
-    REQUIRE(ptr3.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr3.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(ptr3.remote_node.lock()->owns.size() == 1);
+    REQUIRE(ptr3.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr3.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr3.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(ptr3.arrow.remote_node.lock()->owns.size() == 1);
     //
     // will clean all from this context
     //
@@ -382,27 +386,27 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     auto& fake_ptr2 = fake_ptr1.get()->neighbors[0];
     auto& fake_ptr3 = fake_ptr2.get()->neighbors[0];
     // CHECKS (E) - ptr2 and ptr3 are removed
-    REQUIRE(G.entry.remote_node.lock()->has_parent() == false);
-    REQUIRE(G.entry.remote_node.lock()->children.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owned_by.size() == 1);
-    REQUIRE(G.entry.remote_node.lock()->owns.size() == 0);
+    REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owned_by.size() == 1);
+    REQUIRE(G.entry.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(fake_ptr1.remote_node.lock()->has_parent() == true);
-    REQUIRE(fake_ptr1.remote_node.lock()->children.size() == 1);
-    REQUIRE(fake_ptr1.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->children.size() == 1);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr1.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(fake_ptr2.remote_node.lock()->has_parent() == true);
-    REQUIRE(fake_ptr2.remote_node.lock()->children.size() == 1);
-    REQUIRE(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->children.size() == 1);
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(fake_ptr3.remote_node.lock()->has_parent() == true);
-    REQUIRE(fake_ptr3.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_ptr3.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr3.remote_node.lock()->owns.size() == 1);
-    REQUIRE(fake_ptr3.remote_node.lock()->owns[0].lock().get() ==
-            G.entry.remote_node.lock().get());
+    REQUIRE(fake_ptr3.arrow.remote_node.lock()->has_parent() == true);
+    REQUIRE(fake_ptr3.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr3.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr3.arrow.remote_node.lock()->owns.size() == 1);
+    REQUIRE(fake_ptr3.arrow.remote_node.lock()->owns[0].lock().get() ==
+            G.entry.arrow.remote_node.lock().get());
     //
     REQUIRE(G.entry.get()->val == -1);
     REQUIRE(G.entry.count_owned_by() == 1);
@@ -522,27 +526,29 @@ TEST_CASE(
     REQUIRE(fake_entry.is_owned());  // node -1
 
     // deeper debug
-    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr1.remote_node.lock()->children.size() == 1);  // node 2
-    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 1);  // node -1
-    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 1);  // node 2
+    REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 1);  // node -1
+    REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
     // change value to 2.2
     fake_ptr2->val = 2.2;
-    REQUIRE(fake_ptr2.remote_node.lock()->has_parent() == true);  // node 1
-    REQUIRE(fake_ptr2.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr2.remote_node.lock()->owns.size() == 1);  // node 3
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->has_parent() ==
+            true);  // node 1
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr2.arrow.remote_node.lock()->owns.size() == 1);  // node 3
 
     //
-    REQUIRE(ptr3.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr3.remote_node.lock()->children.size() == 1);  // node -1
-    REQUIRE(ptr3.remote_node.lock()->owned_by.size() == 1);  // node 2
-    REQUIRE(ptr3.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr3.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr3.arrow.remote_node.lock()->children.size() == 1);  // node -1
+    REQUIRE(ptr3.arrow.remote_node.lock()->owned_by.size() == 1);  // node 2
+    REQUIRE(ptr3.arrow.remote_node.lock()->owns.size() == 0);
     //
-    REQUIRE(fake_entry.remote_node.lock()->has_parent() == true);  // node 3
-    REQUIRE(fake_entry.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_entry.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_entry.remote_node.lock()->owns.size() == 1);  // node 1
+    REQUIRE(fake_entry.arrow.remote_node.lock()->has_parent() ==
+            true);  // node 3
+    REQUIRE(fake_entry.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_entry.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_entry.arrow.remote_node.lock()->owns.size() == 1);  // node 1
     //
     // ptr3.reset(); // do not delete here
     // ptr1.reset(); // do not delete here
@@ -598,10 +604,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 6 - MyGraph 1 2 3 -1 kill 2") {
     REQUIRE(fake_ptr2.is_nullptr());
 
     // deeper debug
-    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
     REQUIRE(fake_ptr2.is_nullptr());
     // fake_ptr3 is broken now
     // REQUIRE(fake_ptr3.is_nullptr());
@@ -681,28 +687,28 @@ TEST_CASE(
     // deeper debug
     //
     REQUIRE(ptr1.is_root());
-    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
     REQUIRE(fake_ptr2.is_nullptr());
     // fake_ptr3 is broken now, but fake_ptr3_2 is good
     REQUIRE(fake_ptr3_2.is_owned());
-    REQUIRE(fake_ptr3_2.remote_node.lock()->has_parent() == true);  // 4
-    REQUIRE(fake_ptr3_2.remote_node.lock()->children.size() == 1);  // -1
-    REQUIRE(fake_ptr3_2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr3_2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->has_parent() == true);  // 4
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->children.size() == 1);  // -1
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owns.size() == 0);
     // fake_entry is broken now, but fake_entry_2 is good
     REQUIRE(fake_entry_2.is_owned());
-    REQUIRE(fake_entry_2.remote_node.lock()->has_parent() == true);  // 3
-    REQUIRE(fake_entry_2.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_entry_2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_entry_2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->has_parent() == true);  // 3
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->owns.size() == 0);
     REQUIRE(ptr4.is_root());
-    REQUIRE(ptr4.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr4.remote_node.lock()->children.size() == 1);  // 3
-    REQUIRE(ptr4.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(ptr4.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr4.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr4.arrow.remote_node.lock()->children.size() == 1);  // 3
+    REQUIRE(ptr4.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr4.arrow.remote_node.lock()->owns.size() == 0);
     // SHOULD NOT LEAK
   }
   REQUIRE(mynode_count == 0);
@@ -782,28 +788,28 @@ TEST_CASE(
     // deeper debug
     //
     REQUIRE(ptr1.is_root());
-    REQUIRE(ptr1.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr1.remote_node.lock()->children.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(ptr1.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
     REQUIRE(fake_ptr2.is_nullptr());
     // fake_ptr3 is broken now, but fake_ptr3_2 is good
     REQUIRE(fake_ptr3_2.is_owned());
-    REQUIRE(fake_ptr3_2.remote_node.lock()->has_parent() == true);  // 4
-    REQUIRE(fake_ptr3_2.remote_node.lock()->children.size() == 1);  // -1
-    REQUIRE(fake_ptr3_2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_ptr3_2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->has_parent() == true);  // 4
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->children.size() == 1);  // -1
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owns.size() == 0);
     // fake_entry is broken now, but fake_entry_2 is good
     REQUIRE(fake_entry_2.is_owned());
-    REQUIRE(fake_entry_2.remote_node.lock()->has_parent() == true);  // 3
-    REQUIRE(fake_entry_2.remote_node.lock()->children.size() == 0);
-    REQUIRE(fake_entry_2.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(fake_entry_2.remote_node.lock()->owns.size() == 0);
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->has_parent() == true);  // 3
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->children.size() == 0);
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(fake_entry_2.arrow.remote_node.lock()->owns.size() == 0);
     REQUIRE(ptr4.is_root());
-    REQUIRE(ptr4.remote_node.lock()->has_parent() == false);
-    REQUIRE(ptr4.remote_node.lock()->children.size() == 1);  // 3
-    REQUIRE(ptr4.remote_node.lock()->owned_by.size() == 0);
-    REQUIRE(ptr4.remote_node.lock()->owns.size() == 0);
+    REQUIRE(ptr4.arrow.remote_node.lock()->has_parent() == false);
+    REQUIRE(ptr4.arrow.remote_node.lock()->children.size() == 1);  // 3
+    REQUIRE(ptr4.arrow.remote_node.lock()->owned_by.size() == 0);
+    REQUIRE(ptr4.arrow.remote_node.lock()->owns.size() == 0);
     // SHOULD NOT LEAK
   }
   REQUIRE(mynode_count == 0);
@@ -894,8 +900,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     // create copy of self-owned node
     auto entry2 = G.entry.get_owned(G.entry);
     // check self-descendency here (TODO move for TNodeHelper tests)
-    REQUIRE(TNodeHelper<>::isDescendent(entry2.remote_node.lock(),
-                                        G.entry.remote_node.lock()));
+    REQUIRE(TNodeHelper<>::isDescendent(entry2.arrow.remote_node.lock(),
+                                        G.entry.arrow.remote_node.lock()));
     //
     // THIS IS A SELF-LINK... SOME DISCUSSIONS BELOW TO UNDERSTAND ITS MEANING.
     //

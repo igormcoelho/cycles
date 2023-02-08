@@ -123,29 +123,31 @@ int main() {
     assert(fake_entry.is_owned());  // node -1
 
     // deeper debug
-    assert(ptr1.remote_node.lock()->has_parent() == false);
-    assert(ptr1.remote_node.lock()->children.size() == 1);  // node 2
-    assert(ptr1.remote_node.lock()->owned_by.size() == 1);  // node -1
-    assert(ptr1.remote_node.lock()->owns.size() == 0);
+    assert(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    assert(ptr1.arrow.remote_node.lock()->children.size() == 1);  // node 2
+    assert(ptr1.arrow.remote_node.lock()->owned_by.size() == 1);  // node -1
+    assert(ptr1.arrow.remote_node.lock()->owns.size() == 0);
     //
     fake_ptr2->val = 2.2;
     std::cout << "fake_ptr2 = "
-              << fake_ptr2.remote_node.lock()->value_to_string() << std::endl;
-    assert(fake_ptr2.remote_node.lock()->has_parent() == true);  // node 1
-    assert(fake_ptr2.remote_node.lock()->children.size() == 0);
-    assert(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
-    assert(fake_ptr2.remote_node.lock()->owns.size() == 1);  // node 3
+              << fake_ptr2.arrow.remote_node.lock()->value_to_string()
+              << std::endl;
+    assert(fake_ptr2.arrow.remote_node.lock()->has_parent() == true);  // node 1
+    assert(fake_ptr2.arrow.remote_node.lock()->children.size() == 0);
+    assert(fake_ptr2.arrow.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_ptr2.arrow.remote_node.lock()->owns.size() == 1);  // node 3
 
     //
-    assert(ptr3.remote_node.lock()->has_parent() == false);
-    assert(ptr3.remote_node.lock()->children.size() == 1);  // node -1
-    assert(ptr3.remote_node.lock()->owned_by.size() == 1);  // node 2
-    assert(ptr3.remote_node.lock()->owns.size() == 0);
+    assert(ptr3.arrow.remote_node.lock()->has_parent() == false);
+    assert(ptr3.arrow.remote_node.lock()->children.size() == 1);  // node -1
+    assert(ptr3.arrow.remote_node.lock()->owned_by.size() == 1);  // node 2
+    assert(ptr3.arrow.remote_node.lock()->owns.size() == 0);
     //
-    assert(fake_entry.remote_node.lock()->has_parent() == true);  // node 3
-    assert(fake_entry.remote_node.lock()->children.size() == 0);
-    assert(fake_entry.remote_node.lock()->owned_by.size() == 0);
-    assert(fake_entry.remote_node.lock()->owns.size() == 1);  // node 1
+    assert(fake_entry.arrow.remote_node.lock()->has_parent() ==
+           true);  // node 3
+    assert(fake_entry.arrow.remote_node.lock()->children.size() == 0);
+    assert(fake_entry.arrow.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_entry.arrow.remote_node.lock()->owns.size() == 1);  // node 1
     //
     // ptr3.reset(); // do not delete here
     // ptr1.reset(); // do not delete here
@@ -164,28 +166,30 @@ int main() {
     ptr3.reset();
 
     // deeper debug
-    assert(ptr1.remote_node.lock()->has_parent() == false);
-    assert(ptr1.remote_node.lock()->children.size() == 1);  // node 2
-    assert(ptr1.remote_node.lock()->owned_by.size() == 1);  // node -1
-    assert(ptr1.remote_node.lock()->owns.size() == 0);
+    assert(ptr1.arrow.remote_node.lock()->has_parent() == false);
+    assert(ptr1.arrow.remote_node.lock()->children.size() == 1);  // node 2
+    assert(ptr1.arrow.remote_node.lock()->owned_by.size() == 1);  // node -1
+    assert(ptr1.arrow.remote_node.lock()->owns.size() == 0);
     //
-    assert(fake_ptr2.remote_node.lock()->has_parent() == true);  // node 1
-    assert(fake_ptr2.remote_node.lock()->children.size() == 1);  // node 3
-    assert(fake_ptr2.remote_node.lock()->owned_by.size() == 0);
-    assert(fake_ptr2.remote_node.lock()->owns.size() == 0);
+    assert(fake_ptr2.arrow.remote_node.lock()->has_parent() == true);  // node 1
+    assert(fake_ptr2.arrow.remote_node.lock()->children.size() == 1);  // node 3
+    assert(fake_ptr2.arrow.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_ptr2.arrow.remote_node.lock()->owns.size() == 0);
     auto& fake_ptr3 = fake_ptr2.get()->neighbors[0];
     //
 
-    assert(fake_ptr3.remote_node.lock()->has_parent() == true);  // node 2
-    assert(fake_ptr3.remote_node.lock()->children.size() == 1);  // node -1
-    assert(fake_ptr3.remote_node.lock()->owned_by.size() == 0);
-    assert(fake_ptr3.remote_node.lock()->owns.size() == 0);
+    assert(fake_ptr3.arrow.remote_node.lock()->has_parent() == true);  // node 2
+    assert(fake_ptr3.arrow.remote_node.lock()->children.size() ==
+           1);  // node -1
+    assert(fake_ptr3.arrow.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_ptr3.arrow.remote_node.lock()->owns.size() == 0);
     //
-    assert(fake_entry.remote_node.lock()->has_parent() == true);  // node 3
-    assert(fake_entry.remote_node.lock()->children.size() == 0);
-    assert(fake_entry.remote_node.lock()->owned_by.size() == 0);
-    assert(fake_entry.remote_node.lock()->owns.size() == 1);  // node 1
-                                                              //
+    assert(fake_entry.arrow.remote_node.lock()->has_parent() ==
+           true);  // node 3
+    assert(fake_entry.arrow.remote_node.lock()->children.size() == 0);
+    assert(fake_entry.arrow.remote_node.lock()->owned_by.size() == 0);
+    assert(fake_entry.arrow.remote_node.lock()->owns.size() == 1);  // node 1
+                                                                    //
     // ptr1.reset(); // do not delete here
     //
     std::cout << "==================================" << std::endl;

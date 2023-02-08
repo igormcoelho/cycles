@@ -31,7 +31,8 @@ namespace cycles {
 namespace detail {
 
 // NOLINTNEXTLINE
-class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
+class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
+                                       TArrowV1<TNodeData>> {
   // forest_ctx is now type-erased, using T=TNodeData
   using T = TNodeData;
 
@@ -88,7 +89,7 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
  public:
   // main operations
 
-  ArrowType op1_addNodeToNewTree(sptr<TNodeData> ref) override {
+  TArrowV1<TNodeData> op1_addNodeToNewTree(sptr<TNodeData> ref) override {
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
     sptr<TNode<TNodeData>> sptr_remote_node{new TNode<TNodeData>{ref}};
     //
@@ -109,13 +110,16 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     // OK: 'sptr_remote_node' is free to go now
     if (debug()) this->print();
     //
-    return ArrowType{wptr<DynowNodeType>{}, sptr_remote_node};
+    TArrowV1<TNodeData> arrow;
+    arrow.owned_by_node = wptr<DynowNodeType>{};
+    arrow.remote_node = sptr_remote_node;
+    return arrow;
   }
 
   // ArrowType op2_addChildStrong(sptr<DynowNodeType> myNewParent,
   //                              sptr<DynowNodeType> sptr_mynode) override {
-  ArrowType op2_addChildStrong(sptr<DynowNodeType> myNewParent,
-                               sptr<TNodeData> ref) override {
+  TArrowV1<TNodeData> op2_addChildStrong(sptr<DynowNodeType> myNewParent,
+                                         sptr<TNodeData> ref) override {
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
     sptr<TNode<TNodeData>> sptr_mynode{new TNode<TNodeData>{ref}};
     //
@@ -124,11 +128,15 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     sptr_mynode->parent = myNewParent;
     myNewParent->add_child_strong(sptr_mynode);
 
-    return ArrowType{myNewParent, sptr_mynode};
+    TArrowV1<TNodeData> arrow;
+    arrow.owned_by_node = myNewParent;
+    arrow.remote_node = sptr_mynode;
+    return arrow;
   }
 
-  ArrowType op3_weakSetOwnedBy(sptr<DynowNodeType> this_remote_node,
-                               sptr<DynowNodeType> owner_remote_node) override {
+  TArrowV1<TNodeData> op3_weakSetOwnedBy(
+      sptr<DynowNodeType> this_remote_node,
+      sptr<DynowNodeType> owner_remote_node) override {
     //
     if (debug()) {
       std::cout << std::endl
@@ -149,7 +157,10 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>> {
     //
     if (debug()) this->print();
     //
-    return ArrowType{owner_remote_node, this_remote_node};
+    TArrowV1<TNodeData> arrow;
+    arrow.owned_by_node = owner_remote_node;
+    arrow.remote_node = this_remote_node;
+    return arrow;
   }
 
   //
