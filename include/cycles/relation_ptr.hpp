@@ -123,8 +123,7 @@ class relation_ptr {
   }
 
   // C2 CONSTRUCTOR - EQUIVALENT TO C1+C4
-  relation_ptr(wptr<DOF> ctx, T* t, const relation_ptr<T>& owner)
-      : ctx{owner.ctx} {
+  relation_ptr(T* t, const relation_ptr<T>& owner) : ctx{owner.ctx} {
     // context must exist
     assert(ctx.lock());
     //

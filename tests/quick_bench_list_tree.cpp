@@ -108,8 +108,7 @@ int main() {
       //    cycles::relation_ptr<CListNode>{list.ctx, node_next}.get_owned(
       //        *current);
 
-      (*current)->next =
-          cycles::relation_ptr<CListNode>{list.ctx, node_next, *current};
+      (*current)->next = cycles::relation_ptr<CListNode>{node_next, *current};
 
       current = &((*current)->next);
     }
@@ -149,8 +148,7 @@ int main() {
           cycles::relation_ptr<CListNode>{list.ctx, node_next}.get_owned(
               *current);
 #else
-      (*current)->next =
-          cycles::relation_ptr<CListNode>{list.ctx, node_next, *current};
+      (*current)->next = cycles::relation_ptr<CListNode>{node_next, *current};
 #endif
 
       current = &((*current)->next);
@@ -301,8 +299,7 @@ int main() {
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node1}.get_owned(*target));
 #else
-        (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node1, *target});
+        (*target)->children.push_back(relation_ptr<CTreeNode>{node1, *target});
 #endif
         //
         auto* node2 = new CTreeNode{.v = n++};  // NOLINT
@@ -311,8 +308,7 @@ int main() {
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node2}.get_owned(*target));
 #else
-        (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node2, *target});
+        (*target)->children.push_back(relation_ptr<CTreeNode>{node2, *target});
 #endif
         //
         newChild.push(&(*target)->children[0]);
@@ -372,8 +368,7 @@ int main() {
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node1}.get_owned(*target));
 #else
-        (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node1, *target});
+        (*target)->children.push_back(relation_ptr<CTreeNode>{node1, *target});
 #endif
         //
         auto* node2 = new CTreeNode{.v = n++};  // NOLINT
@@ -382,8 +377,7 @@ int main() {
         (*target)->children.push_back(
             relation_ptr<CTreeNode>{tree.ctx, node2}.get_owned(*target));
 #else
-        (*target)->children.push_back(
-            relation_ptr<CTreeNode>{tree.ctx, node2, *target});
+        (*target)->children.push_back(relation_ptr<CTreeNode>{node2, *target});
 #endif
         //
         newChild.push(&(*target)->children[0]);

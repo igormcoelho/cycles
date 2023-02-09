@@ -93,8 +93,7 @@ class MyGraph {
                                       new MyNodeX(v, debug_flag));
     return ptr1.get_owned(owner);
 #else
-    return relation_ptr<MyNodeX>(this->pool.getContext(),
-                                 new MyNodeX(v, debug_flag), owner);
+    return relation_ptr<MyNodeX>(new MyNodeX(v, debug_flag), owner);
 #endif
   }
 

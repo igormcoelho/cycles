@@ -76,8 +76,8 @@ class relation_pool {
   auto getContext() const { return ctx; }
 
   void clear() {
-    // force destruction
-    ctx->destroyAll();
+    // force destruction (beware: ctx could have been moved)
+    if (ctx) ctx->destroyAll();
     // clear context
     ctx = nullptr;
     // start again
