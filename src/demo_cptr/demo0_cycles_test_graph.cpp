@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 // lib
-#include <cycles/detail/forest_ctx.hpp>
+#include <cycles/detail/v1/DynowForestV1.hpp>
 #include <cycles/relation_pool.hpp>
 #include <cycles/relation_ptr.hpp>
 

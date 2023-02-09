@@ -3,7 +3,7 @@
 #include <iostream>
 //
 #include <catch2/catch_amalgamated.hpp>
-#include <cycles/detail/TNode.hpp>
+#include <cycles/detail/v1/TNodeV1.hpp>
 #include <cycles/relation_ptr.hpp>
 
 using namespace std;             // NOLINT

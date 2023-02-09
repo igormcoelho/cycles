@@ -13,7 +13,7 @@ int main() {
   auto c = high_resolution_clock::now();
   {
     // auto data = make_tracked<tracked_ptr<void>[]>(10000000);
-    sptr<forest_ctx> ctx{new forest_ctx{}};
+    sptr<DynowForestV1> ctx{new DynowForestV1{}};
     std::vector<relation_ptr<void>> data(10000000);
     for (int i = 0; i < 10000000; ++i) {
       // if (i % 1000) std::cout << "i=" << i << std::endl;

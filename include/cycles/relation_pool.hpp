@@ -11,7 +11,7 @@
 #include <vector>
 
 //
-#include <cycles/detail/forest_ctx.hpp>
+#include <cycles/detail/v1/DynowForestV1.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
@@ -30,7 +30,7 @@ using namespace detail;
 // relation_pool is templated for test only...
 // it could simply adopt the "best" DOF implementation.
 
-template <class DOF = forest_ctx>
+template <class DOF = DynowForestV1>
 class relation_pool {
  public:
   using pool_type = DOF;
@@ -38,12 +38,12 @@ class relation_pool {
  private:
   // TODO(igormcoelho): ensure ctx behaves like "unique_ptr"? or allow this to
   // live as long as dependent relation_ptr exists?
-  // ==== Implementation using forest_ctx ====
-  sptr<forest_ctx> ctx;
+  // ==== Implementation using DynowForestV1 ====
+  sptr<DynowForestV1> ctx;
 
  public:
   // default constructor
-  relation_pool() : ctx{new forest_ctx{}} {}
+  relation_pool() : ctx{new DynowForestV1{}} {}
 
   // move only
   relation_pool(relation_pool&& corpse) noexcept : ctx{std::move(corpse.ctx)} {
@@ -79,7 +79,7 @@ class relation_pool {
     // clear context
     ctx = nullptr;
     // start again
-    ctx = sptr<forest_ctx>{new forest_ctx{}};
+    ctx = sptr<DynowForestV1>{new DynowForestV1{}};
   }
 };
 

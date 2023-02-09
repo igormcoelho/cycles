@@ -2,8 +2,8 @@
 // C++
 #include <map>
 //
-#include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/detail/v1/TreeV1.hpp>
 #include <cycles/relation_ptr.hpp>
 #include <demo_cptr/MyGraph.hpp>
 #include <pre-experiments/List.hpp>

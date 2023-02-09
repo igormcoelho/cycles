@@ -84,7 +84,7 @@ class CListNode {
 
 class CList {
  public:
-  sptr<cycles::forest_ctx> ctx;
+  sptr<cycles::DynowForestV1> ctx;
   cycles::relation_ptr<CListNode> entry;
 
   ~CList() {

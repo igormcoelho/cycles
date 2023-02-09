@@ -87,7 +87,7 @@ int main() {
   c = high_resolution_clock::now();
   if (true) {
     CList list;
-    list.ctx = sptr<forest_ctx>{new forest_ctx{}};
+    list.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
 
     //
     int n = 0;
@@ -127,7 +127,7 @@ int main() {
   c = high_resolution_clock::now();
   if (true) {
     CList list;
-    list.ctx = sptr<forest_ctx>{new forest_ctx{}};
+    list.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
     list.ctx->setAutoCollect(false);
 
     //
@@ -272,7 +272,7 @@ int main() {
   {
     std::queue<relation_ptr<CTreeNode>*> temp;
     CTree tree;
-    tree.ctx = sptr<forest_ctx>{new forest_ctx{}};
+    tree.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
     // DO NOT PUT 2^29... too much memory!
 
     int n = 0;
@@ -342,7 +342,7 @@ int main() {
   {
     std::queue<relation_ptr<CTreeNode>*> temp;
     CTree tree;
-    tree.ctx = sptr<forest_ctx>{new forest_ctx{}};
+    tree.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
     tree.ctx->setAutoCollect(false);
     // DO NOT PUT 2^29... too much memory!
 

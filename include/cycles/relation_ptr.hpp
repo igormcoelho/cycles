@@ -12,16 +12,16 @@
 #include <vector>
 
 //
-#include <cycles/detail/TArrowV1.hpp>
-#include <cycles/detail/Tree.hpp>
-#include <cycles/detail/forest_ctx.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/detail/v1/DynowForestV1.hpp>
+#include <cycles/detail/v1/TArrowV1.hpp>
+#include <cycles/detail/v1/TreeV1.hpp>
 #include <cycles/relation_pool.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
 // ========================
-// relation_ptr and forest_ctx
+// relation_ptr using DynowForestV1
 // ========================
 // smart pointer suitable for cycles
 // memory is self-managed
@@ -32,7 +32,7 @@ namespace cycles {
 // NOLINTNEXTLINE
 using namespace detail;
 
-template <typename T, class DOF = forest_ctx>
+template <typename T, class DOF = DynowForestV1>
 // NOLINTNEXTLINE
 class relation_ptr {
   using X = TNodeData;
@@ -511,7 +511,7 @@ class relation_ptr {
 
  public:
   template <class... Args>
-  static relation_ptr<T> make(sptr<forest_ctx> ctx, Args&&... args) {
+  static relation_ptr<T> make(sptr<DynowForestV1> ctx, Args&&... args) {
     // NOLINTNEXTLINE
     auto* t = new T(std::forward<Args>(args)...);
     return relation_ptr<T>{ctx, t};

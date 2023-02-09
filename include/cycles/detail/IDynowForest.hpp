@@ -11,10 +11,10 @@
 #include <vector>
 
 //
-#include <cycles/detail/TNode.hpp>
 #include <cycles/detail/TNodeData.hpp>
-#include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/detail/v1/TNodeV1.hpp>
+#include <cycles/detail/v1/TreeV1.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 

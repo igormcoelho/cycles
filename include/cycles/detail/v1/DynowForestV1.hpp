@@ -1,8 +1,8 @@
 // SPDX-License-Identifier:  MIT
 // Copyright (C) 2021-2022 - Cycles - https://github.com/igormcoelho/cycles
 
-#ifndef CYCLES_FOREST_CTX_HPP_  // NOLINT
-#define CYCLES_FOREST_CTX_HPP_  // NOLINT
+#ifndef CYCLES_DynowForestV1_HPP_  // NOLINT
+#define CYCLES_DynowForestV1_HPP_  // NOLINT
 
 // C++
 #include <iostream>
@@ -13,15 +13,15 @@
 //
 #include <cycles/detail/IDynowForest.hpp>
 //
-#include <cycles/detail/TArrowV1.hpp>
-#include <cycles/detail/TNode.hpp>
-#include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/detail/v1/TArrowV1.hpp>
+#include <cycles/detail/v1/TNodeV1.hpp>
+#include <cycles/detail/v1/TreeV1.hpp>
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
 // ========================
-// relation_ptr and forest_ctx
+// relation_ptr and DynowForestV1
 // ========================
 // smart pointer suitable for cycles
 // memory is self-managed
@@ -32,9 +32,9 @@ namespace cycles {
 namespace detail {
 
 // NOLINTNEXTLINE
-class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
-                                       TArrowV1<TNodeData>> {
-  // forest_ctx is now type-erased, using T=TNodeData
+class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
+                                          TArrowV1<TNodeData>> {
+  // DynowForestV1 is now type-erased, using T=TNodeData
   using T = TNodeData;
 
  public:
@@ -68,8 +68,8 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   bool is_destroying{false};
 
  public:
-  forest_ctx() {
-    if (debug()) std::cout << "forest_ctx created!" << std::endl;
+  DynowForestV1() {
+    if (debug()) std::cout << "DynowForestV1 created!" << std::endl;
   }
 
   int getForestSize() override { return static_cast<int>(forest.size()); }
@@ -421,18 +421,19 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   }
 
  public:
-  ~forest_ctx() override {
+  ~DynowForestV1() override {
     if (debug())
-      std::cout << "~forest_ctx() forest_size =" << forest.size() << std::endl;
+      std::cout << "~DynowForestV1() forest_size =" << forest.size()
+                << std::endl;
     destroyForestRoots();
     if (debug())
-      std::cout << "~forest_ctx: final cleanup on pending" << std::endl;
+      std::cout << "~DynowForestV1: final cleanup on pending" << std::endl;
     assert(!is_destroying);
     // NOTE: collect is slower than destroy_pending with unchecked=true
     // collect();
     destroy_pending(true);
     if (debug())
-      std::cout << "~forest_ctx: finished final collect" << std::endl;
+      std::cout << "~DynowForestV1: finished final collect" << std::endl;
   }
 
  public:
@@ -682,7 +683,7 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
 
  public:
   void print() override {
-    std::cout << "print forest_ctx: (forest size=" << forest.size() << ") ["
+    std::cout << "print DynowForestV1: (forest size=" << forest.size() << ") ["
               << std::endl;
     for (const auto& p : forest) {
       std::cout << " ~> ROOT_NODE " << p.first << " as '" << (*p.first)
@@ -697,4 +698,4 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
 
 }  // namespace cycles
 
-#endif  // CYCLES_FOREST_CTX_HPP_ // NOLINT
+#endif  // CYCLES_DynowForestV1_HPP_ // NOLINT

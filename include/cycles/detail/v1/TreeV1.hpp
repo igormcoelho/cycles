@@ -4,8 +4,8 @@
 #ifndef CYCLES_TREE_HPP_  // NOLINT
 #define CYCLES_TREE_HPP_  // NOLINT
 
-#include <cycles/detail/TNode.hpp>
 #include <cycles/detail/utils.hpp>
+#include <cycles/detail/v1/TNodeV1.hpp>
 
 using std::ostream;  // NOLINT
 
