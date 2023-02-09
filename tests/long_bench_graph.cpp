@@ -126,7 +126,7 @@ namespace cycles_example1 {
 std::pair<relation_pool, relation_ptr<Node>> init_long_rptr(
     int v, const std::vector<std::vector<int>>& v_index) {
   //
-  relation_pool pool;
+  relation_pool<> pool;
   std::vector<relation_ptr<Node>> vertex;
   for (int i = 0; i < v; i++) {
     std::string stri = std::to_string(i);

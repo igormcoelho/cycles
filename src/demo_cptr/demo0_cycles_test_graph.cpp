@@ -62,7 +62,7 @@ private:
 //--- Solution 2 (deferred_ptr) -----------------------------------------------
 /*/
 
-static relation_pool pool;
+static relation_pool<> pool;
 
 class MyGraph {
  public:

@@ -13,6 +13,7 @@
 //
 #include <cycles/detail/IDynowForest.hpp>
 //
+#include <cycles/detail/TArrowV1.hpp>
 #include <cycles/detail/TNode.hpp>
 #include <cycles/detail/Tree.hpp>
 #include <cycles/detail/utils.hpp>

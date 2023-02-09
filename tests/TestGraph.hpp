@@ -178,7 +178,7 @@ struct Node {
 void foo(const Node& node) { std::cout << "foo: " << node.datum << std::endl; }
 
 std::pair<relation_pool, relation_ptr<Node>> init() {
-  relation_pool pool;
+  relation_pool<> pool;
   auto root = relation_ptr<Node>{pool.getContext(), new Node("A")};
   auto b = relation_ptr<Node>{pool.getContext(), new Node("B")};
   auto c = relation_ptr<Node>{pool.getContext(), new Node("C")};
@@ -218,7 +218,7 @@ namespace cycles_example2_arena {
 
 template <class T>
 struct TypedArenaCycles {
-  relation_pool pool;
+  relation_pool<> pool;
   std::vector<cycles::relation_ptr<T>> v;
   //
   relation_ptr<T> alloc(T* t) {

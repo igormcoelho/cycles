@@ -58,8 +58,7 @@ class MyGraph {
   bool debug_flag{false};
 
  private:
-  // sptr<forest_ctx> ctx;
-  relation_pool pool;
+  relation_pool<> pool;
 
  public:
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
@@ -73,7 +72,7 @@ class MyGraph {
     // entry.reset();
   }
   //
-  auto my_ctx() -> wptr<relation_pool::pool_type> {
+  auto my_ctx() -> wptr<relation_pool<>::pool_type> {
     return this->pool.getContext();
   }
 

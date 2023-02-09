@@ -18,7 +18,7 @@ using std::vector, std::ostream, std::map;  // NOLINT
 // =======================================
 // relation_pool
 // =======================================
-// hides implementation-specific ctx type
+// hides implementation-specific DOF type
 //----------------------------------------
 
 namespace cycles {
@@ -26,10 +26,14 @@ namespace cycles {
 // NOLINTNEXTLINE
 using namespace detail;
 
-// NOLINTNEXTLINE
+// DOF = Dynamic Ownership Forest
+// relation_pool is templated for test only...
+// it could simply adopt the "best" DOF implementation.
+
+template <class DOF = forest_ctx>
 class relation_pool {
  public:
-  using pool_type = forest_ctx;
+  using pool_type = DOF;
 
  private:
   // TODO(igormcoelho): ensure ctx behaves like "unique_ptr"? or allow this to

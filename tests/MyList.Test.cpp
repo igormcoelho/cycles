@@ -167,7 +167,7 @@ TEST_CASE("CyclesTestMyList: MyList relation_ptr void derived") {
   std::cout << "begin MyList relation_ptr void derived" << std::endl;
   // create context
   {
-    relation_pool pool;
+    relation_pool<> pool;
     relation_ptr<void> ptr_base(pool.getContext(), nullptr);
     ptr_base = relation_ptr<double>(pool.getContext(), new double{1});
     sptr<double> p =

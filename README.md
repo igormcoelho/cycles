@@ -29,7 +29,7 @@ class MyNode {
 class MyGraph {
  public:
   // Example: graph with entry, similar to a root in trees... but may be cyclic
-  relation_pool pool;          // pool of data, similar to 'deferred_heap'
+  relation_pool<> pool;        // pool of data, similar to 'deferred_heap'
   relation_ptr<MyNode> entry;  // pointer to data, similar to 'deferred_ptr'
 
   // helper function to generate new pointers according to same 'pool'
@@ -134,7 +134,7 @@ class MyNode {
 class MyGraph {
  public:
   // Example: graph with entry, similar to a root in trees... but may be cyclic
-  relation_pool pool;          // pool of data, similar to 'deferred_heap'
+  relation_pool<> pool;          // pool of data, similar to 'deferred_heap'
   relation_ptr<MyNode> entry;  // pointer to data, similar to 'deferred_ptr'
 
   // helper function to generate new pointers according to same 'pool'

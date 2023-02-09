@@ -51,14 +51,15 @@ class IDynowForest {
   virtual sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType>,
                                              int idx) = 0;  // useless?
                                                             // main methods
+  //
   // op1: give 'data' and get arrow type (two weak pointers)
   virtual DynowArrowType op1_addNodeToNewTree(sptr<TNodeData>) = 0;
   // op2: give 'node locator' (weak or strong?) and 'data... returns 'arc'
   virtual DynowArrowType op2_addChildStrong(sptr<DynowNodeType>,
                                             sptr<TNodeData>) = 0;
   // op3: give two 'node locators' and get 'arc'
-  virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType>,
-                                            sptr<DynowNodeType>) = 0;
+  virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType> owned,
+                                            sptr<DynowNodeType> owner) = 0;
   // op4: give 'arc' reference (to clean it) and no return (void)
   // NOLINTNEXTLINE
   virtual void op4_remove(DynowArrowType& arrow, bool isRoot, bool isOwned) = 0;

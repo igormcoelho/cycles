@@ -32,14 +32,15 @@ namespace cycles {
 // NOLINTNEXTLINE
 using namespace detail;
 
-template <typename T>
+template <typename T, class DOF = forest_ctx>
 // NOLINTNEXTLINE
 class relation_ptr {
   using X = TNodeData;
   // TODO(igormcoelho): make private!
  public:
+  using pool_type = DOF;
   // TODO(igormcoelho): is this weak or strong?
-  wptr<forest_ctx> ctx;
+  wptr<DOF> ctx;
   //
   bool is_owned_by_node{false};
   TArrowV1<X> arrow;
@@ -74,7 +75,7 @@ class relation_ptr {
   // 1. will store T* t owned by ITSELF
   // 2. will create a new TNode
   // 3. will NOT create a Tree... it's all alone!
-  relation_ptr(wptr<forest_ctx> _ctx, T* t, weak_self flag) : ctx{_ctx} {
+  relation_ptr(wptr<DOF> _ctx, T* t, weak_self flag) : ctx{_ctx} {
     ...
   }
     */
@@ -90,8 +91,7 @@ class relation_ptr {
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  relation_ptr(wptr<forest_ctx> _ctx, T* t)
-      : ctx{_ctx}, is_owned_by_node{false} {
+  relation_ptr(wptr<DOF> _ctx, T* t) : ctx{_ctx}, is_owned_by_node{false} {
     assert(ctx.lock());  // REMOVE! (allow with better logic than assert)
     //
     this->debug_flag_ptr = get_ctx().lock()->debug();
@@ -123,7 +123,7 @@ class relation_ptr {
   }
 
   // C2 CONSTRUCTOR - EQUIVALENT TO C1+C4
-  relation_ptr(wptr<forest_ctx> ctx, T* t, const relation_ptr<T>& owner)
+  relation_ptr(wptr<DOF> ctx, T* t, const relation_ptr<T>& owner)
       : ctx{owner.ctx} {
     // context must exist
     assert(ctx.lock());
@@ -453,7 +453,7 @@ class relation_ptr {
     return relation_ptr<T>{};
   }
 
-  auto get_ctx() -> wptr<forest_ctx> { return ctx; }
+  auto get_ctx() -> wptr<DOF> { return ctx; }
 
   bool operator==(const relation_ptr<T>& other) const {
     // do not comparing null pointers as 'true' (why?)... just feels like
