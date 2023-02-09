@@ -59,15 +59,9 @@ class IDynowForest {
   // op3: give two 'node locators' and get 'arc'
   virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType>,
                                             sptr<DynowNodeType>) = 0;
-  // NOTE: 'sptr_mynode' is reference... don't know why!
+  // op4: give 'arc' reference (to clean it) and no return (void)
   // NOLINTNEXTLINE
-  virtual void op4_remove(sptr<DynowNodeType>& sptr_mynode,
-                          sptr<DynowNodeType> owner_node, bool isRoot,
-                          bool isOwned) = 0;
-
-  // NOLINTNEXTLINE
-  // virtual void op4_remove(DynowArrowType& arrow, bool isRoot, bool isOwned) =
-  // 0;
+  virtual void op4_remove(DynowArrowType& arrow, bool isRoot, bool isOwned) = 0;
 };
 
 }  // namespace detail

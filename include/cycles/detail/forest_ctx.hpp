@@ -351,18 +351,15 @@ class forest_ctx : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     }
   }
 
-  void op4_remove(sptr<DynowNodeType>& sptr_mynode,
-                  sptr<DynowNodeType> owner_node,
-                  // NOLINTNEXTLINE
-                  // void op4_remove(ArrowType& arc,
-                  bool isRoot, bool isOwned) override {
-    /*
-sptr<DynowNodeType> owner_node = arc.first.lock();
-sptr<DynowNodeType> sptr_mynode = arc.second.lock();
-// clear arc (???)
-arc.first.reset();
-arc.second.reset();
-*/
+  // NOLINTNEXTLINE
+  void op4_remove(TArrowV1<TNodeData>& arc, bool isRoot,
+                  bool isOwned) override {
+    sptr<DynowNodeType> owner_node = arc.owned_by_node.lock();
+    sptr<DynowNodeType> sptr_mynode = arc.remote_node.lock();
+    // clear arc (???)
+    arc.owned_by_node.reset();
+    arc.remote_node.reset();
+
     //
     auto myctx = this;
     //
@@ -371,13 +368,8 @@ arc.second.reset();
     //
     if (!will_die) {
       if (debug())
-        std::cout << "DEBUG: WILL NOT DIE. FORCE CLEAR!" << std::endl;
-      // FORCE CLEAR
-      /*
-      this->remote_node = wptr<TNode<X>>();    // clear
-      this->owned_by_node = wptr<TNode<X>>();  // clear
-      this->is_owned_by_node = false;
-      */
+        std::cout << "DEBUG: WILL NOT DIE. CANNOT FORCE CLEAR HERE!"
+                  << std::endl;
       return;
     }
     assert(will_die);
@@ -421,18 +413,6 @@ arc.second.reset();
       // move to pending
       pending.push_back(std::move(p.second->root));
       p.second->root = nullptr;  // useless... just to make sure it's not here
-      /*
-      if (true)
-        std::cout << "TODO: must remove weak links from root Tree node:"
-                  << p.second->root->owned_by.size() << std::endl;
-      if (debug())
-        std::cout << " clearing children of Tree node:  root.|children|="
-                  << p.second->root->children.size() << std::endl;
-      p.second->root->children.clear();  // clear children. IS THIS NECESSARY???
-      if (debug())
-        std::cout << " clearing root with root = nullptr " << std::endl;
-      p.second->root = nullptr;  // clear root
-      */
     }
     if (debug())
       std::cout << "destroyForestRoots: final clear forest" << std::endl;

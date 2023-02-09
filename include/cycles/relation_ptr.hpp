@@ -296,26 +296,7 @@ class relation_ptr {
       //
       if (debug()) std::cout << "destroy: is_root() || is_owned()" << std::endl;
 
-      // must find someone to strongly own me, otherwise node may die!
-      // First:  find someone in my 'owned_by' list
-
-      // -------
-      auto sptr_mynode = this->arrow.remote_node.lock();
-      auto owner_node = this->arrow.owned_by_node.lock();
-      // NOTE: 'sptr_mynode' is reference... don't know exactly why!
-      this->ctx.lock()->op4_remove(sptr_mynode, owner_node, isRoot, isOwned);
-      // -------
-
-      // ========
-      // TODO: must have this arc ready... to make sense!
-      // auto myarc = std::pair<wptr<TNode<X>>, wptr<TNode<X>>>{
-      //     this->remote_node, this->owned_by_node};
-      // this->ctx.lock()->op4_remove(myarc, isRoot, isOwned);
-      //
-      // MANUAL CLEANUP! TODO: FIX!!
-      // this->remote_node.reset();
-      // this->owned_by_node.reset();
-      // ========
+      this->ctx.lock()->op4_remove(this->arrow, isRoot, isOwned);
 
       //
       // end-if is_root || is_owned
@@ -323,12 +304,9 @@ class relation_ptr {
 
     if (debug()) std::cout << "destroy: last cleanups" << std::endl;
     //
-    // this->ref = nullptr;
-    //
     this->arrow = TArrowV1<X>{};  // CLEAR
-    // this->remote_node = wptr<TNode<X>>();    // clear
-    // this->owned_by_node = wptr<TNode<X>>();  // clear
     this->is_owned_by_node = false;
+    //
     if (debug()) std::cout << "destroy: END" << std::endl;
   }
 
