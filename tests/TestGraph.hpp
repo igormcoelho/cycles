@@ -179,12 +179,12 @@ void foo(const Node& node) { std::cout << "foo: " << node.datum << std::endl; }
 
 std::pair<relation_pool<>, relation_ptr<Node>> init() {
   relation_pool<> pool;
-  auto root = relation_ptr<Node>{pool.getContext(), new Node("A")};
-  auto b = relation_ptr<Node>{pool.getContext(), new Node("B")};
-  auto c = relation_ptr<Node>{pool.getContext(), new Node("C")};
-  auto d = relation_ptr<Node>{pool.getContext(), new Node("D")};
-  auto e = relation_ptr<Node>{pool.getContext(), new Node("E")};
-  auto f = relation_ptr<Node>{pool.getContext(), new Node("F")};
+  auto root = relation_ptr<Node>{new Node("A"), pool};
+  auto b = relation_ptr<Node>{new Node("B"), pool};
+  auto c = relation_ptr<Node>{new Node("C"), pool};
+  auto d = relation_ptr<Node>{new Node("D"), pool};
+  auto e = relation_ptr<Node>{new Node("E"), pool};
+  auto f = relation_ptr<Node>{new Node("F"), pool};
 
   {
     auto& mut_root = *(root.get());
@@ -222,7 +222,7 @@ struct TypedArenaCycles {
   std::vector<cycles::relation_ptr<T>> v;
   //
   relation_ptr<T> alloc(T* t) {
-    cycles::relation_ptr<T> ptr{pool.getContext(), t};
+    cycles::relation_ptr<T> ptr{t, pool};
     // observer pointer pattern for relation_ptr
     cycles::relation_ptr<T> ob_ptr = ptr.get_owned(ptr);
     v.push_back(std::move(ptr));

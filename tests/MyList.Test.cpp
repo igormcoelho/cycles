@@ -168,8 +168,8 @@ TEST_CASE("CyclesTestMyList: MyList relation_ptr void derived") {
   // create context
   {
     relation_pool<> pool;
-    relation_ptr<void> ptr_base(pool.getContext(), nullptr);
-    ptr_base = relation_ptr<double>(pool.getContext(), new double{1});
+    relation_ptr<void> ptr_base{nullptr, pool};
+    ptr_base = relation_ptr<double>{new double{1}, pool};
     sptr<double> p =
         std::static_pointer_cast<double, void>(ptr_base.get_shared());
     REQUIRE(*p == 1);

@@ -64,7 +64,7 @@ class MyGraph {
   // Example: graph with entry, similar to a root in trees... but may be cyclic.
   relation_ptr<MyNodeX> entry;
 
-  MyGraph() : entry{make_null_node()} {}
+  MyGraph() {}
 
   ~MyGraph() {
     if (debug_flag) std::cout << "~MyGraph" << std::endl;
@@ -79,7 +79,7 @@ class MyGraph {
   auto make_node(X v) -> relation_ptr<MyNodeX> {
     auto* ptr = new MyNodeX(v, debug_flag);  // NOLINT
     int nc1 = tnode_count;
-    relation_ptr<MyNodeX> cptr(this->pool.getContext(), ptr);
+    relation_ptr<MyNodeX> cptr(ptr, this->pool);
     int nc2 = tnode_count;
     // checking tnode_count against possible (and crazy...) ODR errors
     assert(nc2 == nc1 + 1);
@@ -95,10 +95,6 @@ class MyGraph {
 #else
     return relation_ptr<MyNodeX>(new MyNodeX(v, debug_flag), owner);
 #endif
-  }
-
-  auto make_null_node() -> relation_ptr<MyNodeX> {
-    return relation_ptr<MyNodeX>(this->pool.getContext(), nullptr);
   }
 
   void print() {

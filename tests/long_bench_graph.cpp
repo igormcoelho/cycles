@@ -132,7 +132,7 @@ std::pair<relation_pool<>, relation_ptr<Node>> init_long_rptr(
     std::string stri = std::to_string(i);
     // NOLINTNEXTLINE
     auto* node = new Node(stri);
-    vertex.push_back(relation_ptr<Node>{pool.getContext(), node});
+    vertex.push_back(relation_ptr<Node>{node, pool});
   }
   // make mirror experiment with v_index
   for (int i = 0; i < v; i++) {

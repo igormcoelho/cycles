@@ -39,7 +39,7 @@ class MyList {
   bool debug_flag{false};
   relation_ptr<MyListNode> entry;
 
-  MyList() : ctx{new relation_pool<>::pool_type{}}, entry{make_null_node()} {}
+  MyList() : ctx{new relation_pool<>::pool_type{}} {}
 
   ~MyList() {
     if (debug_flag) std::cout << "~MyList" << std::endl;
@@ -58,20 +58,15 @@ class MyList {
   auto my_ctx() -> wptr<relation_pool<>::pool_type> { return this->ctx; }
 
   auto make_node(double v) -> relation_ptr<MyListNode> {
-    auto* ptr =
-        new MyListNode(v, make_null_node(), make_null_node());  // NOLINT
-    return relation_ptr<MyListNode>(this->ctx, ptr);
+    auto* ptr = new MyListNode(v, nullptr, nullptr);  // NOLINT
+    return relation_ptr<MyListNode>(ptr, this->ctx);
   }
 
   auto make_node_owned(double v, const relation_ptr<MyListNode>& owner)
       -> relation_ptr<MyListNode> {
-    auto ptr1 = relation_ptr<MyListNode>(
-        this->ctx, new MyListNode(v, make_null_node(), make_null_node()));
+    relation_ptr<MyListNode> ptr1(new MyListNode(v, nullptr, nullptr),
+                                  this->ctx);
     return ptr1.get_owned(owner);
-  }
-
-  auto make_null_node() -> relation_ptr<MyListNode> {
-    return relation_ptr<MyListNode>(this->ctx, nullptr);
   }
 
   // PRINT

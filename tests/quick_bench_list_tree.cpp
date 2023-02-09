@@ -95,7 +95,7 @@ int main() {
     // initialize root
     {
       auto* node = new CListNode{.v = n++};  // NOLINT
-      list.entry = cycles::relation_ptr<CListNode>{list.ctx, node};
+      list.entry = cycles::relation_ptr<CListNode>{node, list.ctx};
     }
     //
     cycles::relation_ptr<CListNode>* current = &list.entry;
@@ -134,8 +134,8 @@ int main() {
     // std::cout << "nMax=" << nMax << std::endl;
     // initialize root
     {
-      auto* node = new CListNode{.v = n++};  // NOLINT
-      list.entry = cycles::relation_ptr<CListNode>{list.ctx, node};
+      auto* node_ptr = new CListNode{.v = n++};  // NOLINT
+      list.entry = cycles::relation_ptr<CListNode>{node_ptr, list.ctx};
     }
     //
     cycles::relation_ptr<CListNode>* current = &list.entry;
@@ -278,7 +278,7 @@ int main() {
     // initialize root
     {
       auto* node = new CTreeNode{.v = n++};  // NOLINT
-      tree.root = cycles::relation_ptr<CTreeNode>{tree.ctx, node};
+      tree.root = cycles::relation_ptr<CTreeNode>{node, tree.ctx};
     }
     temp.push(&tree.root);
     //
@@ -346,8 +346,8 @@ int main() {
     // std::cout << "nMax=" << nMax << std::endl;
     // initialize root
     {
-      auto* node = new CTreeNode{.v = n++};  // NOLINT
-      tree.root = cycles::relation_ptr<CTreeNode>{tree.ctx, node};
+      auto* node_ptr = new CTreeNode{.v = n++};  // NOLINT
+      tree.root = cycles::relation_ptr<CTreeNode>{node_ptr, tree.ctx};
     }
     temp.push(&tree.root);
     //

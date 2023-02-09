@@ -34,7 +34,7 @@ class MyGraph {
 
   // helper function to generate new pointers according to same 'pool'
   auto make_node(double v) -> relation_ptr<MyNode> {
-    return relation_ptr<MyNode>(pool.getContext(), new MyNode{.val = v});
+    return relation_ptr<MyNode>(new MyNode{.val = v}, pool);
   }
 };
 ```
@@ -139,7 +139,7 @@ class MyGraph {
 
   // helper function to generate new pointers according to same 'pool'
   auto make_self_node(double v) -> relation_ptr<MyNode> {
-    relation_ptr<MyNode> node{pool.getContext(), new MyNode{.val = v}};
+    relation_ptr<MyNode> node{new MyNode{.val = v}, pool};
     node->self = node.get_owned(node);  // self-ownership pattern
     return node;
   }

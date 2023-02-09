@@ -87,11 +87,55 @@ class relation_ptr {
     assert(is_nullptr());
   }
 
+  // ======= C0' nullptr (allow nullptr implicit conversion) ===============
+  // NOLINTNEXTLINE
+  relation_ptr(std::nullptr_t t) {
+    this->is_owned_by_node = false;
+    this->arrow = TArrowV1<X>{};
+    assert(is_nullptr());
+  }
+
+  // ======= C1' - spointer constructor =======
+  // 1. will store T* t owned by new local shared_ptr 'ref'
+  // 2. will create a new TNode , also carrying shared_ptr 'ref'
+  // 3. will create a new Tree and point
+  relation_ptr(T* t, const relation_pool<DOF>& _pool)
+      : ctx{_pool.getContext()}, is_owned_by_node{false} {
+    assert(ctx.lock());  // REMOVE! (allow with better logic than assert)
+    //
+    this->debug_flag_ptr = get_ctx().lock()->debug();
+    // KEEP LOCAL!
+    sptr<TNodeData> ref;
+    if (t) ref = TNodeData::make_sptr<T>(t);
+    //
+    if (!ref) return;  // SHOULD NOT CREATE A NEW TREE!
+
+    //
+    if (debug()) {
+      std::cout
+          << "C1' pointer constructor: creating NEW relation_ptr (this_new="
+          << this << " to t*=" << t << ") ";
+      if (ref)
+        std::cout << "with ref -> " << *ref << std::endl;
+      else
+        std::cout << "with ref -> nullptr" << std::endl;
+    }
+    //
+    // using op1: we only store weak reference here
+    this->arrow = ctx.lock()->op1_addNodeToNewTree(ref);
+    // this->remote_node = target;
+    //
+    if (debug()) {
+      ctx.lock()->print();
+      std::cout << " -> finished C1' pointer constructor" << std::endl;
+    }
+  }
+
   // ======= C1 - spointer constructor =======
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  relation_ptr(wptr<DOF> _ctx, T* t) : ctx{_ctx}, is_owned_by_node{false} {
+  relation_ptr(T* t, wptr<DOF> _ctx) : ctx{_ctx}, is_owned_by_node{false} {
     assert(ctx.lock());  // REMOVE! (allow with better logic than assert)
     //
     this->debug_flag_ptr = get_ctx().lock()->debug();
@@ -207,7 +251,7 @@ class relation_ptr {
     // corpse.remote_node.reset();
     // corpse.owned_by_node.reset();
     corpse.is_owned_by_node = false;
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+    if (get_ctx().lock()) this->debug_flag_ptr = get_ctx().lock()->debug();
   }
 
  public:
@@ -513,7 +557,7 @@ class relation_ptr {
   static relation_ptr<T> make(sptr<DynowForestV1> ctx, Args&&... args) {
     // NOLINTNEXTLINE
     auto* t = new T(std::forward<Args>(args)...);
-    return relation_ptr<T>{ctx, t};
+    return relation_ptr<T>{t, ctx};
   }
 };
 
