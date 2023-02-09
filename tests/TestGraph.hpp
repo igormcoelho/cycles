@@ -177,7 +177,7 @@ struct Node {
 
 void foo(const Node& node) { std::cout << "foo: " << node.datum << std::endl; }
 
-std::pair<relation_pool, relation_ptr<Node>> init() {
+std::pair<relation_pool<>, relation_ptr<Node>> init() {
   relation_pool<> pool;
   auto root = relation_ptr<Node>{pool.getContext(), new Node("A")};
   auto b = relation_ptr<Node>{pool.getContext(), new Node("B")};
@@ -198,8 +198,8 @@ std::pair<relation_pool, relation_ptr<Node>> init() {
     mut_c.edges.push_back(root.get_owned(c));
   }
 
-  return std::pair<relation_pool, relation_ptr<Node>>{std::move(pool),
-                                                      std::move(root)};
+  return std::pair<relation_pool<>, relation_ptr<Node>>{std::move(pool),
+                                                        std::move(root)};
 }
 
 void test_main() {

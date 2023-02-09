@@ -123,7 +123,7 @@ void test_main1(int V, int E, int SEED) {
 
 namespace cycles_example1 {
 
-std::pair<relation_pool, relation_ptr<Node>> init_long_rptr(
+std::pair<relation_pool<>, relation_ptr<Node>> init_long_rptr(
     int v, const std::vector<std::vector<int>>& v_index) {
   //
   relation_pool<> pool;
@@ -144,8 +144,8 @@ std::pair<relation_pool, relation_ptr<Node>> init_long_rptr(
   //
   // pool.getContext()->debug = true;
   // root is first vertex only... the rest may die automatically. let's see.
-  return std::pair<relation_pool, relation_ptr<Node>>{std::move(pool),
-                                                      std::move(vertex[0])};
+  return std::pair<relation_pool<>, relation_ptr<Node>>{std::move(pool),
+                                                        std::move(vertex[0])};
 }
 
 void test_main_long_rptr(int V, int E, int SEED) {

@@ -421,9 +421,9 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   }
 
  public:
-  ~DynowForestV1() override {
+  void destroyAll() override {
     if (debug())
-      std::cout << "~DynowForestV1() forest_size =" << forest.size()
+      std::cout << "DynowForestV1 destroy() forest_size =" << forest.size()
                 << std::endl;
     destroyForestRoots();
     if (debug())
@@ -432,6 +432,16 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     // NOTE: collect is slower than destroy_pending with unchecked=true
     // collect();
     destroy_pending(true);
+    if (debug())
+      std::cout << "DynowForestV1 destroy(): finished final collect"
+                << std::endl;
+  }
+
+  ~DynowForestV1() override {
+    if (debug())
+      std::cout << "~DynowForestV1() forest_size =" << forest.size()
+                << std::endl;
+    destroyAll();
     if (debug())
       std::cout << "~DynowForestV1: finished final collect" << std::endl;
   }

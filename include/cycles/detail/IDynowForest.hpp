@@ -63,6 +63,8 @@ class IDynowForest {
   // op4: give 'arc' reference (to clean it) and no return (void)
   // NOLINTNEXTLINE
   virtual void op4_remove(DynowArrowType& arrow, bool isRoot, bool isOwned) = 0;
+  // cleanup method (for pool)
+  virtual void destroyAll() = 0;
 };
 
 }  // namespace detail
