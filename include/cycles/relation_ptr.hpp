@@ -40,7 +40,11 @@ class relation_ptr {
  public:
   using pool_type = DOF;
   // TODO(igormcoelho): is this weak or strong?
+#ifdef WEAK_POOL_PTR
   wptr<DOF> ctx;
+#else
+  sptr<DOF> ctx;
+#endif
   //
   bool is_owned_by_node{false};
   TArrowV1<X> arrow;
@@ -56,7 +60,11 @@ class relation_ptr {
   }
 
  public:
-  auto get_ctx() const { return ctx; }
+#ifdef WEAK_POOL_PTR
+  sptr<DOF> get_ctx() const { return ctx.lock(); }
+#else
+  sptr<DOF> get_ctx() const { return ctx; }
+#endif
 
   bool debug() const { return debug_flag_ptr; }
 
@@ -101,9 +109,9 @@ class relation_ptr {
   // 3. will create a new Tree and point
   relation_ptr(T* t, const relation_pool<DOF>& _pool)
       : ctx{_pool.getContext()}, is_owned_by_node{false} {
-    assert(ctx.lock());  // REMOVE! (allow with better logic than assert)
+    assert(get_ctx());  // REMOVE! (allow with better logic than assert)
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+    this->debug_flag_ptr = get_ctx()->debug();
     // KEEP LOCAL!
     sptr<TNodeData> ref;
     if (t) ref = TNodeData::make_sptr<T>(t);
@@ -122,11 +130,11 @@ class relation_ptr {
     }
     //
     // using op1: we only store weak reference here
-    this->arrow = ctx.lock()->op1_addNodeToNewTree(ref);
+    this->arrow = get_ctx()->op1_addNodeToNewTree(ref);
     // this->remote_node = target;
     //
     if (debug()) {
-      ctx.lock()->print();
+      get_ctx()->print();
       std::cout << " -> finished C1' pointer constructor" << std::endl;
     }
   }
@@ -136,9 +144,9 @@ class relation_ptr {
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
   relation_ptr(T* t, wptr<DOF> _ctx) : ctx{_ctx}, is_owned_by_node{false} {
-    assert(ctx.lock());  // REMOVE! (allow with better logic than assert)
+    assert(get_ctx());  // REMOVE! (allow with better logic than assert)
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+    this->debug_flag_ptr = get_ctx()->debug();
     // KEEP LOCAL!
     sptr<TNodeData> ref;
     if (t) ref = TNodeData::make_sptr<T>(t);
@@ -157,11 +165,11 @@ class relation_ptr {
     }
     //
     // using op1: we only store weak reference here
-    this->arrow = ctx.lock()->op1_addNodeToNewTree(ref);
+    this->arrow = get_ctx()->op1_addNodeToNewTree(ref);
     // this->remote_node = target;
     //
     if (debug()) {
-      ctx.lock()->print();
+      get_ctx()->print();
       std::cout << " -> finished C1 pointer constructor" << std::endl;
     }
   }
@@ -169,9 +177,9 @@ class relation_ptr {
   // C2 CONSTRUCTOR - EQUIVALENT TO C1+C4
   relation_ptr(T* t, const relation_ptr<T>& owner) : ctx{owner.ctx} {
     // context must exist
-    assert(ctx.lock());
+    assert(get_ctx());
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+    this->debug_flag_ptr = get_ctx()->debug();
     //
     // KEEP LOCAL!
     sptr<TNodeData> ref;
@@ -217,7 +225,7 @@ class relation_ptr {
     // auto sptr_mynode = this->remote_node.lock();
     // auto [orig, target] =
     this->arrow =
-        ctx.lock()->op2_addChildStrong(owner.arrow.remote_node.lock(), ref);
+        get_ctx()->op2_addChildStrong(owner.arrow.remote_node.lock(), ref);
     // TODO(igormcoelho): no errors possible in op2?
     this->is_owned_by_node = true;
     // this->owned_by_node = orig;
@@ -251,7 +259,7 @@ class relation_ptr {
     // corpse.remote_node.reset();
     // corpse.owned_by_node.reset();
     corpse.is_owned_by_node = false;
-    if (get_ctx().lock()) this->debug_flag_ptr = get_ctx().lock()->debug();
+    if (get_ctx()) this->debug_flag_ptr = get_ctx()->debug();
   }
 
  public:
@@ -267,12 +275,12 @@ class relation_ptr {
       : ctx{copy.ctx}  //, remote_node{copy.remote_node} {
   {
     // context must exist
-    assert(ctx.lock());  // TODO: avoid assert here
+    assert(get_ctx());  // TODO: avoid assert here
     // same pointers on ctx
     // TODO: this assert could be necessary indeed...
-    assert(ctx.lock().get() == owner.ctx.lock().get());
+    assert(get_ctx().get() == owner.get_ctx().get());
     //
-    this->debug_flag_ptr = get_ctx().lock()->debug();
+    this->debug_flag_ptr = get_ctx()->debug();
     if (debug()) std::cout << "c4 constructor for get_owned" << std::endl;
     assert(this != &copy);   // IMPOSSIBLE
     assert(this != &owner);  // IMPOSSIBLE
@@ -288,10 +296,10 @@ class relation_ptr {
     // - each strong child link corresponds to a weak parent link
     //
     // auto [orig, target]
-    // this->arrow = ctx.lock()->op3_weakSetOwnedBy(copy.remote_node.lock(),
+    // this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.remote_node.lock(),
     //                                             owner.remote_node.lock());
-    this->arrow = ctx.lock()->op3_weakSetOwnedBy(
-        copy.arrow.remote_node.lock(), owner.arrow.remote_node.lock());
+    this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.arrow.remote_node.lock(),
+                                                owner.arrow.remote_node.lock());
 
     // remember ownership (for future deletion?)
     // this->remote_node = target;
@@ -339,7 +347,7 @@ class relation_ptr {
       //
       if (debug()) std::cout << "destroy: is_root() || is_owned()" << std::endl;
 
-      this->ctx.lock()->op4_remove(this->arrow, isRoot, isOwned);
+      this->get_ctx()->op4_remove(this->arrow, isRoot, isOwned);
 
       //
       // end-if is_root || is_owned
@@ -394,7 +402,7 @@ class relation_ptr {
     } else {
       // AVOID direct usage of TNode features here... prefer ctx methods:
       //   return (!this->remote_node.lock()->has_parent());
-      return !(this->ctx.lock()->opx_hasParent(this->arrow.remote_node.lock()));
+      return !(this->get_ctx()->opx_hasParent(this->arrow.remote_node.lock()));
     }
   }
 
@@ -418,7 +426,7 @@ class relation_ptr {
     assert(node_ptr);
     // AVOID direct usage of TNode here...
     //   return node_ptr->owned_by.size();
-    return this->ctx.lock()->opx_countOwnedBy(node_ptr);
+    return this->get_ctx()->opx_countOwnedBy(node_ptr);
   }
 
   auto getOwnedBy(int idx) const {
@@ -426,7 +434,7 @@ class relation_ptr {
     assert(node_ptr);
     // AVOID direct usage of TNode here...
     // return node_ptr->owned_by[idx].lock();
-    return this->ctx.lock()->opx_getOwnedBy(node_ptr, idx);
+    return this->get_ctx()->opx_getOwnedBy(node_ptr, idx);
   }
 
  private:
@@ -496,15 +504,13 @@ class relation_ptr {
     return relation_ptr<T>{};
   }
 
-  auto get_ctx() -> wptr<DOF> { return ctx; }
-
   bool operator==(const relation_ptr<T>& other) const {
     // do not comparing null pointers as 'true' (why?)... just feels like
     // right now. (thinking more of refs than pointers) (this->has_get() &&
     // other.has_get()) &&
     // TODO: think more.
     return (this->has_get() == other.has_get()) &&
-           (ctx.lock() == other.ctx.lock()) &&
+           (get_ctx() == other.get_ctx()) &&
            (get() == other.get());  //&& (ref == other.ref);
   }
 

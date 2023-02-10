@@ -13,3 +13,4 @@ clean:
 	rm -f vgcore.*
 	rm -f tests/vgcore.*
 	rm -f src/demo_cptr/vgcore.*
+	rm -f src/examples/vgcore.*
