@@ -129,7 +129,8 @@ class CTreeNode {
 
 class CTree {
  public:
-  sptr<cycles::DynowForestV1> ctx;
+  // sptr<cycles::DynowForestV1> ctx;
+  relation_pool<> pool;
   cycles::relation_ptr<CTreeNode> root;
 
   int tHeight() const {

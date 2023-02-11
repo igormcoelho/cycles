@@ -87,7 +87,7 @@ int main() {
   c = high_resolution_clock::now();
   if (true) {
     CList list;
-    list.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
+    // list.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
 
     //
     int n = 0;
@@ -95,7 +95,7 @@ int main() {
     // initialize root
     {
       auto* node = new CListNode{.v = n++};  // NOLINT
-      list.entry = cycles::relation_ptr<CListNode>{node, list.ctx};
+      list.entry = cycles::relation_ptr<CListNode>{node, list.pool};
     }
     //
     cycles::relation_ptr<CListNode>* current = &list.entry;
@@ -126,8 +126,8 @@ int main() {
   c = high_resolution_clock::now();
   if (true) {
     CList list;
-    list.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
-    list.ctx->setAutoCollect(false);
+    // list.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
+    list.pool.getContext()->setAutoCollect(false);
 
     //
     int n = 0;
@@ -135,7 +135,7 @@ int main() {
     // initialize root
     {
       auto* node_ptr = new CListNode{.v = n++};  // NOLINT
-      list.entry = cycles::relation_ptr<CListNode>{node_ptr, list.ctx};
+      list.entry = cycles::relation_ptr<CListNode>{node_ptr, list.pool};
     }
     //
     cycles::relation_ptr<CListNode>* current = &list.entry;
@@ -270,7 +270,7 @@ int main() {
   {
     std::queue<relation_ptr<CTreeNode>*> temp;
     CTree tree;
-    tree.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
+    // tree.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
     // DO NOT PUT 2^29... too much memory!
 
     int n = 0;
@@ -278,7 +278,7 @@ int main() {
     // initialize root
     {
       auto* node = new CTreeNode{.v = n++};  // NOLINT
-      tree.root = cycles::relation_ptr<CTreeNode>{node, tree.ctx};
+      tree.root = cycles::relation_ptr<CTreeNode>{node, tree.pool};
     }
     temp.push(&tree.root);
     //
@@ -338,8 +338,8 @@ int main() {
   {
     std::queue<relation_ptr<CTreeNode>*> temp;
     CTree tree;
-    tree.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
-    tree.ctx->setAutoCollect(false);
+    // tree.ctx = sptr<DynowForestV1>{new DynowForestV1{}};
+    tree.pool.getContext()->setAutoCollect(false);
     // DO NOT PUT 2^29... too much memory!
 
     int n = 0;
@@ -347,7 +347,7 @@ int main() {
     // initialize root
     {
       auto* node_ptr = new CTreeNode{.v = n++};  // NOLINT
-      tree.root = cycles::relation_ptr<CTreeNode>{node_ptr, tree.ctx};
+      tree.root = cycles::relation_ptr<CTreeNode>{node_ptr, tree.pool};
     }
     temp.push(&tree.root);
     //

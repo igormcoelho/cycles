@@ -357,6 +357,13 @@ class relation_ptr {
     //
     this->arrow = TArrowV1<X>{};  // CLEAR
     this->is_owned_by_node = false;
+//
+#ifdef WEAK_POOL_PTR
+    // nothing to do
+#else
+    // reset shared structure for context
+    this->ctx = nullptr;
+#endif
     //
     if (debug()) std::cout << "destroy: END" << std::endl;
   }
