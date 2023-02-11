@@ -41,7 +41,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   // collect strategy parameters
   //
   bool _auto_collect{true};
-  bool autoCollect() override { return _auto_collect; }
+  bool getAutoCollect() override { return _auto_collect; }
   void setAutoCollect(bool ac) override { _auto_collect = ac; }
   //
   bool _debug{false};
@@ -73,20 +73,6 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   }
 
   int getForestSize() override { return static_cast<int>(forest.size()); }
-
-  /*
-    bool opx_hasParent(sptr<DynowNodeType> node_ptr) override {
-      return node_ptr->has_parent();
-    }
-  */
-  int opx_countOwnedBy(sptr<DynowNodeType> node_ptr) override {
-    return static_cast<int>(node_ptr->owned_by.size());
-  }
-
-  sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType> node_ptr,
-                                     int idx) override {
-    return node_ptr->owned_by.at(idx).lock();
-  }
 
  public:
   // main operations
@@ -180,16 +166,16 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
 
   bool op4x_setNewOwner(sptr<DynowNodeType> sptr_mynode) {
     bool will_die = true;  // default
-    auto myctx = this;
+    // auto myctx = this;
     if (debug())
       std::cout
           << "DEBUG: FIND OWNED_BY. NODE WILL DIE IF NOT FIND REPLACEMENT!"
           << std::endl;
     // find new owner, otherwise will die
-    int owned_by_count = myctx->opx_countOwnedBy(sptr_mynode);
+    int owned_by_count = static_cast<int>(sptr_mynode->owned_by.size());
     //
     for (unsigned k = 0; k < owned_by_count; k++) {
-      auto myNewParent = myctx->opx_getOwnedBy(sptr_mynode, k);
+      auto myNewParent = sptr_mynode->owned_by.at(k).lock();
       if (!myNewParent) {
         std::cout << "ERROR! no new parent! how??" << std::endl;
       }
@@ -254,10 +240,11 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     //
     // AVOID Using TNode here...
     //    sptr_mynode->owned_by.size()
-    if (debug())
+    if (debug()) {
+      int owned_by_count = static_cast<int>(sptr_mynode->owned_by.size());
       std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
-                << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
-                << std::endl;
+                << " |owned_by|=" << owned_by_count << std::endl;
+    }
     //
     // check situation of node (if dying or not)
     //
@@ -271,7 +258,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
       // check if owner still exists
       if (debug()) std::cout << "DEBUG: I AM OWNED!" << std::endl;
       if (!owner_node) {
-        // SHOULD THIS BEHAVE AS is_nullptr?
+        // SHOULD THIS BEHAVE AS is_null?
         if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
         will_die = false;
       } else {
@@ -329,10 +316,10 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     // sptr_mynode->owned_by.size()
     //
     if (debug()) {
+      int owned_by_count = static_cast<int>(sptr_mynode->owned_by.size());
       std::cout << "destroy: moving to pending list with these properties: ";
       std::cout << "node |owns|=" << sptr_mynode->owns.size()
-                << " |owned_by|=" << myctx->opx_countOwnedBy(sptr_mynode)
-                << std::endl;
+                << " |owned_by|=" << owned_by_count << std::endl;
     }
     myctx->pending.push_back(std::move(sptr_mynode));
     int sz_pending = myctx->pending.size();
@@ -346,7 +333,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
                 << myctx->pending[sz_pending - 1]->owned_by.size() << std::endl;
     }
     // last holding reference to node is on pending list
-    if (myctx->autoCollect()) {
+    if (myctx->getAutoCollect()) {
       if (debug()) {
         std::cout << "DEBUG: begin auto_collect. |pending|="
                   << myctx->pending.size() << std::endl;

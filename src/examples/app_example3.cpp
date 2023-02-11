@@ -35,8 +35,8 @@ class MyNode {
 
   // add node as self->next, and node->prev as self
   void add_next(const relation_ptr<MyNode>& node) {
-    assert(!node.is_nullptr());
-    assert(!self.is_nullptr());
+    assert(!node.arrow.is_null());
+    assert(!self.arrow.is_null());
     self->_next = node.get_owned(self);
     node->_prev = self.get_owned(node);
   }
@@ -59,7 +59,7 @@ class MyList {
 
   // helper function to generate new pointers according to same 'pool'
   auto make_self_node(double val) -> relation_ptr<MyNode> {
-    assert(!_entry.is_nullptr());
+    assert(!_entry.arrow.is_null());
     relation_ptr<MyNode> node{new MyNode{val}, _entry.get_ctx()};
     node->set_self(node);  // self-ownership pattern
     return node;
@@ -82,7 +82,7 @@ int main() {
 
     // create nodes -1, 1, 2 and 3
     L.set_entry(-1.0);
-    assert(!L.entry().is_nullptr());
+    assert(!L.entry().arrow.is_null());
     L.entry()->add_next(L.make_self_node(1));
     L.entry()->next()->add_next(L.make_self_node(2));
     L.entry()->next()->next()->add_next(L.make_self_node(3));

@@ -91,7 +91,7 @@ class relation_ptr {
   relation_ptr() {
     // this->is_owned_by_node = false;
     this->arrow = TArrowV1<X>{};
-    assert(this->arrow.is_nullptr());
+    assert(this->arrow.is_null());
   }
 
   // ======= C0' nullptr (allow nullptr implicit conversion) ===============
@@ -99,7 +99,7 @@ class relation_ptr {
   relation_ptr(std::nullptr_t t) {
     // this->arrow.is_owned_by_node = false;
     this->arrow = TArrowV1<X>{};
-    assert(arrow.is_nullptr());
+    assert(arrow.is_null());
   }
 
   // ======= C1' - spointer constructor =======
@@ -215,7 +215,7 @@ class relation_ptr {
     //
     // BEGIN C4 PART
     //
-    assert(!owner.arrow.is_nullptr());
+    assert(!owner.arrow.is_null());
     // remember ownership (for future deletion?)
     // this->owned_by_node = owner.remote_node;
     //     this->is_owned_by_node = true;
@@ -289,7 +289,7 @@ class relation_ptr {
     assert(this != &copy);   // IMPOSSIBLE
     assert(this != &owner);  // IMPOSSIBLE
     //
-    assert(!owner.arrow.is_nullptr());  // TODO: avoid assert here
+    assert(!owner.arrow.is_null());  // TODO: avoid assert here
     //
     // both nodes exist already (copy node and owner node)
     // register WEAK ownership in tree
@@ -337,11 +337,11 @@ class relation_ptr {
     }
     // BEGIN complex logic
     // where is nullptr here? TODO: fix
-    assert(this->arrow.is_nullptr() || this->arrow.is_root() ||
+    assert(this->arrow.is_null() || this->arrow.is_root() ||
            this->arrow.is_owned());
     //
-    if (this->arrow.is_nullptr()) {
-      if (debug()) std::cout << "destroy: is_nullptr()" << std::endl;
+    if (this->arrow.is_null()) {
+      if (debug()) std::cout << "destroy: is_null()" << std::endl;
       return;  // nothing to destroy
                // (MUST KEEP else below, otherwise it may break(?))
     } else {
@@ -389,20 +389,22 @@ class relation_ptr {
     if (debug()) std::cout << "end ~relation_ptr()" << std::endl;
   }
 
+  // TODO: remove this method!
   int count_owned_by() const {
     auto node_ptr = this->arrow.remote_node.lock();
     assert(node_ptr);
     // AVOID direct usage of TNode here...
-    //   return node_ptr->owned_by.size();
-    return this->get_ctx()->opx_countOwnedBy(node_ptr);
+    return node_ptr->owned_by.size();
+    // return this->get_ctx()->opx_countOwnedBy(node_ptr);
   }
 
+  // TODO: remove this method!
   auto getOwnedBy(int idx) const {
     auto node_ptr = this->arrow.remote_node.lock();
     assert(node_ptr);
     // AVOID direct usage of TNode here...
     // return node_ptr->owned_by[idx].lock();
-    return this->get_ctx()->opx_getOwnedBy(node_ptr, idx);
+    return node_ptr->owned_by.at(idx).lock();
   }
 
  private:
@@ -437,9 +439,9 @@ class relation_ptr {
   auto get_owned(const relation_ptr<T>& owner) const {
     // C4 constructor
     // NOTE: this cannot be nullptr
-    assert(!this->arrow.is_nullptr());
+    assert(!this->arrow.is_null());
     // NOTE: owner cannot be nullptr
-    assert(!owner.arrow.is_nullptr());
+    assert(!owner.arrow.is_null());
     // int sz_owns = owner.arrow.remote_node.lock()->owns.size();
     auto r = relation_ptr<T>(*this, owner);
     // assert(sz_owns + 1 == owner.arrow.remote_node.lock()->owns.size());
@@ -456,7 +458,7 @@ class relation_ptr {
   // NOT implemented yet
   auto get_unowned() {
     // cannot get pointer from null
-    if (this->arrow.is_nullptr()) {
+    if (this->arrow.is_null()) {
       // return null
       return relation_ptr<T>{};
     }
@@ -494,7 +496,7 @@ class relation_ptr {
   explicit operator bool() const noexcept { return has_get(); }
 
   sptr<T> get_shared() const {
-    // assert(!is_nullptr());
+    // assert(!is_null());
     auto sremote_node = this->arrow.remote_node.lock();
     if (!sremote_node) {
       return nullptr;

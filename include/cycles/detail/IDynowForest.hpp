@@ -30,7 +30,7 @@ namespace detail {
 class IArrow {
  public:
   virtual ~IArrow() = default;
-  virtual bool is_nullptr() const = 0;
+  virtual bool is_null() const = 0;
   virtual bool is_root() const = 0;
   virtual bool is_owned() const = 0;
 };
@@ -38,7 +38,7 @@ class IArrow {
 #if __cplusplus > 201703L  // c++20 supported
 template <class T>
 concept XArrowType = requires(T self, bool b) {
-  { self.is_nullptr() } -> std::convertible_to<bool>;
+  { self.is_null() } -> std::convertible_to<bool>;
   { self.is_root() } -> std::convertible_to<bool>;
   { self.is_owned() } -> std::convertible_to<bool>;
   { self.setIsOwnedByNode(b) } -> std::same_as<void>;
@@ -67,15 +67,11 @@ class IDynowForest {
   virtual void print() {}
   // base methods or not?
   virtual void collect() = 0;
-  virtual bool autoCollect() { return true; }
+  virtual bool getAutoCollect() { return true; }
   virtual void setAutoCollect(bool ac) {}
   // helpers
   virtual int getForestSize() = 0;  // testing only?
-  // virtual bool opx_hasParent(sptr<DynowNodeType> node_ptr) = 0;
-  virtual int opx_countOwnedBy(sptr<DynowNodeType>) = 0;  // useless?
-  virtual sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType>,
-                                             int idx) = 0;  // useless?
-                                                            // main methods
+
   //
   // op1: give 'data' and get arrow type (two weak pointers)
   virtual DynowArrowType op1_addNodeToNewTree(sptr<TNodeData>) = 0;

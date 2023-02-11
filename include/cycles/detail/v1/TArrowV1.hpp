@@ -61,19 +61,19 @@ class TArrowV1 : public IArrow {
   bool debug() const { return debug_flag_arrow; }
 
   // ========== TWO FUNDAMENTAL PROPERTIES ===========
-  // A) is_nullptr
+  // A) is_null
   // B) is_root
   // C) is_owned
-  // Node should respect: is_nullptr() || is_root() || is_owned()
+  // Node should respect: is_null() || is_root() || is_owned()
   //
 
   // check if this pointer is nullptr
-  bool is_nullptr() const override { return (!this->remote_node.lock()); }
+  bool is_null() const override { return (!this->remote_node.lock()); }
 
   // check if this pointer is root (in tree/forest universe)
   bool is_root() const override {
     // IMPORTANT! DO NOT REMOVE is_owned() check from here!!
-    if (is_nullptr() || is_owned()) {
+    if (is_null() || is_owned()) {
       return false;
     } else {
       return !this->remote_node.lock()->has_parent();
@@ -98,10 +98,10 @@ class TArrowV1 : public IArrow {
     return b1;
   }
 
-  // HELPER: is_nullptr, is_root, is_owned
+  // HELPER: is_null, is_root, is_owned
   std::string getType() {
-    if (is_nullptr())
-      return "is_nullptr";
+    if (is_null())
+      return "is_null";
     else if (is_root())
       return "is_root";
     else
