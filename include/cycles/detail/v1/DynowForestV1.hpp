@@ -74,10 +74,11 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
 
   int getForestSize() override { return static_cast<int>(forest.size()); }
 
-  bool opx_hasParent(sptr<DynowNodeType> node_ptr) override {
-    return node_ptr->has_parent();
-  }
-
+  /*
+    bool opx_hasParent(sptr<DynowNodeType> node_ptr) override {
+      return node_ptr->has_parent();
+    }
+  */
   int opx_countOwnedBy(sptr<DynowNodeType> node_ptr) override {
     return static_cast<int>(node_ptr->owned_by.size());
   }
@@ -132,6 +133,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     TArrowV1<TNodeData> arrow;
     arrow.owned_by_node = myNewParent;
     arrow.remote_node = sptr_mynode;
+    arrow.is_owned_by_node = true;
     return arrow;
   }
 
@@ -161,6 +163,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     TArrowV1<TNodeData> arrow;
     arrow.owned_by_node = owner_remote_node;
     arrow.remote_node = this_remote_node;
+    arrow.is_owned_by_node = true;
     return arrow;
   }
 

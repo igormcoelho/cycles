@@ -35,7 +35,8 @@ class MyNode {
         std::cout << "~MyNode: WILL CLEAR MY NEIGHBORS!" << std::endl;
         for (unsigned i = 0; i < neighbors.size(); i++)
           std::cout << "  MyNode neighbor i=" << i
-                    << " => type: " << neighbors[i].getType() << std::endl;
+                    << " => type: " << neighbors[i].arrow.getType()
+                    << std::endl;
         neighbors.clear();
       }
       std::cout << "~MyNode(" << val << "): FINISHED!" << std::endl;

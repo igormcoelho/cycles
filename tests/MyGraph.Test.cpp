@@ -23,11 +23,11 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 1 - MyGraph Single") {
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.entry.is_root());
+    REQUIRE(G.entry.arrow.is_root());
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // reset -1 node
     G.entry.reset();
-    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(G.entry.arrow.is_nullptr());
     REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
 
     if (false) {
@@ -50,26 +50,26 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.entry.is_root());
+    REQUIRE(G.entry.arrow.is_root());
 
     if (false) {
       G.entry.setDebug(true);  // -1
     }
 
     auto ptr1 = G.make_node(1.0);
-    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.arrow.is_root());
     //
     // CHECKS (B) - node 1 is owned by -1
     //
     G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
-    REQUIRE(G.entry.get()->neighbors[0].is_owned());
+    REQUIRE(G.entry.get()->neighbors[0].arrow.is_owned());
 
     //
     auto ptr2 = G.make_node(2.0);
-    REQUIRE(ptr2.is_root());
+    REQUIRE(ptr2.arrow.is_root());
 
     auto ptr3 = G.make_node(3.0);
-    REQUIRE(ptr3.is_root());
+    REQUIRE(ptr3.arrow.is_root());
 
     //
     // G.print();
@@ -84,12 +84,12 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
     ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
 
-    REQUIRE(ptr2.is_root());
-    REQUIRE(ptr3.is_root());
-    REQUIRE(ptr2.get()->neighbors[0].is_owned());
-    REQUIRE(ptr3.get()->neighbors[0].is_owned());
+    REQUIRE(ptr2.arrow.is_root());
+    REQUIRE(ptr3.arrow.is_root());
+    REQUIRE(ptr2.get()->neighbors[0].arrow.is_owned());
+    REQUIRE(ptr3.get()->neighbors[0].arrow.is_owned());
 
-    REQUIRE(!G.entry.is_nullptr());
+    REQUIRE(!G.entry.arrow.is_nullptr());
     //
     // G.print();
     //
@@ -97,7 +97,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
       std::cout << "PRINT ptr2 details:" << ptr2.get() << std::endl;
       for (unsigned i = 0; i < ptr2.get()->neighbors.size(); i++)
         std::cout << "  ptr2 MyNode neighbor i=" << i
-                  << " => type: " << ptr2.get()->neighbors[i].getType()
+                  << " => type: " << ptr2.get()->neighbors[i].arrow.getType()
                   << std::endl;
     }
     // node 2 should point to node 3
@@ -115,9 +115,9 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     REQUIRE(ptr3.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(ptr3.arrow.remote_node.lock()->owns.size() == 1);
     //
-    REQUIRE(G.entry.is_root());
-    REQUIRE(ptr3.is_root());
-    REQUIRE(ptr3.get()->neighbors[0].is_owned());
+    REQUIRE(G.entry.arrow.is_root());
+    REQUIRE(ptr3.arrow.is_root());
+    REQUIRE(ptr3.get()->neighbors[0].arrow.is_owned());
     //
     // std::cout << std::endl;
     // std::cout << std::endl << "WILL RESET ptr3" << std::endl << std::endl;
@@ -126,8 +126,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     // FINALIZATION
     //
-    REQUIRE(!G.entry.is_nullptr());
-    REQUIRE(G.entry.is_root());
+    REQUIRE(!G.entry.arrow.is_nullptr());
+    REQUIRE(G.entry.arrow.is_root());
     REQUIRE(G.entry.get()->val == -1);
     REQUIRE(G.entry->neighbors.size() == 1);
 
@@ -151,18 +151,18 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.entry.is_root());
+    REQUIRE(G.entry.arrow.is_root());
     //
     // begin make cycle
     //
     auto ptr1 = G.make_node(1.0);
-    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.arrow.is_root());
     //
     auto ptr2 = G.make_node(2.0);
-    REQUIRE(ptr2.is_root());
+    REQUIRE(ptr2.arrow.is_root());
     //
     auto ptr3 = G.make_node(3.0);
-    REQUIRE(ptr3.is_root());
+    REQUIRE(ptr3.arrow.is_root());
 
     //
     // -1/entry -> 1 -> 2 -> 3 -> (-1/entry)
@@ -170,8 +170,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     // CHECKS (B) - node 1 is owned by -1
     //
     G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
-    REQUIRE(ptr1.is_root());
-    REQUIRE(G.entry.get()->neighbors[0].is_owned());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(G.entry.get()->neighbors[0].arrow.is_owned());
     REQUIRE(G.entry.get()->neighbors[0].get()->neighbors.size() == 0);
     //
     ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
@@ -179,7 +179,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     // CHECKS (C) - ptr1 is deleted
     //
     ptr1.reset();
-    REQUIRE(ptr1.is_nullptr());
+    REQUIRE(ptr1.arrow.is_nullptr());
     //
     // CHECKS (D) - ptr2 and ptr3 are added as owners
     //
@@ -216,10 +216,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
     // CHECKS (E) - ptr2 and ptr3 are removed
     //
     ptr2.reset();
-    REQUIRE(ptr2.is_nullptr());
+    REQUIRE(ptr2.arrow.is_nullptr());
     //
     ptr3.reset();
-    REQUIRE(ptr3.is_nullptr());
+    REQUIRE(ptr3.arrow.is_nullptr());
     //
     // FINALIZATION
     //
@@ -278,7 +278,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     auto entry_sptr = G.entry.get_shared();
     REQUIRE(entry_sptr.use_count() == 2);
     //
-    REQUIRE(G.entry.is_root());
+    REQUIRE(G.entry.arrow.is_root());
     //
     // make cycle
 
@@ -286,19 +286,19 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(mynode_count == 2);
     REQUIRE(tnode_count == 2);
     REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
-    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.arrow.is_root());
     //
     auto ptr2 = G.make_node(2.0);
     REQUIRE(mynode_count == 3);
     REQUIRE(tnode_count == 3);
     REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
-    REQUIRE(ptr2.is_root());
+    REQUIRE(ptr2.arrow.is_root());
     //
     auto ptr3 = G.make_node(3.0);
     REQUIRE(mynode_count == 4);
     REQUIRE(tnode_count == 4);
     REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
-    REQUIRE(ptr3.is_root());
+    REQUIRE(ptr3.arrow.is_root());
 
     //
     // -1/entry -> 1 -> 2 -> 3 -> (-1/entry)
@@ -308,8 +308,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     // G.my_ctx().lock()->debug = true;
     G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
     REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
-    REQUIRE(ptr1.is_root());
-    REQUIRE(G.entry.get()->neighbors[0].is_owned());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(G.entry.get()->neighbors[0].arrow.is_owned());
     // CHECKS (B) - node 1 is owned by -1
     REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
     REQUIRE(G.entry.arrow.remote_node.lock()->children.size() == 0);
@@ -324,14 +324,14 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     //
     ptr1.get()->neighbors.push_back(ptr2.get_owned(ptr1));
     REQUIRE(G.my_ctx().lock()->getForestSize() == 4);
-    REQUIRE(ptr1.is_root());
-    REQUIRE(ptr1.get()->neighbors[0].is_owned());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(ptr1.get()->neighbors[0].arrow.is_owned());
     // will destroy ptr1 from this context...
     // it still exists as G.entry.get()->neighbors[0]
     ptr1.reset();
-    REQUIRE(ptr1.is_nullptr());
+    REQUIRE(ptr1.arrow.is_nullptr());
     REQUIRE(G.my_ctx().lock()->getForestSize() == 3);
-    REQUIRE(G.entry.get()->neighbors[0].is_owned());
+    REQUIRE(G.entry.get()->neighbors[0].arrow.is_owned());
     auto& fake_ptr1 = G.entry.get()->neighbors[0];
     // CHECKS (C) - ptr1 is deleted
     REQUIRE(G.entry.arrow.remote_node.lock()->has_parent() == false);
@@ -378,9 +378,9 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     // will clean all from this context
     //
     ptr2.reset();
-    REQUIRE(ptr2.is_nullptr());
+    REQUIRE(ptr2.arrow.is_nullptr());
     ptr3.reset();
-    REQUIRE(ptr3.is_nullptr());
+    REQUIRE(ptr3.arrow.is_nullptr());
     //
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     auto& fake_ptr2 = fake_ptr1.get()->neighbors[0];
@@ -518,12 +518,12 @@ TEST_CASE(
     //
     auto& fake_ptr2 = ptr1->neighbors[0];
     auto& fake_entry = ptr3->neighbors[0];
-    REQUIRE(G.entry.is_nullptr());
-    REQUIRE(ptr1.is_root());
-    REQUIRE(fake_ptr2.is_owned());  // node 2
-    REQUIRE(ptr2.is_nullptr());
-    REQUIRE(ptr3.is_root());
-    REQUIRE(fake_entry.is_owned());  // node -1
+    REQUIRE(G.entry.arrow.is_nullptr());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(fake_ptr2.arrow.is_owned());  // node 2
+    REQUIRE(ptr2.arrow.is_nullptr());
+    REQUIRE(ptr3.arrow.is_root());
+    REQUIRE(fake_entry.arrow.is_owned());  // node -1
 
     // deeper debug
     REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
@@ -588,31 +588,31 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 6 - MyGraph 1 2 3 -1 kill 2") {
 
     // force reset: root dies but other refs still on main(), from ptr1
     G.entry.reset();
-    REQUIRE(G.entry.is_nullptr());
-    REQUIRE(ptr1.is_root());
-    REQUIRE(fake_ptr2.is_owned());
-    REQUIRE(fake_ptr3.is_owned());
+    REQUIRE(G.entry.arrow.is_nullptr());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(fake_ptr2.arrow.is_owned());
+    REQUIRE(fake_ptr3.arrow.is_owned());
     auto& fake_entry = fake_ptr3->neighbors[0];
-    REQUIRE(fake_entry.is_owned());  // node -1
+    REQUIRE(fake_entry.arrow.is_owned());  // node -1
     // KILL PART!
-    REQUIRE(fake_ptr2.is_owned());  // node 2
+    REQUIRE(fake_ptr2.arrow.is_owned());  // node 2
     // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
     // only one root survivor (1)
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
-    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(fake_ptr2.arrow.is_nullptr());
 
     // deeper debug
     REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
     REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
-    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(fake_ptr2.arrow.is_nullptr());
     // fake_ptr3 is broken now
-    // REQUIRE(fake_ptr3.is_nullptr());
+    // REQUIRE(fake_ptr3.arrow.is_nullptr());
     // fake_entry is broken now
-    // REQUIRE(fake_entry.is_nullptr());
+    // REQUIRE(fake_entry.arrow.is_nullptr());
     //
     // SHOULD NOT LEAK
   }
@@ -650,12 +650,12 @@ TEST_CASE(
 
     // force reset: root dies but other refs still on main(), from ptr1
     G.entry.reset();
-    REQUIRE(G.entry.is_nullptr());
-    REQUIRE(ptr1.is_root());
-    REQUIRE(fake_ptr2.is_owned());
-    REQUIRE(fake_ptr3.is_owned());
+    REQUIRE(G.entry.arrow.is_nullptr());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(fake_ptr2.arrow.is_owned());
+    REQUIRE(fake_ptr3.arrow.is_owned());
     auto& fake_entry = fake_ptr3->neighbors[0];
-    REQUIRE(fake_entry.is_owned());  // node -1
+    REQUIRE(fake_entry.arrow.is_owned());  // node -1
     // add node 4 saving 3 and -1
     auto ptr4 = G.make_node(4.0);
     ptr4->neighbors.push_back(fake_ptr3.get_owned(ptr4));
@@ -665,46 +665,46 @@ TEST_CASE(
     // std::cout << std::endl << "KILL PART!" << std::endl;
     // node 2 must die
     // node 3 and node -1 must survive (held by node 4)
-    REQUIRE(fake_ptr2.is_owned());  // node 2
+    REQUIRE(fake_ptr2.arrow.is_owned());  // node 2
     // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
     // two root survivors (1) and (4) -> 3 -1
     REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
-    REQUIRE(ptr1.is_root());
-    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(fake_ptr2.arrow.is_nullptr());
     // fake_ptr3 now is bad pointer, inaccessible from fake_ptr2,
     // but fake_ptr3_2 is accessible from ptr4
-    REQUIRE(fake_ptr3_2.is_owned());
+    REQUIRE(fake_ptr3_2.arrow.is_owned());
     //
     // fake_entry now is bad pointer, inaccessible from fake_ptr3,
     // but fake_entry_2 is accessible from fake_ptr3_2
     auto& fake_entry_2 = fake_ptr3_2->neighbors[0];
-    REQUIRE(fake_entry_2.is_owned());
+    REQUIRE(fake_entry_2.arrow.is_owned());
     //
-    REQUIRE(ptr4.is_root());
+    REQUIRE(ptr4.arrow.is_root());
     //
     // deeper debug
     //
-    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.arrow.is_root());
     REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
     REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
-    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(fake_ptr2.arrow.is_nullptr());
     // fake_ptr3 is broken now, but fake_ptr3_2 is good
-    REQUIRE(fake_ptr3_2.is_owned());
+    REQUIRE(fake_ptr3_2.arrow.is_owned());
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->has_parent() == true);  // 4
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->children.size() == 1);  // -1
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owns.size() == 0);
     // fake_entry is broken now, but fake_entry_2 is good
-    REQUIRE(fake_entry_2.is_owned());
+    REQUIRE(fake_entry_2.arrow.is_owned());
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->has_parent() == true);  // 3
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->children.size() == 0);
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->owns.size() == 0);
-    REQUIRE(ptr4.is_root());
+    REQUIRE(ptr4.arrow.is_root());
     REQUIRE(ptr4.arrow.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr4.arrow.remote_node.lock()->children.size() == 1);  // 3
     REQUIRE(ptr4.arrow.remote_node.lock()->owned_by.size() == 0);
@@ -751,12 +751,12 @@ TEST_CASE(
 
     // force reset: root dies but other refs still on main(), from ptr1
     G.entry.reset();
-    REQUIRE(G.entry.is_nullptr());
-    REQUIRE(ptr1.is_root());
-    REQUIRE(fake_ptr2.is_owned());
-    REQUIRE(fake_ptr3.is_owned());
+    REQUIRE(G.entry.arrow.is_nullptr());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(fake_ptr2.arrow.is_owned());
+    REQUIRE(fake_ptr3.arrow.is_owned());
     auto& fake_entry = fake_ptr3->neighbors[0];
-    REQUIRE(fake_entry.is_owned());  // node -1
+    REQUIRE(fake_entry.arrow.is_owned());  // node -1
     // add node 4 saving 3 and -1
     auto ptr4 = G.make_node(4.0);
     ptr4->neighbors.push_back(fake_ptr3.get_owned(ptr4));
@@ -766,46 +766,46 @@ TEST_CASE(
     // std::cout << std::endl << "KILL PART!" << std::endl;
     // node 2 must die
     // node 3 and node -1 must survive (held by node 4)
-    REQUIRE(fake_ptr2.is_owned());  // node 2
+    REQUIRE(fake_ptr2.arrow.is_owned());  // node 2
     // force reset: node 2 is killed together with node 3 and node -1
     fake_ptr2.reset();
     // two root survivors (1) and (4) -> 3 -1
     REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
-    REQUIRE(ptr1.is_root());
-    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(ptr1.arrow.is_root());
+    REQUIRE(fake_ptr2.arrow.is_nullptr());
     // fake_ptr3 now is bad pointer, inaccessible from fake_ptr2,
     // but fake_ptr3_2 is accessible from ptr4
-    REQUIRE(fake_ptr3_2.is_owned());
+    REQUIRE(fake_ptr3_2.arrow.is_owned());
     //
     // fake_entry now is bad pointer, inaccessible from fake_ptr3,
     // but fake_entry_2 is accessible from fake_ptr3_2
     auto& fake_entry_2 = fake_ptr3_2->neighbors[0];
-    REQUIRE(fake_entry_2.is_owned());
+    REQUIRE(fake_entry_2.arrow.is_owned());
     //
-    REQUIRE(ptr4.is_root());
+    REQUIRE(ptr4.arrow.is_root());
     //
     // deeper debug
     //
-    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.arrow.is_root());
     REQUIRE(ptr1.arrow.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr1.arrow.remote_node.lock()->children.size() == 0);
     REQUIRE(ptr1.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(ptr1.arrow.remote_node.lock()->owns.size() == 0);
-    REQUIRE(fake_ptr2.is_nullptr());
+    REQUIRE(fake_ptr2.arrow.is_nullptr());
     // fake_ptr3 is broken now, but fake_ptr3_2 is good
-    REQUIRE(fake_ptr3_2.is_owned());
+    REQUIRE(fake_ptr3_2.arrow.is_owned());
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->has_parent() == true);  // 4
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->children.size() == 1);  // -1
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(fake_ptr3_2.arrow.remote_node.lock()->owns.size() == 0);
     // fake_entry is broken now, but fake_entry_2 is good
-    REQUIRE(fake_entry_2.is_owned());
+    REQUIRE(fake_entry_2.arrow.is_owned());
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->has_parent() == true);  // 3
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->children.size() == 0);
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->owned_by.size() == 0);
     REQUIRE(fake_entry_2.arrow.remote_node.lock()->owns.size() == 0);
-    REQUIRE(ptr4.is_root());
+    REQUIRE(ptr4.arrow.is_root());
     REQUIRE(ptr4.arrow.remote_node.lock()->has_parent() == false);
     REQUIRE(ptr4.arrow.remote_node.lock()->children.size() == 1);  // 3
     REQUIRE(ptr4.arrow.remote_node.lock()->owned_by.size() == 0);
@@ -826,7 +826,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
     // STEP (A)
     // creating -1 node
     G.entry = G.make_node(-1.0);
-    REQUIRE(G.entry.is_root());
+    REQUIRE(G.entry.arrow.is_root());
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     // make cycle
@@ -839,10 +839,10 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
     //
     REQUIRE(G.my_ctx().lock()->getForestSize() == 2);
     //
-    REQUIRE(ptr1.is_root());
+    REQUIRE(ptr1.arrow.is_root());
     // check first arc
-    REQUIRE(ptr1->neighbors[0].is_owned());
-    REQUIRE(ptr1->neighbors[0].is_owned_by_node);
+    REQUIRE(ptr1->neighbors[0].arrow.is_owned());
+    REQUIRE(ptr1->neighbors[0].arrow.is_owned_by_node);
     //
     // Multi-link between ptr1 and ptr2: (ptr1->ptr2), (ptr1->ptr2)
     ptr1->neighbors.push_back(ptr1->neighbors[0].get_owned(ptr1));
@@ -852,17 +852,17 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
       auto& fake_ptr2_0 = ptr1->neighbors[0];
       auto& fake_ptr2_1 = ptr1->neighbors[1];
       // check again the first arc (no corruption should happen)
-      REQUIRE(fake_ptr2_0.is_owned_by_node);
-      REQUIRE(fake_ptr2_0.is_owned());
+      REQUIRE(fake_ptr2_0.arrow.is_owned_by_node);
+      REQUIRE(fake_ptr2_0.arrow.is_owned());
       //
       // check properties of all smart pointers involved
-      REQUIRE(ptr1.is_root());
-      REQUIRE(fake_ptr2_0.is_owned());
-      REQUIRE(fake_ptr2_1.is_owned());
+      REQUIRE(ptr1.arrow.is_root());
+      REQUIRE(fake_ptr2_0.arrow.is_owned());
+      REQUIRE(fake_ptr2_1.arrow.is_owned());
       // reset first arc (child must not be wiped out)
       fake_ptr2_0.reset();
-      REQUIRE(fake_ptr2_0.is_nullptr());
-      REQUIRE(fake_ptr2_1.is_owned());
+      REQUIRE(fake_ptr2_0.arrow.is_nullptr());
+      REQUIRE(fake_ptr2_1.arrow.is_owned());
     }
     // try three arcs now (remember that first arc neighbors[0] is now nullptr)
     ptr1->neighbors.push_back(ptr1->neighbors[1].get_owned(ptr1));
@@ -876,11 +876,11 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
     //
     // reset -1 node
     G.entry.reset();
-    REQUIRE(G.entry.is_nullptr());
+    REQUIRE(G.entry.arrow.is_nullptr());
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // reset ptr1
     ptr1.reset();
-    REQUIRE(ptr1.is_nullptr());
+    REQUIRE(ptr1.arrow.is_nullptr());
 
     if (false) {
       G.entry.setDebug(true);  // -1
@@ -936,16 +936,16 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     REQUIRE(G.entry->val == 2);
     REQUIRE(entry2->val == 2);
     // check status
-    REQUIRE(G.entry.is_root());
-    REQUIRE(entry2.is_owned());
+    REQUIRE(G.entry.arrow.is_root());
+    REQUIRE(entry2.arrow.is_owned());
     // check forest structure
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
     // create one more self-owned reference
     auto entry3 = entry2.get_self_owned();
-    REQUIRE(G.entry.is_root());
-    REQUIRE(entry2.is_owned());
-    REQUIRE(entry3.is_owned());
+    REQUIRE(G.entry.arrow.is_root());
+    REQUIRE(entry2.arrow.is_owned());
+    REQUIRE(entry3.arrow.is_owned());
     // check forest structure
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
@@ -962,9 +962,9 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 10 - MyGraph unowned and self-owned") {
     REQUIRE(mynode_count == 0);
 
     // both should be null
-    REQUIRE(G.entry.is_nullptr());
-    REQUIRE(entry2.is_nullptr());
-    REQUIRE(entry3.is_nullptr());
+    REQUIRE(G.entry.arrow.is_nullptr());
+    REQUIRE(entry2.arrow.is_nullptr());
+    REQUIRE(entry3.arrow.is_nullptr());
   }
   // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);
@@ -986,8 +986,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 11 - MyGraph get_unowned") {
     // check value
     REQUIRE(G.entry->val == -1);
     // check status
-    REQUIRE(G.entry.is_root());
-    REQUIRE(entry2.is_nullptr());
+    REQUIRE(G.entry.arrow.is_root());
+    REQUIRE(entry2.arrow.is_nullptr());
     // check forest structure
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     //
@@ -996,8 +996,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 11 - MyGraph get_unowned") {
     G.entry.reset();
 
     // both should be null
-    REQUIRE(G.entry.is_nullptr());
-    REQUIRE(entry2.is_nullptr());
+    REQUIRE(G.entry.arrow.is_nullptr());
+    REQUIRE(entry2.arrow.is_nullptr());
   }
   // SHOULD NOT LEAK
   REQUIRE(mynode_count == 0);

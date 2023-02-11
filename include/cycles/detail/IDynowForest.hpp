@@ -26,7 +26,32 @@ namespace cycles {
 
 namespace detail {
 
+// prefer concept instead of this interface
+class IArrow {
+ public:
+  virtual ~IArrow() = default;
+  virtual bool is_nullptr() const = 0;
+  virtual bool is_root() const = 0;
+  virtual bool is_owned() const = 0;
+};
+
+#if __cplusplus > 201703L  // c++20 supported
+template <class T>
+concept XArrowType = requires(T self, bool b) {
+  { self.is_nullptr() } -> std::convertible_to<bool>;
+  { self.is_root() } -> std::convertible_to<bool>;
+  { self.is_owned() } -> std::convertible_to<bool>;
+  { self.setIsOwnedByNode(b) } -> std::same_as<void>;
+  // NOLINTNEXTLINE
+};
+#endif
+
+#if __cplusplus > 201703L  // c++20 supported
+template <class XNode, class XTree, XArrowType XArrow>
+#else
 template <class XNode, class XTree, class XArrow>
+#endif
+
 class IDynowForest {
  public:
   using DynowNodeType = XNode;
@@ -46,7 +71,7 @@ class IDynowForest {
   virtual void setAutoCollect(bool ac) {}
   // helpers
   virtual int getForestSize() = 0;  // testing only?
-  virtual bool opx_hasParent(sptr<DynowNodeType> node_ptr) = 0;
+  // virtual bool opx_hasParent(sptr<DynowNodeType> node_ptr) = 0;
   virtual int opx_countOwnedBy(sptr<DynowNodeType>) = 0;  // useless?
   virtual sptr<DynowNodeType> opx_getOwnedBy(sptr<DynowNodeType>,
                                              int idx) = 0;  // useless?

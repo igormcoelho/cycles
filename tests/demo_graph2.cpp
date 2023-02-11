@@ -115,12 +115,12 @@ int main() {
     //
     auto& fake_ptr2 = ptr1->neighbors[0];
     auto& fake_entry = ptr3->neighbors[0];
-    assert(G.entry.is_nullptr());
-    assert(ptr1.is_root());
-    assert(fake_ptr2.is_owned());  // node 2
-    assert(ptr2.is_nullptr());
-    assert(ptr3.is_root());
-    assert(fake_entry.is_owned());  // node -1
+    assert(G.entry.arrow.is_nullptr());
+    assert(ptr1.arrow.is_root());
+    assert(fake_ptr2.arrow.is_owned());  // node 2
+    assert(ptr2.arrow.is_nullptr());
+    assert(ptr3.arrow.is_root());
+    assert(fake_entry.arrow.is_owned());  // node -1
 
     // deeper debug
     assert(ptr1.arrow.remote_node.lock()->has_parent() == false);
