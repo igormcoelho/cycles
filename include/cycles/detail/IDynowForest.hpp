@@ -38,6 +38,7 @@ class IArrow {
 #if __cplusplus > 201703L  // c++20 supported
 template <class T>
 concept XArrowType = requires(T self, bool b) {
+  {self.get_data_shared()};  // NOLINT
   { self.is_null() } -> std::convertible_to<bool>;
   { self.is_root() } -> std::convertible_to<bool>;
   { self.is_owned() } -> std::convertible_to<bool>;

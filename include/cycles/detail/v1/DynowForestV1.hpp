@@ -117,6 +117,11 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
       sptr<TNode<TNodeData>> this_remote_node,
       sptr<TNode<TNodeData>> owner_remote_node) override {
     //
+    // it seems that best logic is:
+    // - each weak owned_by link corresponds to weak owns link
+    // - each strong child link corresponds to a weak parent link
+    //
+    //
     if (debug()) {
       std::cout << std::endl
                 << "relation_ptr:: unsafe_set_owned_by" << std::endl;

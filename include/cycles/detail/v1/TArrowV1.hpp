@@ -30,10 +30,8 @@ namespace cycles {
 namespace detail {
 
 // default is now type-erased T
-template <typename T = TNodeData>
+template <typename X = TNodeData>
 class TArrowV1 : public IArrow {
-  using X = T;
-
   bool debug_flag_arrow{false};
 
  public:
@@ -76,6 +74,18 @@ class TArrowV1 : public IArrow {
     // AVOID direct usage of TNode here...
     // return node_ptr->owned_by[idx].lock();
     return node_ptr->owned_by.at(idx).lock();
+  }
+
+ public:
+  // returns shared pointer to data
+  sptr<X> get_data_shared() const {
+    sptr<TNode<X>> sremote_node = this->remote_node.lock();
+    if (!sremote_node) {
+      return nullptr;
+    } else {
+      // NOLINTNEXTLINE
+      return sptr<X>{sremote_node->value, (X*)(sremote_node->value->p)};
+    }
   }
 
   // ========== TWO FUNDAMENTAL PROPERTIES ===========

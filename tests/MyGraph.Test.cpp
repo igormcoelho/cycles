@@ -31,7 +31,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 1 - MyGraph Single") {
     REQUIRE(G.my_ctx().lock()->getForestSize() == 0);
 
     if (false) {
-      G.entry.setDebug(true);  // -1
+      G.entry.arrow.setDebug(true);  // -1
     }
   }
   // SHOULD NOT LEAK
@@ -53,7 +53,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     REQUIRE(G.entry.arrow.is_root());
 
     if (false) {
-      G.entry.setDebug(true);  // -1
+      G.entry.arrow.setDebug(true);  // -1
     }
 
     auto ptr1 = G.make_node(1.0);
@@ -61,8 +61,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     // CHECKS (B) - node 1 is owned by -1
     //
-    G.entry.get()->neighbors.push_back(ptr1.get_owned(G.entry));
-    REQUIRE(G.entry.get()->neighbors[0].arrow.is_owned());
+    G.entry->neighbors.push_back(ptr1.get_owned(G.entry));
+    REQUIRE(G.entry->neighbors[0].arrow.is_owned());
 
     //
     auto ptr2 = G.make_node(2.0);
@@ -81,8 +81,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     // CHECKS (D') - ptr2 and ptr3 are added as owners
     //
-    ptr2.get()->neighbors.push_back(ptr3.get_owned(ptr2));
-    ptr3.get()->neighbors.push_back(G.entry.get_owned(ptr3));
+    ptr2->neighbors.push_back(ptr3.get_owned(ptr2));
+    ptr3->neighbors.push_back(G.entry.get_owned(ptr3));
 
     REQUIRE(ptr2.arrow.is_root());
     REQUIRE(ptr3.arrow.is_root());
@@ -94,8 +94,8 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     // G.print();
     //
     if (false) {
-      std::cout << "PRINT ptr2 details:" << ptr2.get() << std::endl;
-      for (unsigned i = 0; i < ptr2.get()->neighbors.size(); i++)
+      std::cout << "PRINT ptr2 (testing operator*):" << *ptr2 << std::endl;
+      for (unsigned i = 0; i < ptr2->neighbors.size(); i++)
         std::cout << "  ptr2 MyNode neighbor i=" << i
                   << " => type: " << ptr2.get()->neighbors[i].arrow.getType()
                   << std::endl;
@@ -134,7 +134,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 2 - MyGraph A B C' D' E'") {
     //
     // debug
     if (false) {
-      G.entry.setDebug(true);  // -1
+      G.entry.arrow.setDebug(true);  // -1
     }
   }
   // SHOULD NOT LEAK
@@ -234,11 +234,15 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 3 - MyGraph A-B-C-D-E Simple") {
         -1);
     // debug
     if (false) {
-      G.entry->neighbors[0].setDebug(true);                              // 1
-      G.entry->neighbors[0]->neighbors[0].setDebug(true);                // 2
-      G.entry->neighbors[0]->neighbors[0]->neighbors[0].setDebug(true);  // 3
-      G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0].setDebug(
-          true);  // -1
+      G.entry->neighbors[0].arrow.setDebug(true);                // 1
+      G.entry->neighbors[0]->neighbors[0].arrow.setDebug(true);  // 2
+      G.entry->neighbors[0]->neighbors[0]->neighbors[0].arrow.setDebug(
+          true);  // 3
+      G.entry->neighbors[0]
+          ->neighbors[0]
+          ->neighbors[0]
+          ->neighbors[0]
+          .arrow.setDebug(true);  // -1
     }
   }
   // SHOULD NOT LEAK
@@ -448,11 +452,15 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
     // make everyone verbose
     if (false) {
-      G.entry->neighbors[0].setDebug(true);                              // -1
-      G.entry->neighbors[0]->neighbors[0].setDebug(true);                // 1
-      G.entry->neighbors[0]->neighbors[0]->neighbors[0].setDebug(true);  // 2
-      G.entry->neighbors[0]->neighbors[0]->neighbors[0]->neighbors[0].setDebug(
-          true);  // 3
+      G.entry->neighbors[0].arrow.setDebug(true);                // -1
+      G.entry->neighbors[0]->neighbors[0].arrow.setDebug(true);  // 1
+      G.entry->neighbors[0]->neighbors[0]->neighbors[0].arrow.setDebug(
+          true);  // 2
+      G.entry->neighbors[0]
+          ->neighbors[0]
+          ->neighbors[0]
+          ->neighbors[0]
+          .arrow.setDebug(true);  // 3
     }
     //
     // manually invoke collection
@@ -463,7 +471,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);  // NO COLLECTION??
     //
     // G.my_ctx().lock()->debug = true;
-    // G.entry.setDebug(true);
+    // G.entry.arrow.setDebug(true);
     REQUIRE(true);
   }
   // SHOULD NOT LEAK
@@ -552,8 +560,8 @@ TEST_CASE(
     // ptr3.reset(); // do not delete here
     // ptr1.reset(); // do not delete here
     //
-    // G.entry.setDebug(true);
-    // ptr1.setDebug(true);
+    // G.entry.arrow.setDebug(true);
+    // ptr1.arrow.setDebug(true);
     //
     // std::cout << "will finish scope" << std::endl;
     // G.my_ctx().lock()->debug = true;
@@ -882,7 +890,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 9 - MyGraph MultiGraph") {
     REQUIRE(ptr1.arrow.is_null());
 
     if (false) {
-      G.entry.setDebug(true);  // -1
+      G.entry.arrow.setDebug(true);  // -1
     }
   }
   // SHOULD NOT LEAK

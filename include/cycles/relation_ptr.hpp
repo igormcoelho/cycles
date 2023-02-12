@@ -25,7 +25,7 @@ using std::vector, std::ostream, std::map;  // NOLINT
 // =================================
 // smart pointer suitable for cycles
 // memory is self-managed
-//-------------------------
+//----------------------------------
 
 namespace cycles {
 
@@ -48,18 +48,16 @@ class relation_ptr {
 #endif
   //
   TArrowV1<X> arrow;
-  //
-  bool debug_flag_ptr{false};
 
  public:
   using pool_type = DOF;
 
-  void setDebug(bool b) {
-    debug_flag_ptr = b;
-    // auto node = remote_node.lock();
-    // if (node) node->debug_flag = b;
-    arrow.setDebug(b);
-  }
+  /*
+    void setDebug(bool b) {
+      debug_flag_ptr = b;
+      arrow.setDebug(b);
+    }
+    */
 
  public:
 #ifdef WEAK_POOL_PTR
@@ -68,37 +66,27 @@ class relation_ptr {
   sptr<DOF> get_ctx() const { return ctx; }
 #endif
 
-  bool debug() const { return debug_flag_ptr; }
-
-  // C[-1] constructor for Strong Self links is a terrible idea...
-  // 1) because it breaks many things! (with no much promising gains)
-  // 2) it makes many things unsecure and changes basic assumptions (like no
-  // strong loops!)
-  // 3) it is interesting! but, maybe needs to improve current basic things
-  // first
-  /*
-  // flag for C[-1] constructor...
-  struct weak_self {};
-
   // ======= C[-1] constructor (weak self) ======
-  // Maybe this is a bad idea, but seems interesting to try...
-  // 1. will store T* t owned by ITSELF
-  // 2. will create a new TNode
+  // struct weak_self {};
+  //
+  // C[-1] constructor for Strong Self links is a bad idea!
+  // ====> Tested Strategy (not promising at all!):
+  // 1. will store T* t on new TNode
+  // 2. will connect TNode STRONGLY pointing to ITSELF
   // 3. will NOT create a Tree... it's all alone!
-  relation_ptr(wptr<DOF> _ctx, T* t, weak_self flag) : ctx{_ctx} {
-    ...
-  }
-    */
+  //
+  // relation_ptr(wptr<DOF> _ctx, T* t, weak_self flag)
+  //     : ctx{_ctx} {...}
 
   // ======= C0 nullptr =======
-  relation_ptr() {
-    this->arrow = TArrowV1<X>{};
-    assert(this->arrow.is_null());
-  }
+  relation_ptr() { setup_c0(); }
 
   // ======= C0' nullptr (allow nullptr implicit conversion) ===============
   // NOLINTNEXTLINE
-  relation_ptr(std::nullptr_t t) {
+  relation_ptr(std::nullptr_t t) { setup_c0(); }
+
+  // implementation for constructor C0 and C0'
+  void setup_c0() {
     this->arrow = TArrowV1<X>{};
     assert(arrow.is_null());
   }
@@ -109,241 +97,121 @@ class relation_ptr {
   // 3. will create a new Tree and point
   relation_ptr(T* t, const relation_pool<DOF>& _pool)
       : ctx{_pool.getContext()} {
-    assert(get_ctx());  // REMOVE! (allow with better logic than assert)
-    //
-    bool is_owned_by_node{false};
-    this->debug_flag_ptr = get_ctx()->debug();
-    // KEEP LOCAL!
-    sptr<TNodeData> ref;
-    if (t) ref = TNodeData::make_sptr<T>(t);
-    //
-    if (!ref) return;  // SHOULD NOT CREATE A NEW TREE!
-
-    //
-    if (debug()) {
-      std::cout
-          << "C1' pointer constructor: creating NEW relation_ptr (this_new="
-          << this << " to t*=" << t << ") ";
-      if (ref)
-        std::cout << "with ref -> " << *ref << std::endl;
-      else
-        std::cout << "with ref -> nullptr" << std::endl;
-    }
-    //
-    // using op1: we only store weak reference here
-    this->arrow = get_ctx()->op1_addNodeToNewTree(ref);
-    assert(this->arrow.is_owned_by_node == is_owned_by_node);
-    // this->remote_node = target;
-    //
-    if (debug()) {
-      get_ctx()->print();
-      std::cout << " -> finished C1' pointer constructor" << std::endl;
-    }
+    setup_c1(t);
   }
 
   // ======= C1 - spointer constructor =======
   // 1. will store T* t owned by new local shared_ptr 'ref'
   // 2. will create a new TNode , also carrying shared_ptr 'ref'
   // 3. will create a new Tree and point
-  relation_ptr(T* t, wptr<DOF> _ctx) : ctx{_ctx} {
-    assert(get_ctx());  // REMOVE! (allow with better logic than assert)
-    bool is_owned_by_node{false};
-    //
-    this->debug_flag_ptr = get_ctx()->debug();
-    // KEEP LOCAL!
-    sptr<TNodeData> ref;
-    if (t) ref = TNodeData::make_sptr<T>(t);
-    //
-    if (!ref) return;  // SHOULD NOT CREATE A NEW TREE!
+  relation_ptr(T* t, wptr<DOF> _ctx) : ctx{_ctx} { setup_c1(t); }
 
-    //
-    if (debug()) {
-      std::cout
-          << "C1 pointer constructor: creating NEW relation_ptr (this_new="
-          << this << " to t*=" << t << ") ";
-      if (ref)
-        std::cout << "with ref -> " << *ref << std::endl;
-      else
-        std::cout << "with ref -> nullptr" << std::endl;
+  // implementation for constructor C1 and C1'
+  void setup_c1(T* t) {
+    // if no context or null pointer, this is null arrow
+    if ((!t) || (!get_ctx())) {
+      this->arrow = TArrowV1<X>{};
+      assert(arrow.is_null());
+      return;
     }
-    //
+    // keep local until passed to forest
+    sptr<TNodeData> ref = TNodeData::make_sptr<T>(t);
+    // sanity check on 'make_sptr'
+    assert(ref);
     // using op1: we only store weak reference here
     this->arrow = get_ctx()->op1_addNodeToNewTree(ref);
-    assert(this->arrow.is_owned_by_node == is_owned_by_node);
-    // this->remote_node = target;
-    //
-    if (debug()) {
-      get_ctx()->print();
-      std::cout << " -> finished C1 pointer constructor" << std::endl;
-    }
+    // sanity check on 'op1'
+    assert(!this->arrow.is_owned_by_node);
+    assert(arrow.is_root());
   }
 
   // C2 CONSTRUCTOR - EQUIVALENT TO C1+C4
   relation_ptr(T* t, const relation_ptr<T>& owner) : ctx{owner.ctx} {
-    // context must exist
-    assert(get_ctx());
-    //
-    this->debug_flag_ptr = get_ctx()->debug();
-    //
-    // KEEP LOCAL!
-    sptr<TNodeData> ref;
-    if (t) ref = TNodeData::make_sptr<T>(t);
-    //
-
-    //
-    if (debug()) {
-      std::cout
-          << "C2 pointer constructor: creating NEW relation_ptr (this_new="
-          << this << " to t*=" << t << ") ";
-      if (ref)
-        std::cout << "with ref -> " << *ref << std::endl;
-      else
-        std::cout << "with ref -> nullptr" << std::endl;
+    // if no context or null pointer, this is null arrow
+    if ((!t) || (!get_ctx()) || owner.arrow.is_null()) {
+      this->arrow = TArrowV1<X>{};
+      assert(arrow.is_null());
+      return;
     }
-    //
-    if (!ref) return;  // SHOULD NOT CREATE A NEW TREE!
-
-    // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr...
-    // this 'remote_node' is weak!
-    // auto sptr_remote_node = !t ? nullptr : sptr<TNode<X>>(new TNode<X>{ref});
-    // we only hold weak reference here
-    // this->remote_node = sptr_remote_node;
-    // this->is_owned_by_node = false;
-    //
-
-    //
-    // END C1 PART
-    //
-    // BEGIN C4 PART
-    //
-    assert(!owner.arrow.is_null());
-    // remember ownership (for future deletion?)
-    // this->owned_by_node = owner.remote_node;
-    //     this->is_owned_by_node = true;
-    // OWNER MUST EXIST... AT LEAST NOW!
-    // assert(this->owned_by_node.lock());
-    // auto myNewParent = owned_by_node.lock();
-    //
-    // register STRONG ownership in tree
-    //
-    // auto sptr_mynode = this->remote_node.lock();
-    // auto [orig, target] =
+    // KEEP LOCAL
+    sptr<TNodeData> ref = TNodeData::make_sptr<T>(t);
+    // sanity check on 'make_sptr'
+    assert(ref);
+    // invoke op2
     this->arrow =
         get_ctx()->op2_addChildStrong(owner.arrow.remote_node.lock(), ref);
-    // TODO(igormcoelho): no errors possible in op2?
-    bool is_owned_by_node = true;
-    assert(this->arrow.is_owned_by_node == is_owned_by_node);
-    // this->owned_by_node = orig;
-    // this->remote_node = target;
-    //
-    if (debug())
-      std::cout << "finish c2: stored owner in owned_by_node" << std::endl;
+    // sanity check
+    assert(this->arrow.is_owned());
   }
 
  private:
-  //
-  // NO COPY CONSTRUCTOR
-  //
-  // ======= C3 copy constructor =======
+  // ======= C3 copy constructor (DELETED) =======
   relation_ptr(const relation_ptr<T>& copy) = delete;
 
  public:
+  // ======= C4 copy constructor WITH owner =======
+  relation_ptr(const relation_ptr<T>& copy, const relation_ptr<T>& owner)
+      : ctx{copy.ctx} {
+    // if no context or null pointer, this is null arrow
+    if (!get_ctx() || copy.arrow.is_null() || owner.arrow.is_null()) {
+      this->arrow = TArrowV1<X>{};
+      assert(arrow.is_null());
+      return;
+    }
+
+    // Runtime Check: same ctx for both pointers
+    assert(get_ctx().get() == owner.get_ctx().get());
+    //
+    assert(this != &copy);   // IMPOSSIBLE
+    assert(this != &owner);  // IMPOSSIBLE
+    // ==========================================================
+    // both nodes exist already (copy node and owner node)
+    // register WEAK ownership in tree using 'op3_weakSetOwnedBy'
+    //
+    this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.arrow.remote_node.lock(),
+                                                owner.arrow.remote_node.lock());
+    // sanity check
+    assert(this->arrow.is_owned());
+    // sanity check: OWNER MUST EXIST... AT LEAST FOR NOW!
+    assert(this->arrow.owned_by_node.lock());
+  }
+
+  // friend helper for constructor M1
   template <typename U, typename DOF2>
   friend class relation_ptr;
 
   // ======= M1 move constructor =======
-  // simply move smart pointer to all elements: ctx, ref and remote_node
-  //
-  // IMPORTANT: allow conversion from any type U, such that U* converts to T*
-  //
+  // IMPORTANT 1: allow conversion from any type U, such that U* converts to T*
+  // IMPORTANT 2: do not restrict it over implicit conversions
   template <class U, class = typename std::enable_if<
                          std::is_convertible<U*, T*>::value, void>::type>
   relation_ptr(relation_ptr<U, DOF>&& corpse) noexcept  // NOLINT
-      : ctx{std::move(corpse.ctx)}, arrow{std::move(corpse.arrow)} {
-    if (get_ctx()) this->debug_flag_ptr = get_ctx()->debug();
-  }
+      : ctx{std::move(corpse.ctx)}, arrow{std::move(corpse.arrow)} {}
 
  public:
-  // ======= C4 copy constructor WITH owner =======
-  // copy constructor (still good for vector... must be the meaning of a
-  // "copy") proposed operation is: cptr1 = relation_ptr<T>(cptr0, cptr2); //
-  // (cptr0 and cptr2 exists already) it could also follow this logic:
-  // 1. cptr1 = relation_ptr<T>{cptr0}; // copy cptr0 into cptr1
-  // 2. cptr1.set_owned_by(cptr2);   // makes cptr1 (and also cptr0) owned by
-  // cptr2
-  //
-  relation_ptr(const relation_ptr<T>& copy, const relation_ptr<T>& owner)
-      : ctx{copy.ctx}  //, remote_node{copy.remote_node} {
-  {
-    // context must exist
-    assert(get_ctx());  // TODO: avoid assert here
-    // same pointers on ctx
-    // TODO: this assert could be necessary indeed...
-    assert(get_ctx().get() == owner.get_ctx().get());
-    //
-    this->debug_flag_ptr = get_ctx()->debug();
-    if (debug()) std::cout << "c4 constructor for get_owned" << std::endl;
-    assert(this != &copy);   // IMPOSSIBLE
-    assert(this != &owner);  // IMPOSSIBLE
-    //
-    assert(!owner.arrow.is_null());  // TODO: avoid assert here
-    //
-    // both nodes exist already (copy node and owner node)
-    // register WEAK ownership in tree
-    // this->set_owned_by(owner);  // invokes 'op3_weakSetOwnedBy'
+  // ========== destructor ==========
+  ~relation_ptr() { destroy(); }
 
-    // it seems that best logic is:
-    // - each weak owned_by link corresponds to weak owns link
-    // - each strong child link corresponds to a weak parent link
-    //
-    this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.arrow.remote_node.lock(),
-                                                owner.arrow.remote_node.lock());
-    assert(this->arrow.is_owned_by_node);
-    // OWNER MUST EXIST... AT LEAST NOW!
-    assert(this->arrow.owned_by_node.lock());
-    if (debug())
-      std::cout << "finish c4: stored owner in owned_by_node" << std::endl;
-  }
+  void reset() { destroy(); }
 
- public:
+ private:
   void destroy() {
-    if (debug()) std::cout << "destroy: BEGIN" << std::endl;
-    // TODO(igormcoelho): how to manage "delegated sptr" pointers here?
-    // Maybe just consider some "unique_ptr forest" for now?
-    //
-    if (debug()) {
-      std::cout << "destroy: ref_use_count=" << this->get_shared().use_count();
-      if (!has_get())
-        std::cout << " get(): NULL";
-      else
-        std::cout << " get(): (" << this->get() << ")";
-      std::cout << std::endl;
-    }
-    // BEGIN complex logic
-    // where is nullptr here? TODO: fix
+    // sanity check
     assert(this->arrow.is_null() || this->arrow.is_root() ||
            this->arrow.is_owned());
     //
     if (this->arrow.is_null()) {
-      if (debug()) std::cout << "destroy: is_null()" << std::endl;
-      return;  // nothing to destroy
-               // (MUST KEEP else below, otherwise it may break(?))
+      // nothing to do!
+      // arrow will be fully cleared in next step
     } else {
-      //
       assert(this->arrow.is_root() || this->arrow.is_owned());
-      //
-      if (debug()) std::cout << "destroy: is_root() || is_owned()" << std::endl;
-
       this->get_ctx()->op4_remove(this->arrow);
-
-      //
       // end-if is_root || is_owned
     }
 
-    if (debug()) std::cout << "destroy: last cleanups" << std::endl;
-    //
-    this->arrow = TArrowV1<X>{};  // CLEAR
-    assert(!this->arrow.is_owned_by_node);
+    // CLEAR (even if it's null already...)
+    this->arrow = TArrowV1<X>{};
+    assert(this->arrow.is_null());
 //
 #ifdef WEAK_POOL_PTR
     // nothing to do
@@ -351,22 +219,6 @@ class relation_ptr {
     // reset shared structure for context
     this->ctx = nullptr;
 #endif
-    //
-    if (debug()) std::cout << "destroy: END" << std::endl;
-  }
-
-  void reset() {
-    if (debug()) std::cout << "relation_ptr::reset() BEGIN" << std::endl;
-    destroy();
-    if (debug()) std::cout << "relation_ptr::reset() END" << std::endl;
-  }
-
-  ~relation_ptr() {
-    if (debug())
-      std::cout << "begin ~relation_ptr() getType=" << this->arrow.getType()
-                << std::endl;
-    destroy();
-    if (debug()) std::cout << "end ~relation_ptr()" << std::endl;
   }
 
  private:
@@ -374,19 +226,15 @@ class relation_ptr {
   relation_ptr& operator=(const relation_ptr& other) = delete;
 
  public:
+  // move assignment
   relation_ptr& operator=(relation_ptr&& corpse) noexcept {
-    if (debug()) std::cout << "begin operator=(&&)" << std::endl;
     destroy();
-    if (debug()) std::cout << "will move assign" << std::endl;
     this->ctx = std::move(corpse.ctx);
-    this->debug_flag_ptr = corpse.debug_flag_ptr;
     this->arrow = std::move(corpse.arrow);
-    if (debug()) std::cout << "end operator==(&&)" << std::endl;
-
     return *this;
   }
 
-  // =============== BASE OPERATIONS ===============
+  // =============== GET OPERATIONS ===============
 
   // get_owned: returns a relation_ptr pointing to owner's data and setup
   // ownership relationship to 'owner'
@@ -449,28 +297,19 @@ class relation_ptr {
   // this typically replaces 'has_get'
   explicit operator bool() const noexcept { return has_get(); }
 
+  // returns shared pointer to data
   sptr<T> get_shared() const {
-    // assert(!is_null());
+    // TODO: use arrow.get_data_shared()
     auto sremote_node = this->arrow.remote_node.lock();
     if (!sremote_node) {
       return nullptr;
     } else {
-      // TODO: how to make this simpler?
-      //
-      // return sremote_node->value;
-      //
-      /*
-      sptr<TNodeData> tdata = sremote_node->value;
-      T* ptr_t = (T*)tdata->p;
-      */
-      //
-      // delegate liveness of sptr<TNodeData> to sptr<T>
-      //
       // NOLINTNEXTLINE
       return sptr<T>{sremote_node->value, (T*)(sremote_node->value->p)};
     }
   }
 
+  // returns raw pointer to data
   T* get() const {
     auto mysptr = get_shared();
     if (!mysptr)
@@ -482,7 +321,27 @@ class relation_ptr {
   // typical navigation operator
   T* operator->() const { return get(); }
 
+  // const operator* (SFINAE disables for T=void)
+  template <typename U = T>
+  typename std::enable_if<!std::is_same<U, void>::value, const U&>::type  //
+  operator*() const {
+    T* ptr = get();
+    assert(ptr);
+    return *ptr;
+  }
+
+  // operator* (SFINAE disables for T=void)
+  template <typename U = T>
+  typename std::enable_if<!std::is_same<U, void>::value, U&>::type  //
+  operator*() {
+    T* ptr = get();
+    assert(ptr);
+    return *ptr;
+  }
+
  public:
+  // TODO: improve with multiple 'make' methods...
+  // IDEA: 'make', 'make_owned', 'make_unowned' (same as 'make'), etc
   template <class... Args>
   static relation_ptr<T> make(sptr<DynowForestV1> ctx, Args&&... args) {
     // NOLINTNEXTLINE

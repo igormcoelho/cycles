@@ -155,10 +155,10 @@ int main() {
     std::cout << "============================" << std::endl;
     std::cout << "BEGIN DEBUG FOR DESTRUCTION!" << std::endl;
     std::cout << "============================" << std::endl;
-    G.entry.setDebug(true);
-    ptr1.setDebug(true);
-    ptr2.setDebug(true);
-    ptr3.setDebug(true);
+    G.entry.arrow.setDebug(true);
+    ptr1.arrow.setDebug(true);
+    ptr2.arrow.setDebug(true);
+    ptr3.arrow.setDebug(true);
     G.my_ctx().lock()->setDebug(true);
 
     // MANUAL DESTRUCTION (NATURALLY OCCURRING IN THIS ORDER...)
