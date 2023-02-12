@@ -1,8 +1,8 @@
 // SPDX-License-Identifier:  MIT
 // Copyright (C) 2021-2022 - Cycles - https://github.com/igormcoelho/cycles
 
-#ifndef CYCLES_DETAIL_TARROWV1_HPP_
-#define CYCLES_DETAIL_TARROWV1_HPP_
+#ifndef CYCLES_DETAIL_V1_TARROWV1_HPP_
+#define CYCLES_DETAIL_V1_TARROWV1_HPP_
 
 // C++
 #include <iostream>
@@ -60,6 +60,24 @@ class TArrowV1 : public IArrow {
 
   bool debug() const { return debug_flag_arrow; }
 
+  // INFO: only for debug/test
+  int count_owned_by() const {
+    auto node_ptr = this->remote_node.lock();
+    assert(node_ptr);
+    // AVOID direct usage of TNode here...
+    return node_ptr->owned_by.size();
+    // return this->get_ctx()->opx_countOwnedBy(node_ptr);
+  }
+
+  // INFO: only for debug/test
+  auto getOwnedBy(int idx) const {
+    auto node_ptr = this->remote_node.lock();
+    assert(node_ptr);
+    // AVOID direct usage of TNode here...
+    // return node_ptr->owned_by[idx].lock();
+    return node_ptr->owned_by.at(idx).lock();
+  }
+
   // ========== TWO FUNDAMENTAL PROPERTIES ===========
   // A) is_null
   // B) is_root
@@ -113,4 +131,4 @@ class TArrowV1 : public IArrow {
 
 }  // namespace cycles
 
-#endif  // CYCLES_DETAIL_TARROWV1_HPP_
+#endif  // CYCLES_DETAIL_V1_TARROWV1_HPP_

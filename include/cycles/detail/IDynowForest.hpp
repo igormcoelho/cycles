@@ -18,8 +18,8 @@
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
-// ======================================
-// Interface for Dynamic Ownership Forest
+// =======================================
+// Interface for Dynamic Ownership Forest:
 // IDynowForest
 
 namespace cycles {
@@ -57,8 +57,6 @@ class IDynowForest {
   using DynowNodeType = XNode;
   using DynowTreeType = XTree;
   using DynowArrowType = XArrow;
-  // using DynowArrowType = std::pair<wptr<XNode>, wptr<XNode>>;
-
   virtual ~IDynowForest() = default;
 
   // debug helpers
@@ -83,7 +81,7 @@ class IDynowForest {
                                             sptr<DynowNodeType> owner) = 0;
   // op4: give 'arc' reference (to clean it) and no return (void)
   // NOLINTNEXTLINE
-  virtual void op4_remove(DynowArrowType& arrow, bool isRoot, bool isOwned) = 0;
+  virtual void op4_remove(DynowArrowType& arrow) = 0;
   // cleanup method (for pool)
   virtual void destroyAll() = 0;
 };

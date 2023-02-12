@@ -35,7 +35,7 @@ namespace detail {
 class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
                                           TArrowV1<TNodeData>> {
   // DynowForestV1 is now type-erased, using T=TNodeData
-  using T = TNodeData;
+  // using T = TNodeData;
 
  public:
   // collect strategy parameters
@@ -48,21 +48,13 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   bool debug() override { return _debug; }
   void setDebug(bool d) override { _debug = d; }
 
-  // Forest management system comes here (default is sptr)
-  using NodeType = sptr<TNode<TNodeData>>;
-  using TreeType = sptr<Tree<TNodeData>>;
-  using ArrowType = std::pair<wptr<DynowNodeType>, wptr<DynowNodeType>>;
-  //
-  // using NodeType = sptr<TNode<sptr<T>>>;
-  // using TreeType = sptr<Tree<sptr<T>>>;
-
  private:
   // Forest: every Tree is identified by its Root node in map system
-  map<NodeType, TreeType> forest;
+  map<sptr<TNode<TNodeData>>, sptr<Tree<TNodeData>>> forest;
 
  public:
   // pending deletions of nodes
-  vector<NodeType> pending;
+  vector<sptr<TNode<TNodeData>>> pending;
 
  private:
   bool is_destroying{false};
@@ -85,7 +77,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
       std::cout << "=> C1 constructor: Registering this in new Tree!"
                 << std::endl;
     }
-    auto stree = sptr<DynowTreeType>(new DynowTreeType{});
+    sptr<Tree<TNodeData>> stree(new Tree<TNodeData>{});
     if (debug()) {
       std::cout << "tree ~> ";
       stree->print();
@@ -99,14 +91,12 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     if (debug()) this->print();
     //
     TArrowV1<TNodeData> arrow;
-    arrow.owned_by_node = wptr<DynowNodeType>{};
+    arrow.owned_by_node = wptr<TNode<TNodeData>>{};
     arrow.remote_node = sptr_remote_node;
     return arrow;
   }
 
-  // ArrowType op2_addChildStrong(sptr<DynowNodeType> myNewParent,
-  //                              sptr<DynowNodeType> sptr_mynode) override {
-  TArrowV1<TNodeData> op2_addChildStrong(sptr<DynowNodeType> myNewParent,
+  TArrowV1<TNodeData> op2_addChildStrong(sptr<TNode<TNodeData>> myNewParent,
                                          sptr<TNodeData> ref) override {
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
     sptr<TNode<TNodeData>> sptr_mynode{new TNode<TNodeData>{ref}};
@@ -124,8 +114,8 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   }
 
   TArrowV1<TNodeData> op3_weakSetOwnedBy(
-      sptr<DynowNodeType> this_remote_node,
-      sptr<DynowNodeType> owner_remote_node) override {
+      sptr<TNode<TNodeData>> this_remote_node,
+      sptr<TNode<TNodeData>> owner_remote_node) override {
     //
     if (debug()) {
       std::cout << std::endl
@@ -138,7 +128,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
                 << " '" << (owner_remote_node->value.get()) << std::endl;
     }
 
-    DynowNodeType::add_weak_link_owned(this_remote_node, owner_remote_node);
+    TNode<TNodeData>::add_weak_link_owned(this_remote_node, owner_remote_node);
     //
     if (debug())
       std::cout << "owner |children|=" << this_remote_node->children.size()
@@ -153,18 +143,101 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     return arrow;
   }
 
-  //
-  void op4x_clearWeakLinks(sptr<DynowNodeType> owner_node,
-                           sptr<DynowNodeType> sptr_mynode) {
-    // remove my weak link from owner
-    bool r0 = TNodeHelper<>::removeFromOwnsList(owner_node, sptr_mynode);
-    assert(r0);
-    // remove owner from my weak link list
-    bool r1 = TNodeHelper<>::removeFromOwnedByList(owner_node, sptr_mynode);
-    assert(r1);
+  // NOLINTNEXTLINE
+  void op4_remove(TArrowV1<TNodeData>& arc) override {
+    bool isRoot = arc.is_root();
+    bool isOwned = arc.is_owned();
+    //
+    assert(isRoot || isOwned);
+    sptr<TNode<TNodeData>> owner_node = arc.owned_by_node.lock();
+    sptr<TNode<TNodeData>> sptr_mynode = arc.remote_node.lock();
+    // clear arc (???)
+    arc.owned_by_node.reset();
+    arc.remote_node.reset();
+
+    //
+    auto myctx = this;
+    //
+    bool will_die = myctx->op4x_checkSituationCleanup(sptr_mynode, owner_node,
+                                                      isRoot, isOwned);
+    //
+    if (!will_die) {
+      if (debug())
+        std::cout << "DEBUG: WILL NOT DIE. CANNOT FORCE CLEAR HERE!"
+                  << std::endl;
+      return;
+    }
+    assert(will_die);
+    // invoke expensive 'setNewOwner' operation
+    will_die = myctx->op4x_setNewOwner(sptr_mynode);
+    //
+    // CLEAR!
+    if (debug())
+      std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
+
+    myctx->op4x_prepareDestruction(sptr_mynode, owner_node, isRoot, isOwned);
+
+    // final check: if will_die, send to pending list (FAST)
+    if (will_die) myctx->op4x_destroyNode(sptr_mynode);
   }
 
-  bool op4x_setNewOwner(sptr<DynowNodeType> sptr_mynode) {
+ private:
+  // OK - helper 1 of op4_remove
+  bool op4x_checkSituationCleanup(sptr<TNode<TNodeData>> sptr_mynode,
+                                  sptr<TNode<TNodeData>> owner_node,
+                                  bool isRoot, bool isOwned) {
+    bool will_die = false;
+    //
+    // AVOID Using TNode here...
+    //    sptr_mynode->owned_by.size()
+    if (debug()) {
+      int owned_by_count = static_cast<int>(sptr_mynode->owned_by.size());
+      std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
+                << " |owned_by|=" << owned_by_count << std::endl;
+    }
+    //
+    // check situation of node (if dying or not)
+    //
+    if (isRoot) {
+      // this node is root in tree!
+      if (debug()) std::cout << "DEBUG: I AM ROOT! I WILL DIE!" << std::endl;
+      will_die = true;
+    }  // is_root
+    //
+    if (isOwned) {
+      // check if owner still exists
+      if (debug()) std::cout << "DEBUG: I AM OWNED!" << std::endl;
+      if (!owner_node) {
+        // SHOULD THIS BEHAVE AS is_null?
+        if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
+        will_die = false;
+      } else {
+        // CHECK IF OWNER IS MY PARENT...
+        if (owner_node == sptr_mynode->parent.lock()) {
+          if (debug())
+            std::cout << "DEBUG: OWNER IS MY PARENT! I MAY DIE!" << std::endl;
+          will_die = true;
+        } else {
+          if (debug())
+            std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
+                      << std::endl;
+          // my node will stay alive since my parent still holds me strong
+          will_die = false;
+          // remove my weak link from owner
+          bool r0 = TNodeHelper<>::removeFromOwnsList(owner_node, sptr_mynode);
+          assert(r0);
+          // remove owner from my weak link list
+          bool r1 =
+              TNodeHelper<>::removeFromOwnedByList(owner_node, sptr_mynode);
+          assert(r1);
+        }
+      }
+    }  // end is_owned
+    return will_die;
+  }
+
+  // OK - helper 2 of op4_remove
+  bool op4x_setNewOwner(sptr<TNode<TNodeData>> sptr_mynode) {
     bool will_die = true;  // default
     // auto myctx = this;
     if (debug())
@@ -232,56 +305,9 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     return will_die;
   }
 
-  bool op4x_checkSituation(sptr<DynowNodeType> sptr_mynode,
-                           sptr<DynowNodeType> owner_node, bool isRoot,
-                           bool isOwned) {
-    bool will_die = false;
-    auto myctx = this;
-    //
-    // AVOID Using TNode here...
-    //    sptr_mynode->owned_by.size()
-    if (debug()) {
-      int owned_by_count = static_cast<int>(sptr_mynode->owned_by.size());
-      std::cout << "destroy: |owns|=" << sptr_mynode->owns.size()
-                << " |owned_by|=" << owned_by_count << std::endl;
-    }
-    //
-    // check situation of node (if dying or not)
-    //
-    if (isRoot) {
-      // this node is root in tree!
-      if (debug()) std::cout << "DEBUG: I AM ROOT! I WILL DIE!" << std::endl;
-      will_die = true;
-    }  // is_root
-    //
-    if (isOwned) {
-      // check if owner still exists
-      if (debug()) std::cout << "DEBUG: I AM OWNED!" << std::endl;
-      if (!owner_node) {
-        // SHOULD THIS BEHAVE AS is_null?
-        if (debug()) std::cout << "WARNING: avestruz!" << std::endl;
-        will_die = false;
-      } else {
-        // CHECK IF OWNER IS MY PARENT...
-        if (owner_node == sptr_mynode->parent.lock()) {
-          if (debug())
-            std::cout << "DEBUG: OWNER IS MY PARENT! I MAY DIE!" << std::endl;
-          will_die = true;
-        } else {
-          if (debug())
-            std::cout << "DEBUG: OWNER IS NOT MY PARENT! I WILL NOT DIE!"
-                      << std::endl;
-          // my node will stay alive since my parent still holds me strong
-          will_die = false;
-          myctx->op4x_clearWeakLinks(owner_node, sptr_mynode);
-        }
-      }
-    }  // end is_owned
-    return will_die;
-  }
-
-  void op4x_prepareDestruction(sptr<DynowNodeType> sptr_mynode,
-                               sptr<DynowNodeType> owner_node, bool isRoot,
+  // OK - helper 3 of op4_remove
+  void op4x_prepareDestruction(sptr<TNode<TNodeData>> sptr_mynode,
+                               sptr<TNode<TNodeData>> owner_node, bool isRoot,
                                bool isOwned) {
     auto myctx = this;
     // prepare final destruction
@@ -304,9 +330,9 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     }
   }
 
-  // NOTE: 'sptr_mynode' is reference... Don't know why!
+  // OK - helper 4 of op4_remove
   // NOLINTNEXTLINE
-  void op4x_destroyNode(sptr<DynowNodeType>& sptr_mynode) {
+  void op4x_destroyNode(sptr<TNode<TNodeData>>& sptr_mynode) {
     auto myctx = this;
     if (debug())
       std::cout << "destroy: will_die is TRUE. MOVE TO GARBAGE." << std::endl;
@@ -342,74 +368,6 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     }
   }
 
-  // NOLINTNEXTLINE
-  void op4_remove(TArrowV1<TNodeData>& arc, bool isRoot,
-                  bool isOwned) override {
-    sptr<DynowNodeType> owner_node = arc.owned_by_node.lock();
-    sptr<DynowNodeType> sptr_mynode = arc.remote_node.lock();
-    // clear arc (???)
-    arc.owned_by_node.reset();
-    arc.remote_node.reset();
-
-    //
-    auto myctx = this;
-    //
-    bool will_die =
-        myctx->op4x_checkSituation(sptr_mynode, owner_node, isRoot, isOwned);
-    //
-    if (!will_die) {
-      if (debug())
-        std::cout << "DEBUG: WILL NOT DIE. CANNOT FORCE CLEAR HERE!"
-                  << std::endl;
-      return;
-    }
-    assert(will_die);
-    // invoke expensive 'setNewOwner' operation
-    will_die = myctx->op4x_setNewOwner(sptr_mynode);
-    //
-    // CLEAR!
-    if (debug())
-      std::cout << "CLEAR STEP: will_die = " << will_die << std::endl;
-
-    myctx->op4x_prepareDestruction(sptr_mynode, owner_node, isRoot, isOwned);
-
-    // final check: if will_die, send to pending list (FAST)
-    if (will_die) {
-      myctx->op4x_destroyNode(sptr_mynode);
-    }
-  }
-
- private:
-  // quickly destroy all forest roots
-  void destroyForestRoots() {
-    for (const auto& p : forest) {
-      if (debug())
-        std::cout << "destroyForestRoots: clearing root of ~> " << p.first
-                  << "'" << (*p.first) << "' -> " << p.second << " TREE"
-                  << std::endl;
-      // NOLINTNEXTLINE
-      assert(p.second->root);  // root must never be nullptr
-      if (debug())
-        std::cout << "destroyForestRoots: move tree root node to garbage for "
-                     "deferred destruction"
-                  << std::endl;
-      // ===============================
-      // DO NOT DESTROY RECURSIVELY HERE
-      // p.second->root = nullptr;  // clear root BEFORE CHILDREN
-      //
-      // force clean both lists: owned_by and owns (UNCHECKED/FASTER)
-      bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(p.second->root, true);
-      assert(b1);
-      //
-      // move to pending
-      pending.push_back(std::move(p.second->root));
-      p.second->root = nullptr;  // useless... just to make sure it's not here
-    }
-    if (debug())
-      std::cout << "destroyForestRoots: final clear forest" << std::endl;
-    forest.clear();  // is it necessary??
-  }
-
  public:
   void destroyAll() override {
     if (debug())
@@ -436,6 +394,38 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
       std::cout << "~DynowForestV1: finished final collect" << std::endl;
   }
 
+ private:
+  // quickly destroy all forest roots
+  void destroyForestRoots() {
+    for (const auto& p : forest) {
+      if (debug())
+        std::cout << "destroyForestRoots: clearing root of ~> " << p.first
+                  << "'" << (*p.first) << "' -> " << p.second << " TREE"
+                  << std::endl;
+      // NOLINTNEXTLINE
+      assert(p.second->root);  // root must never be nullptr
+      if (debug())
+        std::cout << "destroyForestRoots: move tree root node to garbage for "
+                     "deferred destruction"
+                  << std::endl;
+      // ===============================
+      // DO NOT DESTROY RECURSIVELY HERE
+      // p.second->root = nullptr;  // clear root BEFORE CHILDREN
+      //
+      // force clean both lists: owned_by and owns (UNCHECKED/FASTER)
+      bool b1 = TNodeHelper<TNodeData>::cleanOwnsAndOwnedByLists(p.second->root,
+                                                                 true);
+      assert(b1);
+      //
+      // move to pending
+      pending.push_back(std::move(p.second->root));
+      p.second->root = nullptr;  // useless... just to make sure it's not here
+    }
+    if (debug())
+      std::cout << "destroyForestRoots: final clear forest" << std::endl;
+    forest.clear();  // is it necessary??
+  }
+
  public:
   std::pair<int, int> debug_count_ownership_links() {
     std::pair<int, int> p{0, 0};
@@ -448,7 +438,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
   }
 
  private:
-  std::pair<int, int> debug_count_owns_owned_by(sptr<TNode<T>> node) {
+  std::pair<int, int> debug_count_owns_owned_by(sptr<TNode<TNodeData>> node) {
     std::pair<int, int> p{0, 0};
     p.first += static_cast<int>(node->owns.size());
     p.second += static_cast<int>(node->owned_by.size());
@@ -460,8 +450,8 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     return p;
   }
 
- public:
-  void destroy_tree(sptr<TNode<T>> sptr_mynode) {
+ private:
+  void destroy_tree(sptr<TNode<TNodeData>> sptr_mynode) {
     if (debug()) std::cout << "destroy: will destroy my tree." << std::endl;
     // find my tree
     auto tree_it = this->forest.find(sptr_mynode);
@@ -516,7 +506,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     // ==============================
     //
     // store data separately for delayed destruction
-    std::vector<sptr<T>> vdata;
+    std::vector<sptr<TNodeData>> vdata;
 
     // TODO(igormcoelho): make queue?
     while (pending.size() > 0) {
@@ -525,7 +515,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
         std::cout << "CTX: WHILE processing pending list. |pending|="
                   << pending.size() << std::endl;
       }
-      sptr<TNode<T>> sptr_delete = std::move(pending[0]);
+      sptr<TNode<TNodeData>> sptr_delete = std::move(pending[0]);
       pending.erase(pending.begin() + 0);
       //
       if (debug()) {
@@ -546,8 +536,8 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
                     << std::endl;
       }
       // force clean both lists: owned_by and owns (CHECKED OR UNCHECKED)
-      bool b1 =
-          TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_delete, unchecked);
+      bool b1 = TNodeHelper<TNodeData>::cleanOwnsAndOwnedByLists(sptr_delete,
+                                                                 unchecked);
       assert(b1);
       //
       assert(sptr_delete->owned_by.size() == 0);
@@ -590,7 +580,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
         //
         if (unchecked) {
           // no solution for this child in UNCHECKED mode
-          TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_child, true);
+          TNodeHelper<TNodeData>::cleanOwnsAndOwnedByLists(sptr_child, true);
         }
 
         for (unsigned k = 0; k < sptr_child->owned_by.size(); k++) {
@@ -613,7 +603,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
           // NOTE: costly O(tree_size)=O(N) test in worst case for
           // 'isDescendent'
           bool _isDescendent =
-              TNodeHelper<T>::isDescendent(sptr_new_parent, sptr_child);
+              TNodeHelper<TNodeData>::isDescendent(sptr_new_parent, sptr_child);
           //
           if (debug())
             std::cout << "DEBUG: isDescendent=" << _isDescendent << " k=" << k
@@ -630,8 +620,10 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
           will_die = false;
           //
           sptr_child->parent = sptr_new_parent;
-          TNodeHelper<T>::removeFromOwnsList(sptr_new_parent, sptr_child);
-          TNodeHelper<T>::removeFromOwnedByList(sptr_new_parent, sptr_child);
+          TNodeHelper<TNodeData>::removeFromOwnsList(sptr_new_parent,
+                                                     sptr_child);
+          TNodeHelper<TNodeData>::removeFromOwnedByList(sptr_new_parent,
+                                                        sptr_child);
           sptr_new_parent->add_child_strong(sptr_child);
         }
         // kill if not held by anyone now
@@ -642,7 +634,8 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
                       << sptr_child->value_to_string() << std::endl;
           //
           // force clean both lists: owned_by and owns
-          bool b1 = TNodeHelper<T>::cleanOwnsAndOwnedByLists(sptr_child);
+          bool b1 =
+              TNodeHelper<TNodeData>::cleanOwnsAndOwnedByLists(sptr_child);
           assert(b1);
           //
           pending.push_back(std::move(sptr_child));

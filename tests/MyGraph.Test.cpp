@@ -272,9 +272,7 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
 
     // forest size is 1
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
-    // no need for this check, anymore... too much like sptr!
-    // REQUIRE(G.entry.get_ref_use_count() == 2);
-    //  => alternative check:
+    //
     auto entry_sptr = G.entry.get_shared();
     REQUIRE(entry_sptr.use_count() == 2);
     //
@@ -409,19 +407,20 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
             G.entry.arrow.remote_node.lock().get());
     //
     REQUIRE(G.entry.get()->val == -1);
-    REQUIRE(G.entry.count_owned_by() == 1);
+    REQUIRE(G.entry.arrow.count_owned_by() == 1);
     //
     REQUIRE(G.entry->neighbors[0].get()->val == 1);
-    REQUIRE(G.entry->neighbors[0].count_owned_by() == 0);
+    REQUIRE(G.entry->neighbors[0].arrow.count_owned_by() == 0);
     REQUIRE(G.entry->neighbors[0].get()->neighbors.size() == 1);
     //
     REQUIRE(G.entry->neighbors[0]->neighbors[0]->val == 2);
-    REQUIRE(G.entry->neighbors[0]->neighbors[0].count_owned_by() == 0);
+    REQUIRE(G.entry->neighbors[0]->neighbors[0].arrow.count_owned_by() == 0);
     //
     REQUIRE(G.entry->neighbors[0]->neighbors[0]->neighbors[0]->val == 3);
-    REQUIRE(
-        G.entry->neighbors[0]->neighbors[0]->neighbors[0].count_owned_by() ==
-        0);
+    REQUIRE(G.entry->neighbors[0]
+                ->neighbors[0]
+                ->neighbors[0]
+                .arrow.count_owned_by() == 0);
     //
     // full cycle: -1 -> 1 -> 2 -> 3 -> -1
     REQUIRE(
@@ -431,13 +430,13 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 4 - MyGraph A-B-C-D-E Detailed") {
                 ->neighbors[0]
                 ->neighbors[0]
                 ->neighbors[0]
-                .count_owned_by() == 1);
+                .arrow.count_owned_by() == 1);
     // try to take lock on owner
     REQUIRE((bool)G.entry->neighbors[0]
                 ->neighbors[0]
                 ->neighbors[0]
                 ->neighbors[0]
-                .getOwnedBy(0));
+                .arrow.getOwnedBy(0));
     // full cycle: -1 -> 1 -> 2 -> 3 -> -1 -> 1
     REQUIRE(G.entry->neighbors[0]
                 ->neighbors[0]

@@ -8,7 +8,7 @@ cc_test(
     srcs = glob([
         "MyGraph.Test.cpp",
     ]),
-    defines = ["CATCH_CONFIG_MAIN", "CYCLES_TOSTRING"],
+    defines = ["CATCH_CONFIG_MAIN", "CYCLES_TOSTRING", "CYCLES_TEST"],
     deps = ["//include/cycles:cycles_hpp", 
     "//include/demo_cptr:demo_cptr_hpp",
      ":catch2_thirdparty"]
@@ -19,7 +19,7 @@ cc_test(
     srcs = glob([
         "MyList.Test.cpp",
     ]),
-    defines = ["CATCH_CONFIG_MAIN", "CYCLES_TOSTRING"],
+    defines = ["CATCH_CONFIG_MAIN", "CYCLES_TOSTRING", "CYCLES_TEST"],
     deps = ["//include/cycles:cycles_hpp", 
     "//include/demo_cptr:demo_cptr_hpp",
      ":catch2_thirdparty"]
@@ -38,6 +38,7 @@ cc_test(
 cc_binary(
     name = "test_demo_graph2",
     srcs = ["demo_graph2.cpp"],
+    defines = ["CYCLES_TEST"],
     deps=["//include/cycles:cycles_hpp", 
     "//include/demo_cptr:demo_cptr_hpp",
     "//include/pre-experiments:pre_experiments_hpp"]

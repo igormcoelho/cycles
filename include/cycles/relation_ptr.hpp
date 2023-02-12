@@ -20,9 +20,9 @@
 
 using std::vector, std::ostream, std::map;  // NOLINT
 
-// ========================
+// =================================
 // relation_ptr using DynowForestV1
-// ========================
+// =================================
 // smart pointer suitable for cycles
 // memory is self-managed
 //-------------------------
@@ -36,10 +36,11 @@ template <typename T, class DOF = DynowForestV1>
 // NOLINTNEXTLINE
 class relation_ptr {
   using X = TNodeData;
-  // TODO(igormcoelho): make private!
- public:
-  using pool_type = DOF;
-  // TODO(igormcoelho): is this weak or strong?
+
+#ifdef CYCLES_TEST
+ public:  // NOLINT
+#endif
+
 #ifdef WEAK_POOL_PTR
   wptr<DOF> ctx;
 #else
@@ -51,6 +52,8 @@ class relation_ptr {
   bool debug_flag_ptr{false};
 
  public:
+  using pool_type = DOF;
+
   void setDebug(bool b) {
     debug_flag_ptr = b;
     // auto node = remote_node.lock();
@@ -87,9 +90,8 @@ class relation_ptr {
   }
     */
 
-  // ======= C0 nullptr ===============
+  // ======= C0 nullptr =======
   relation_ptr() {
-    // this->is_owned_by_node = false;
     this->arrow = TArrowV1<X>{};
     assert(this->arrow.is_null());
   }
@@ -97,7 +99,6 @@ class relation_ptr {
   // ======= C0' nullptr (allow nullptr implicit conversion) ===============
   // NOLINTNEXTLINE
   relation_ptr(std::nullptr_t t) {
-    // this->arrow.is_owned_by_node = false;
     this->arrow = TArrowV1<X>{};
     assert(arrow.is_null());
   }
@@ -247,6 +248,9 @@ class relation_ptr {
   relation_ptr(const relation_ptr<T>& copy) = delete;
 
  public:
+  template <typename U, typename DOF2>
+  friend class relation_ptr;
+
   // ======= M1 move constructor =======
   // simply move smart pointer to all elements: ctx, ref and remote_node
   //
@@ -254,15 +258,8 @@ class relation_ptr {
   //
   template <class U, class = typename std::enable_if<
                          std::is_convertible<U*, T*>::value, void>::type>
-  relation_ptr(relation_ptr<U>&& corpse) noexcept
-      : ctx{corpse.ctx},
-        // remote_node{std::move(corpse.remote_node)},
-        // owned_by_node{std::move(corpse.owned_by_node)},
-        // is_owned_by_node{corpse.is_owned_by_node},
-        arrow{std::move(corpse.arrow)} {
-    // corpse.remote_node.reset();
-    // corpse.owned_by_node.reset();
-    // corpse.is_owned_by_node = false;
+  relation_ptr(relation_ptr<U, DOF>&& corpse) noexcept  // NOLINT
+      : ctx{std::move(corpse.ctx)}, arrow{std::move(corpse.arrow)} {
     if (get_ctx()) this->debug_flag_ptr = get_ctx()->debug();
   }
 
@@ -299,27 +296,14 @@ class relation_ptr {
     // - each weak owned_by link corresponds to weak owns link
     // - each strong child link corresponds to a weak parent link
     //
-    // auto [orig, target]
-    // this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.remote_node.lock(),
-    //                                             owner.remote_node.lock());
     this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.arrow.remote_node.lock(),
                                                 owner.arrow.remote_node.lock());
-
-    // remember ownership (for future deletion?)
-    // this->remote_node = target;
-    // this->owned_by_node = orig;
-    //
-    // this->owned_by_node = owner.remote_node;
-    bool is_owned_by_node = true;
-    assert(this->arrow.is_owned_by_node == is_owned_by_node);
+    assert(this->arrow.is_owned_by_node);
     // OWNER MUST EXIST... AT LEAST NOW!
-    assert(this->arrow.owned_by_node.lock());  // TODO: crazy test.. why?
+    assert(this->arrow.owned_by_node.lock());
     if (debug())
       std::cout << "finish c4: stored owner in owned_by_node" << std::endl;
   }
-
- private:
-  int get_ref_use_count() const { return this->get_shared().use_count(); }
 
  public:
   void destroy() {
@@ -328,7 +312,7 @@ class relation_ptr {
     // Maybe just consider some "unique_ptr forest" for now?
     //
     if (debug()) {
-      std::cout << "destroy: ref_use_count=" << this->get_ref_use_count();
+      std::cout << "destroy: ref_use_count=" << this->get_shared().use_count();
       if (!has_get())
         std::cout << " get(): NULL";
       else
@@ -346,14 +330,11 @@ class relation_ptr {
                // (MUST KEEP else below, otherwise it may break(?))
     } else {
       //
-      bool isRoot = this->arrow.is_root();
-      bool isOwned = this->arrow.is_owned();
-      //
-      assert(isRoot || isOwned);
+      assert(this->arrow.is_root() || this->arrow.is_owned());
       //
       if (debug()) std::cout << "destroy: is_root() || is_owned()" << std::endl;
 
-      this->get_ctx()->op4_remove(this->arrow, isRoot, isOwned);
+      this->get_ctx()->op4_remove(this->arrow);
 
       //
       // end-if is_root || is_owned
@@ -362,8 +343,7 @@ class relation_ptr {
     if (debug()) std::cout << "destroy: last cleanups" << std::endl;
     //
     this->arrow = TArrowV1<X>{};  // CLEAR
-    bool is_owned_by_node = false;
-    assert(this->arrow.is_owned_by_node == is_owned_by_node);
+    assert(!this->arrow.is_owned_by_node);
 //
 #ifdef WEAK_POOL_PTR
     // nothing to do
@@ -389,39 +369,18 @@ class relation_ptr {
     if (debug()) std::cout << "end ~relation_ptr()" << std::endl;
   }
 
-  // TODO: remove this method!
-  int count_owned_by() const {
-    auto node_ptr = this->arrow.remote_node.lock();
-    assert(node_ptr);
-    // AVOID direct usage of TNode here...
-    return node_ptr->owned_by.size();
-    // return this->get_ctx()->opx_countOwnedBy(node_ptr);
-  }
-
-  // TODO: remove this method!
-  auto getOwnedBy(int idx) const {
-    auto node_ptr = this->arrow.remote_node.lock();
-    assert(node_ptr);
-    // AVOID direct usage of TNode here...
-    // return node_ptr->owned_by[idx].lock();
-    return node_ptr->owned_by.at(idx).lock();
-  }
-
  private:
   // no copy assignment
   relation_ptr& operator=(const relation_ptr& other) = delete;
 
  public:
   relation_ptr& operator=(relation_ptr&& corpse) noexcept {
-    if (debug()) std::cout << "begin operator==(&&)" << std::endl;
+    if (debug()) std::cout << "begin operator=(&&)" << std::endl;
     destroy();
     if (debug()) std::cout << "will move assign" << std::endl;
     this->ctx = std::move(corpse.ctx);
     this->debug_flag_ptr = corpse.debug_flag_ptr;
-    // this->remote_node = std::move(corpse.remote_node);
-    // this->owned_by_node = std::move(corpse.owned_by_node);
     this->arrow = std::move(corpse.arrow);
-    // this->is_owned_by_node = std::move(corpse.is_owned_by_node);
     if (debug()) std::cout << "end operator==(&&)" << std::endl;
 
     return *this;
@@ -475,13 +434,8 @@ class relation_ptr {
   }
 
   bool operator==(const relation_ptr<T>& other) const {
-    // do not comparing null pointers as 'true' (why?)... just feels like
-    // right now. (thinking more of refs than pointers) (this->has_get() &&
-    // other.has_get()) &&
-    // TODO: think more.
-    return (this->has_get() == other.has_get()) &&
-           (get_ctx() == other.get_ctx()) &&
-           (get() == other.get());  //&& (ref == other.ref);
+    // context and pointers should be the same
+    return (get_ctx() == other.get_ctx()) && (get() == other.get());
   }
 
  private:
