@@ -35,8 +35,6 @@ using namespace detail;
 template <typename T, class DOF = DynowForestV1>
 // NOLINTNEXTLINE
 class relation_ptr {
-  using X = TNodeData;
-
 #ifdef CYCLES_TEST
  public:  // NOLINT
 #endif
@@ -47,17 +45,10 @@ class relation_ptr {
   sptr<DOF> ctx;
 #endif
   //
-  TArrowV1<X> arrow;
+  TArrowV1<TNodeData> arrow;
 
  public:
   using pool_type = DOF;
-
-  /*
-    void setDebug(bool b) {
-      debug_flag_ptr = b;
-      arrow.setDebug(b);
-    }
-    */
 
  public:
 #ifdef WEAK_POOL_PTR
@@ -87,7 +78,7 @@ class relation_ptr {
 
   // implementation for constructor C0 and C0'
   void setup_c0() {
-    this->arrow = TArrowV1<X>{};
+    this->arrow = TArrowV1<TNodeData>{};
     assert(arrow.is_null());
   }
 
@@ -110,7 +101,7 @@ class relation_ptr {
   void setup_c1(T* t) {
     // if no context or null pointer, this is null arrow
     if ((!t) || (!get_ctx())) {
-      this->arrow = TArrowV1<X>{};
+      this->arrow = TArrowV1<TNodeData>{};
       assert(arrow.is_null());
       return;
     }
@@ -129,7 +120,7 @@ class relation_ptr {
   relation_ptr(T* t, const relation_ptr<T>& owner) : ctx{owner.ctx} {
     // if no context or null pointer, this is null arrow
     if ((!t) || (!get_ctx()) || owner.arrow.is_null()) {
-      this->arrow = TArrowV1<X>{};
+      this->arrow = TArrowV1<TNodeData>{};
       assert(arrow.is_null());
       return;
     }
@@ -154,7 +145,7 @@ class relation_ptr {
       : ctx{copy.ctx} {
     // if no context or null pointer, this is null arrow
     if (!get_ctx() || copy.arrow.is_null() || owner.arrow.is_null()) {
-      this->arrow = TArrowV1<X>{};
+      this->arrow = TArrowV1<TNodeData>{};
       assert(arrow.is_null());
       return;
     }
@@ -210,7 +201,7 @@ class relation_ptr {
     }
 
     // CLEAR (even if it's null already...)
-    this->arrow = TArrowV1<X>{};
+    this->arrow = TArrowV1<TNodeData>{};
     assert(this->arrow.is_null());
 //
 #ifdef WEAK_POOL_PTR
@@ -299,14 +290,13 @@ class relation_ptr {
 
   // returns shared pointer to data
   sptr<T> get_shared() const {
-    // TODO: use arrow.get_data_shared()
-    auto sremote_node = this->arrow.remote_node.lock();
-    if (!sremote_node) {
+    if (!get_ctx()) return nullptr;
+    sptr<TNodeData> sdata = get_ctx()->op0_getSharedData(this->arrow);
+    if (!sdata)
       return nullptr;
-    } else {
+    else
       // NOLINTNEXTLINE
-      return sptr<T>{sremote_node->value, (T*)(sremote_node->value->p)};
-    }
+      return sptr<T>{sdata, (T*)(sdata->p)};
   }
 
   // returns raw pointer to data

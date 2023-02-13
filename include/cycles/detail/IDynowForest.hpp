@@ -38,7 +38,6 @@ class IArrow {
 #if __cplusplus > 201703L  // c++20 supported
 template <class T>
 concept XArrowType = requires(T self, bool b) {
-  {self.get_data_shared()};  // NOLINT
   { self.is_null() } -> std::convertible_to<bool>;
   { self.is_root() } -> std::convertible_to<bool>;
   { self.is_owned() } -> std::convertible_to<bool>;
@@ -58,6 +57,7 @@ class IDynowForest {
   using DynowNodeType = XNode;
   using DynowTreeType = XTree;
   using DynowArrowType = XArrow;
+  //
   virtual ~IDynowForest() = default;
 
   // debug helpers
@@ -70,8 +70,9 @@ class IDynowForest {
   virtual void setAutoCollect(bool ac) {}
   // helpers
   virtual int getForestSize() = 0;  // testing only?
-
   //
+  // op0: get type-erased data from arrow as shared_ptr
+  virtual sptr<TNodeData> op0_getSharedData(DynowArrowType arc) = 0;
   // op1: give 'data' and get arrow type (two weak pointers)
   virtual DynowArrowType op1_addNodeToNewTree(sptr<TNodeData>) = 0;
   // op2: give 'node locator' (weak or strong?) and 'data... returns 'arc'

@@ -77,17 +77,6 @@ class TArrowV1 : public IArrow {
   }
 
  public:
-  // returns shared pointer to data
-  sptr<X> get_data_shared() const {
-    sptr<TNode<X>> sremote_node = this->remote_node.lock();
-    if (!sremote_node) {
-      return nullptr;
-    } else {
-      // NOLINTNEXTLINE
-      return sptr<X>{sremote_node->value, (X*)(sremote_node->value->p)};
-    }
-  }
-
   // ========== TWO FUNDAMENTAL PROPERTIES ===========
   // A) is_null
   // B) is_root

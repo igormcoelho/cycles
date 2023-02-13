@@ -69,6 +69,14 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
  public:
   // main operations
 
+  sptr<TNodeData> op0_getSharedData(TArrowV1<TNodeData> arrow) override {
+    sptr<TNode<TNodeData>> sremote_node = arrow.remote_node.lock();
+    if (!sremote_node)
+      return nullptr;
+    else
+      return sremote_node->value;
+  }
+
   TArrowV1<TNodeData> op1_addNodeToNewTree(sptr<TNodeData> ref) override {
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
     sptr<TNode<TNodeData>> sptr_remote_node{new TNode<TNodeData>{ref}};
