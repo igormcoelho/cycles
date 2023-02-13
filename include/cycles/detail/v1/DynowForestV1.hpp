@@ -32,8 +32,10 @@ namespace cycles {
 namespace detail {
 
 // NOLINTNEXTLINE
-class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
-                                          TArrowV1<TNodeData>> {
+// class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
+//                                           TArrowV1<TNodeData>> {
+// NOLINTNEXTLINE
+class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
   // DynowForestV1 is type-erased by means of TNodeData
  public:
   // collect strategy parameters

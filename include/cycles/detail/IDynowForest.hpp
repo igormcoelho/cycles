@@ -46,15 +46,15 @@ concept XArrowType = requires(T self, bool b) {
 #endif
 
 #if __cplusplus > 201703L  // c++20 supported
-template <class XNode, class XTree, XArrowType XArrow>
+template <XArrowType XArrow>
 #else
-template <class XNode, class XTree, class XArrow>
+template <class XArrow>
 #endif
 
 class IDynowForest {
  public:
-  using DynowNodeType = XNode;
-  using DynowTreeType = XTree;
+  // using DynowNodeType = XNode;
+  // using DynowTreeType = XTree;
   using DynowArrowType = XArrow;
   //
   virtual ~IDynowForest() = default;
