@@ -41,7 +41,6 @@ concept XArrowType = requires(T self, bool b) {
   { self.is_null() } -> std::convertible_to<bool>;
   { self.is_root() } -> std::convertible_to<bool>;
   { self.is_owned() } -> std::convertible_to<bool>;
-  { self.setIsOwnedByNode(b) } -> std::same_as<void>;
   // NOLINTNEXTLINE
 };
 #endif

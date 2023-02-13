@@ -48,8 +48,6 @@ class TArrowV1 : public IArrow {
   wptr<TNode<X>> owned_by_node;
 
  public:
-  void setIsOwnedByNode(bool b) { this->is_owned_by_node = b; }
-
   void setDebug(bool b) {
     debug_flag_arrow = b;
     auto node = remote_node.lock();
@@ -77,7 +75,7 @@ class TArrowV1 : public IArrow {
   }
 
  public:
-  // ========== TWO FUNDAMENTAL PROPERTIES ===========
+  // ========== FUNDAMENTAL PROPERTIES FOR ARROW ===========
   // A) is_null
   // B) is_root
   // C) is_owned
