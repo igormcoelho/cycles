@@ -71,15 +71,21 @@ class IDynowForest {
   virtual int getForestSize() = 0;  // testing only?
   //
   // op0: get type-erased data from arrow as shared_ptr
-  virtual sptr<TNodeData> op0_getSharedData(DynowArrowType arc) = 0;
+  virtual sptr<TNodeData> op0_getSharedData(const DynowArrowType& arc) = 0;
   // op1: give 'data' and get arrow type (two weak pointers)
   virtual DynowArrowType op1_addNodeToNewTree(sptr<TNodeData>) = 0;
   // op2: give 'node locator' (weak or strong?) and 'data... returns 'arc'
-  virtual DynowArrowType op2_addChildStrong(sptr<DynowNodeType>,
+  // virtual DynowArrowType op2_addChildStrong(sptr<DynowNodeType>,
+  //                                           sptr<TNodeData>) = 0;
+  virtual DynowArrowType op2_addChildStrong(const DynowArrowType&,
                                             sptr<TNodeData>) = 0;
+
   // op3: give two 'node locators' and get 'arc'
-  virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType> owned,
-                                            sptr<DynowNodeType> owner) = 0;
+  // virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType> owned,
+  //                                          sptr<DynowNodeType> owner) = 0;
+  virtual DynowArrowType op3_weakSetOwnedBy(const DynowArrowType& owned,
+                                            const DynowArrowType& owner) = 0;
+
   // op4: give 'arc' reference (to clean it) and no return (void)
   // NOLINTNEXTLINE
   virtual void op4_remove(DynowArrowType& arrow) = 0;

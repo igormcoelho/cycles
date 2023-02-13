@@ -34,9 +34,7 @@ namespace detail {
 // NOLINTNEXTLINE
 class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
                                           TArrowV1<TNodeData>> {
-  // DynowForestV1 is now type-erased, using T=TNodeData
-  // using T = TNodeData;
-
+  // DynowForestV1 is type-erased by means of TNodeData
  public:
   // collect strategy parameters
   //
@@ -69,7 +67,7 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
  public:
   // main operations
 
-  sptr<TNodeData> op0_getSharedData(TArrowV1<TNodeData> arrow) override {
+  sptr<TNodeData> op0_getSharedData(const TArrowV1<TNodeData>& arrow) override {
     sptr<TNode<TNodeData>> sremote_node = arrow.remote_node.lock();
     if (!sremote_node)
       return nullptr;
@@ -104,8 +102,12 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     return arrow;
   }
 
-  TArrowV1<TNodeData> op2_addChildStrong(sptr<TNode<TNodeData>> myNewParent,
-                                         sptr<TNodeData> ref) override {
+  // TArrowV1<TNodeData> op2_addChildStrong(sptr<TNode<TNodeData>> myNewParent,
+  //                                        sptr<TNodeData> ref) override {
+  TArrowV1<TNodeData> op2_addChildStrong(
+      const TArrowV1<TNodeData>& arrowToParent, sptr<TNodeData> ref) override {
+    auto myNewParent = arrowToParent.remote_node.lock();
+    assert(myNewParent);  // TODO: remove // NOLINT
     // WE NEED TO HOLD SPTR locally, UNTIL we store it in definitive sptr tree
     sptr<TNode<TNodeData>> sptr_mynode{new TNode<TNodeData>{ref}};
     //
@@ -121,9 +123,16 @@ class DynowForestV1 : public IDynowForest<TNode<TNodeData>, Tree<TNodeData>,
     return arrow;
   }
 
+  // TArrowV1<TNodeData> op3_weakSetOwnedBy(
+  //     sptr<TNode<TNodeData>> this_remote_node,
+  //     sptr<TNode<TNodeData>> owner_remote_node) override {
   TArrowV1<TNodeData> op3_weakSetOwnedBy(
-      sptr<TNode<TNodeData>> this_remote_node,
-      sptr<TNode<TNodeData>> owner_remote_node) override {
+      const TArrowV1<TNodeData>& arrowToOwned,
+      const TArrowV1<TNodeData>& arrowToOwner) override {
+    auto this_remote_node = arrowToOwned.remote_node.lock();
+    auto owner_remote_node = arrowToOwner.remote_node.lock();
+    assert(this_remote_node);   // TODO: remove // NOLINT
+    assert(owner_remote_node);  // TODO: remove // NOLINT
     //
     // it seems that best logic is:
     // - each weak owned_by link corresponds to weak owns link

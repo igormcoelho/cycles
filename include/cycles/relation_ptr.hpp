@@ -5,20 +5,14 @@
 #define CYCLES_RELATION_PTR_HPP_  // NOLINT
 
 // C++
-#include <iostream>
-#include <map>
-#include <string>  // ONLY FOR getType HELPER??
-#include <utility>
-#include <vector>
+#include <memory>
 
 //
 #include <cycles/detail/utils.hpp>
 #include <cycles/detail/v1/DynowForestV1.hpp>
-#include <cycles/detail/v1/TArrowV1.hpp>
-#include <cycles/detail/v1/TreeV1.hpp>
 #include <cycles/relation_pool.hpp>
 
-using std::vector, std::ostream, std::map;  // NOLINT
+// using std::vector, std::ostream, std::map;  // NOLINT
 
 // =================================
 // relation_ptr using DynowForestV1
@@ -35,6 +29,13 @@ using namespace detail;
 template <typename T, class DOF = DynowForestV1>
 // NOLINTNEXTLINE
 class relation_ptr {
+ public:
+  // publicly export pool type and arrow type
+  using pool_type = DOF;
+  using arrow_type = typename DOF::DynowArrowType;
+
+ private:
+  // internal variables come here...
 #ifdef CYCLES_TEST
  public:  // NOLINT
 #endif
@@ -45,10 +46,7 @@ class relation_ptr {
   sptr<DOF> ctx;
 #endif
   //
-  TArrowV1<TNodeData> arrow;
-
- public:
-  using pool_type = DOF;
+  arrow_type arrow;
 
  public:
 #ifdef WEAK_POOL_PTR
@@ -78,7 +76,7 @@ class relation_ptr {
 
   // implementation for constructor C0 and C0'
   void setup_c0() {
-    this->arrow = TArrowV1<TNodeData>{};
+    this->arrow = arrow_type{};
     assert(arrow.is_null());
   }
 
@@ -101,7 +99,7 @@ class relation_ptr {
   void setup_c1(T* t) {
     // if no context or null pointer, this is null arrow
     if ((!t) || (!get_ctx())) {
-      this->arrow = TArrowV1<TNodeData>{};
+      this->arrow = arrow_type{};
       assert(arrow.is_null());
       return;
     }
@@ -120,7 +118,7 @@ class relation_ptr {
   relation_ptr(T* t, const relation_ptr<T>& owner) : ctx{owner.ctx} {
     // if no context or null pointer, this is null arrow
     if ((!t) || (!get_ctx()) || owner.arrow.is_null()) {
-      this->arrow = TArrowV1<TNodeData>{};
+      this->arrow = arrow_type{};
       assert(arrow.is_null());
       return;
     }
@@ -129,8 +127,7 @@ class relation_ptr {
     // sanity check on 'make_sptr'
     assert(ref);
     // invoke op2
-    this->arrow =
-        get_ctx()->op2_addChildStrong(owner.arrow.remote_node.lock(), ref);
+    this->arrow = get_ctx()->op2_addChildStrong(owner.arrow, ref);
     // sanity check
     assert(this->arrow.is_owned());
   }
@@ -145,7 +142,7 @@ class relation_ptr {
       : ctx{copy.ctx} {
     // if no context or null pointer, this is null arrow
     if (!get_ctx() || copy.arrow.is_null() || owner.arrow.is_null()) {
-      this->arrow = TArrowV1<TNodeData>{};
+      this->arrow = arrow_type{};
       assert(arrow.is_null());
       return;
     }
@@ -159,12 +156,9 @@ class relation_ptr {
     // both nodes exist already (copy node and owner node)
     // register WEAK ownership in tree using 'op3_weakSetOwnedBy'
     //
-    this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.arrow.remote_node.lock(),
-                                                owner.arrow.remote_node.lock());
+    this->arrow = get_ctx()->op3_weakSetOwnedBy(copy.arrow, owner.arrow);
     // sanity check
     assert(this->arrow.is_owned());
-    // sanity check: OWNER MUST EXIST... AT LEAST FOR NOW!
-    assert(this->arrow.owned_by_node.lock());
   }
 
   // friend helper for constructor M1
@@ -201,7 +195,7 @@ class relation_ptr {
     }
 
     // CLEAR (even if it's null already...)
-    this->arrow = TArrowV1<TNodeData>{};
+    this->arrow = arrow_type{};
     assert(this->arrow.is_null());
 //
 #ifdef WEAK_POOL_PTR
@@ -240,9 +234,8 @@ class relation_ptr {
     assert(!this->arrow.is_null());
     // NOTE: owner cannot be nullptr
     assert(!owner.arrow.is_null());
-    // int sz_owns = owner.arrow.remote_node.lock()->owns.size();
+    //
     auto r = relation_ptr<T>(*this, owner);
-    // assert(sz_owns + 1 == owner.arrow.remote_node.lock()->owns.size());
     //
     return r;
   }
