@@ -33,6 +33,7 @@ class relation_ptr {
   // publicly export pool type and arrow type
   using pool_type = DOF;
   using arrow_type = typename DOF::DynowArrowType;
+  using erased_type = typename arrow_type::erased_type;
 
  private:
   // internal variables come here...
@@ -104,13 +105,12 @@ class relation_ptr {
       return;
     }
     // keep local until passed to forest
-    sptr<TNodeData> ref = TNodeData::make_sptr<T>(t);
+    auto ref = erased_type::make_data(t);
     // sanity check on 'make_sptr'
     assert(ref);
     // using op1: we only store weak reference here
     this->arrow = get_ctx()->op1_addNodeToNewTree(ref);
     // sanity check on 'op1'
-    assert(!this->arrow.is_owned_by_node);
     assert(arrow.is_root());
   }
 
@@ -123,7 +123,7 @@ class relation_ptr {
       return;
     }
     // KEEP LOCAL
-    sptr<TNodeData> ref = TNodeData::make_sptr<T>(t);
+    auto ref = erased_type::make_data(t);
     // sanity check on 'make_sptr'
     assert(ref);
     // invoke op2
@@ -190,7 +190,12 @@ class relation_ptr {
       // arrow will be fully cleared in next step
     } else {
       assert(this->arrow.is_root() || this->arrow.is_owned());
-      this->get_ctx()->op4_remove(this->arrow);
+      if (!this->get_ctx()) {
+        std::cout << "WARNING: no context to destroy()... why this happened? ";
+        std::cout << "arrow getType = " << arrow.getType() << std::endl;
+      } else {
+        this->get_ctx()->op4_remove(this->arrow);
+      }
       // end-if is_root || is_owned
     }
 
@@ -246,23 +251,13 @@ class relation_ptr {
     return self_ptr;
   }
 
-  // NOT implemented yet
   auto get_unowned() {
-    // cannot get pointer from null
-    if (this->arrow.is_null()) {
-      // return null
-      return relation_ptr<T>{};
-    }
-    // cannot currently make copies of unowned
-    if (this->arrow.is_root()) {
-      // return null
-      return relation_ptr<T>{};
-    }
-    // this must be owned
-    assert(this->arrow.is_owned());
-    std::cout << "ERROR: must implement unowned from owned logic!" << std::endl;
-    assert(false);
-    return relation_ptr<T>{};
+    if (!get_ctx()) return relation_ptr<T>{};
+    auto arr = get_ctx()->op5_copyNodeToNewTree(this->arrow);
+    // manually create relation_ptr
+    relation_ptr<T> p{};
+    p.arrow = std::move(arr);
+    return p;
   }
 
   bool operator==(const relation_ptr<T>& other) const {
@@ -284,6 +279,7 @@ class relation_ptr {
   // returns shared pointer to data
   sptr<T> get_shared() const {
     if (!get_ctx()) return nullptr;
+    // TODO: manage other types than 'sptr<TNodeData>'
     sptr<TNodeData> sdata = get_ctx()->op0_getSharedData(this->arrow);
     if (!sdata)
       return nullptr;

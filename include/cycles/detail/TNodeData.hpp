@@ -117,6 +117,11 @@ class TNodeData {
   }
 
   template <class T>
+  static sptr<TNodeData> make_data(T* ptr) {
+    return make_sptr(ptr);
+  }
+
+  template <class T>
   static sptr<TNodeData> make_sptr(T* ptr) {
     if constexpr (std::is_void<T>::value) {
       // NOLINTNEXTLINE

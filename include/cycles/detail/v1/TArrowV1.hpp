@@ -35,6 +35,13 @@ class TArrowV1 : public IArrow {
   bool debug_flag_arrow{false};
 
  public:
+  // Default data_type is sptr<TNodeData>
+  // It must be the same as TNode<X>::data_type
+  using data_type = typename TNode<X>::data_type;
+  using node_type = TNode<X>;
+  using erased_type = X;
+
+ public:
   bool is_owned_by_node{false};
 
  public:

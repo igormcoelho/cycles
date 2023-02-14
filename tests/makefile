@@ -5,7 +5,7 @@ test_demo_graph2: demo_graph2.cpp
 	valgrind ../build/test_demo_graph2
 
 test_catch2:
-	g++ TNode.Test.cpp MyGraph.Test.cpp MyList.Test.cpp  -g --std=c++20 -Wfatal-errors -DCYCLES_TEST -I../include/ -I../src -Ithirdparty/ thirdparty/catch2/catch_amalgamated.cpp -DCYCLES_TOSTRING -o ../build/test_catch2 
+	g++ TNode.Test.cpp MyGraph.Test.cpp MyList.Test.cpp  -g --std=c++17 -Wfatal-errors -DCYCLES_TEST -I../include/ -I../src -Ithirdparty/ thirdparty/catch2/catch_amalgamated.cpp -DCYCLES_TOSTRING -o ../build/test_catch2 
 	valgrind --leak-check=full ../build/test_catch2
 
 test_quick_bench: bench_list_tree_build

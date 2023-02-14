@@ -38,6 +38,7 @@ class IArrow {
 #if __cplusplus > 201703L  // c++20 supported
 template <class T>
 concept XArrowType = requires(T self, bool b) {
+  typename T::data_type;  // default is sptr<TNodeData>
   { self.is_null() } -> std::convertible_to<bool>;
   { self.is_root() } -> std::convertible_to<bool>;
   { self.is_owned() } -> std::convertible_to<bool>;
@@ -50,12 +51,12 @@ template <XArrowType XArrow>
 #else
 template <class XArrow>
 #endif
-
 class IDynowForest {
  public:
-  // using DynowNodeType = XNode;
-  // using DynowTreeType = XTree;
   using DynowArrowType = XArrow;
+  // Default data type is sptr<TNodeData>
+  // It must be the same as XArrow::data_type
+  using DynowDataType = typename XArrow::data_type;
   //
   virtual ~IDynowForest() = default;
 
@@ -66,19 +67,25 @@ class IDynowForest {
   // base methods or not?
   virtual void collect() = 0;
   virtual bool getAutoCollect() { return true; }
-  virtual void setAutoCollect(bool ac) {}
+  // NOTE 1: setAutoCollect will return 'false' if not supported
+  // NOTE 2: setAutoCollect should collect() if 'true' is passed (even
+  // if not supported!)
+  virtual bool setAutoCollect(bool ac) {
+    if (ac) collect();
+    return false;
+  }
   // helpers
   virtual int getForestSize() = 0;  // testing only?
   //
   // op0: get type-erased data from arrow as shared_ptr
-  virtual sptr<TNodeData> op0_getSharedData(const DynowArrowType& arc) = 0;
+  virtual DynowDataType op0_getSharedData(const DynowArrowType& arc) = 0;
   // op1: give 'data' and get arrow type (two weak pointers)
-  virtual DynowArrowType op1_addNodeToNewTree(sptr<TNodeData>) = 0;
+  virtual DynowArrowType op1_addNodeToNewTree(DynowDataType) = 0;
   // op2: give 'node locator' (weak or strong?) and 'data... returns 'arc'
   // virtual DynowArrowType op2_addChildStrong(sptr<DynowNodeType>,
   //                                           sptr<TNodeData>) = 0;
   virtual DynowArrowType op2_addChildStrong(const DynowArrowType&,
-                                            sptr<TNodeData>) = 0;
+                                            DynowDataType) = 0;
 
   // op3: give two 'node locators' and get 'arc'
   // virtual DynowArrowType op3_weakSetOwnedBy(sptr<DynowNodeType> owned,
@@ -89,6 +96,9 @@ class IDynowForest {
   // op4: give 'arc' reference (to clean it) and no return (void)
   // NOLINTNEXTLINE
   virtual void op4_remove(DynowArrowType& arrow) = 0;
+
+  // op5: receive 'arc' and make 'unowned' link
+  virtual DynowArrowType op5_copyNodeToNewTree(const DynowArrowType& arrow) = 0;
   // cleanup method (for pool)
   virtual void destroyAll() = 0;
 };

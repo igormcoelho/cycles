@@ -35,6 +35,11 @@ template <typename T = TNodeData>
 class TNode {
   //
  public:
+  // default data_type is sptr<TNodeData>
+  using data_type = sptr<T>;
+  using erased_type = T;
+
+ public:
   //
   sptr<T> value;
   bool debug_flag{false};
@@ -102,12 +107,16 @@ class TNode {
     }
     tnode_count--;
     //
-    if (owns.size() > 0)
+    if (owns.size() > 0) {
       std::cout << "~TNode SERIOUS WARNING: non-zero owns list. |owns|="
                 << owns.size() << std::endl;
-    if (owned_by.size() > 0)
+      std::cout << "CHECK ~TNode(" << value_to_string() << ")" << std::endl;
+    }
+    if (owned_by.size() > 0) {
       std::cout << "~TNode SERIOUS WARNING: non-zero owned_by list. |owns|="
                 << owned_by.size() << std::endl;
+      std::cout << "CHECK ~TNode(" << value_to_string() << ")" << std::endl;
+    }
     // =====================================================
     // We should prevent non-empty |owns| and |owned_by|, as
     // this strategy allows removing a lot of code below...

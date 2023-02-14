@@ -997,6 +997,26 @@ TEST_CASE("CyclesTestGraph: TEST_CASE 11 - MyGraph get_unowned") {
     REQUIRE(entry2.arrow.is_null());
     // check forest structure
     REQUIRE(G.my_ctx().lock()->getForestSize() == 1);
+    // create owned node and then make unowned copy
+    {
+      auto cptr1 = G.make_node(1.0);
+      G.entry->neighbors.push_back(cptr1.get_owned(G.entry));
+      REQUIRE(cptr1.arrow.is_root());
+      REQUIRE(G.entry->neighbors[0].arrow.is_owned());
+      // try to copy unowned of neighbor 0
+      auto unowned1 = G.entry->neighbors[0].get_unowned();
+      REQUIRE(unowned1.arrow.is_null());
+      // drop cptr1
+    }
+
+    // try again with unowned1 (with cptr1 dead now)
+    auto unowned1 = G.entry->neighbors[0].get_unowned();
+    REQUIRE(unowned1.arrow.is_root());
+
+    // try again (II) with unowned2 - but cannot have double unonowned (on v1)
+    auto unowned2 = G.entry->neighbors[0].get_unowned();
+    REQUIRE(unowned2.arrow.is_null());
+
     //
     // destroy unowned/root reference
     //

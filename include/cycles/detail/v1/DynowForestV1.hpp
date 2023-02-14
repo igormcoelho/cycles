@@ -42,7 +42,13 @@ class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
   //
   bool _auto_collect{true};
   bool getAutoCollect() override { return _auto_collect; }
-  void setAutoCollect(bool ac) override { _auto_collect = ac; }
+  bool setAutoCollect(bool ac) override {
+    _auto_collect = ac;
+    // if true, collect() now!
+    if (ac) collect();
+    // return 'true' if setAutoCollect(...) is supported
+    return true;
+  }
   //
   bool _debug{false};
   bool debug() override { return _debug; }
@@ -393,6 +399,92 @@ class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
   }
 
  public:
+  // op5: receive 'arc' and make 'unowned' link
+  TArrowV1<TNodeData> op5_copyNodeToNewTree(
+      const TArrowV1<TNodeData>& arrow) override {
+    // cannot get pointer from null or copy unowned
+    if (arrow.is_null() || arrow.is_root()) {
+      // return null
+      TArrowV1<TNodeData> arr;
+      assert(arr.is_null());
+      return arr;
+    }
+    // only case supported by V1: copy of owned
+    assert(arrow.is_owned());
+
+    // (1) ensure that remote_node is NOT root of any existing tree...
+    // Maybe this check could be avoided in the future, TODO: think
+    // FIXED: in fact, we need to find if DATA is already there, right?
+    // So, maybe we can adjust forest map in the future, to hold data->tree, not
+    // node->tree...
+
+    auto sptr_mynode = arrow.remote_node.lock();
+    assert(sptr_mynode);
+
+    // C++17 required (if C++11 is desired, change this part)
+    bool found = false;
+    for (auto const& [key, val] : this->forest) {
+      if (key->value.get() == sptr_mynode->value.get()) {
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      // Cannot make double copy of unowned in this forest v1 structure.
+      // Designed solution: return null
+      TArrowV1<TNodeData> arr;
+      assert(arr.is_null());
+      return arr;
+    }
+    // GOOD: data in tree not existing, can make unowned copy
+
+    // copy data sptr into new node
+    sptr<TNode<TNodeData>> sptrNewNode{
+        new TNode<TNodeData>{sptr_mynode->value}};
+
+    // (2) create new Tree and make remote_node its root
+    sptr<Tree<TNodeData>> stree(new Tree<TNodeData>{});
+    // STRONG storage of remote node pointer
+    stree->set_root(sptrNewNode);
+    this->forest[sptrNewNode] = stree;
+
+    // (3) must remove strong link from old parent to remote_node
+    auto sptr_oldParent = arrow.owned_by_node.lock();
+    assert(sptr_oldParent);
+
+    bool r = sptr_oldParent->remove_child(sptr_mynode.get());
+    if (!r)
+      std::cout << "SERIOUS WARNING: is this a LOOP node (op5)?" << std::endl;
+    assert(r);
+
+    // (4) must include weak link from old parent to remote_node
+    TNode<TNodeData>::add_weak_link_owned(sptr_mynode, sptr_oldParent);
+
+    // (5) add strong child: sptrNewNode -> sptr_mynode (otherwise sptr_mynode
+    // will die)
+
+    //
+    // register STRONG ownership in tree
+    //
+    sptr_mynode->parent = sptrNewNode;
+    sptrNewNode->add_child_strong(sptr_mynode);
+
+    // (6) create root arrow
+    //
+    TArrowV1<TNodeData> arr;
+    arr.is_owned_by_node = false;
+    arr.remote_node = sptrNewNode;
+    assert(arr.is_root());
+    // sanity action
+    sptrNewNode = nullptr;
+    // sanity action
+    sptr_mynode = nullptr;
+    //
+    return arr;
+  }
+
+ public:
   void destroyAll() override {
     if (debug())
       std::cout << "DynowForestV1 destroy() forest_size =" << forest.size()
@@ -497,7 +589,8 @@ class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
   }
 
  public:
-  // public method to manually invoke collection, if 'auto_collect' is not true
+  // public method to manually invoke collection, if 'auto_collect' is not
+  // true
   void collect() override { destroy_pending(false); }
 
  private:
@@ -614,9 +707,9 @@ class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
           //
           if (sptr_new_parent.get() == sptr_child.get()) {
             if (debug()) {
-              std::cout
-                  << "Found new parent to own child but it's loop! Ignoring! k="
-                  << k << std::endl;
+              std::cout << "Found new parent to own child but it's loop! "
+                           "Ignoring! k="
+                        << k << std::endl;
             }
             continue;
           }
