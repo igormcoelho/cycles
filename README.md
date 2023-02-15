@@ -84,7 +84,7 @@ It is either **immutable** or **null** (when data is collected or after `.reset(
 `relation_ptr<T>` offers two main ways to **get** its internal pointer:
 
 - `get() -> T*`: returns raw pointer `T*`. (*this is a powerful, but dangerous operation... as in `std::shared_ptr` and `std::unique_ptr`*)
-- `get_owned(const relation_ptr<T>& owner) -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting ownership link to the owner**
+- `get_owned(const relation_ptr<T>& owner) -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting ownership link to the owner** (*this is a safe and preferred operation*)
 
 One may also need one of the following two extra **get** patterns:
 
