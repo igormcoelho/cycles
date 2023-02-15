@@ -1,0 +1,3 @@
+[submodule "tests/thirdparty/hsutter-gcpp"]
+	path = tests/thirdparty/hsutter-gcpp
+	url = https://github.com/hsutter/gcpp.git

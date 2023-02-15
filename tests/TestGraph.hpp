@@ -10,6 +10,7 @@
 //
 #include <cycles/relation_ptr.hpp>
 //
+#include <hsutter-gcpp/deferred_allocator.h>
 // ================== EXAMPLE ================
 
 using namespace cycles;  // NOLINT
@@ -295,3 +296,79 @@ void test_main() {
 }
 
 }  // namespace cycles_example2_arena
+
+namespace gcpp_example1 {
+// RC graph
+// Similar to cycles_example1, using hsutter gcpp
+
+using namespace gcpp;  // NOLINT
+
+struct Node {
+  std::string datum;
+  deferred_vector<deferred_ptr<Node>> edges;
+
+  explicit Node(const std::string& datum, deferred_heap& h)
+      : datum{datum}, edges{h} {}
+
+  void traverse(std::function<void(const std::string&)> f,
+                std::set<std::string>& seen) const {
+    //
+    if (seen.find(this->datum) == seen.end()) {
+      return;
+    }
+    f(this->datum);
+    seen.insert(this->datum);
+    // error: invalid conversion from ‘const void*’ to ‘void*’
+    // strange error: set(get() + offset)
+    // for (auto& n : this->edges) {
+    for (unsigned i = 0; i < edges.size(); i++) {
+      auto& n = edges[i];
+      n->traverse(f, seen);
+    }
+  }
+
+  // TODO(igormcoelho): this part could be improved with delegated sptr
+  Node* first() const { return this->edges.at(0).get(); }
+
+  friend std::ostream& operator<<(std::ostream& os, const Node& me) {
+    os << "Node(\"" << me.datum << "\")";
+    return os;
+  }
+};
+
+void foo(const Node& node) { std::cout << "foo: " << node.datum << std::endl; }
+
+deferred_ptr<Node> init(deferred_heap& my_heap) {
+  auto root = my_heap.make<Node>("A", my_heap);
+  auto b = my_heap.make<Node>("B", my_heap);
+  auto c = my_heap.make<Node>("C", my_heap);
+  auto d = my_heap.make<Node>("D", my_heap);
+  auto e = my_heap.make<Node>("E", my_heap);
+  auto f = my_heap.make<Node>("F", my_heap);
+
+  {
+    auto& mut_root = *(root.get());
+    mut_root.edges.push_back(b);
+    mut_root.edges.push_back(c);
+    mut_root.edges.push_back(d);
+
+    auto& mut_c = *(c.get());
+    mut_c.edges.push_back(e);
+    mut_c.edges.push_back(f);
+    mut_c.edges.push_back(root);
+  }
+
+  return root;
+}
+
+void test_main() {
+  deferred_heap my_heap;
+  auto root = init(my_heap);
+  const auto& gref = *(root.get());
+  std::set<std::string> seen;
+  gref.traverse([&](const std::string& d) { std::cout << d; }, seen);
+  Node* f = gref.first();
+  foo(*f);
+}
+
+}  // namespace gcpp_example1

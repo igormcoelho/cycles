@@ -48,10 +48,10 @@ bench_list_tree: bench_list_tree_build
 
 
 bench_graph:
-	# g++ bench/quick_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/quick_bench_graph
+	# g++ bench/quick_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -Ithirdparty -I../src -o ../build/quick_bench_graph
 	# valgrind --leak-check=full ../build/quick_bench_graph
 	#
-	g++ bench/long_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/long_bench_graph
+	g++ bench/long_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -Ithirdparty -Ithirdparty/hsutter-gcpp/submodules/gsl/include -I../src -o ../build/long_bench_graph
 	../build/long_bench_graph
 	valgrind --leak-check=full ../build/long_bench_graph
 	

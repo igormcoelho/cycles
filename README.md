@@ -204,7 +204,9 @@ This pointer has disadvantages too:
 
 - **experimental project, likely with hidden bugs and inneficient implementation** (SERIOUS testing and benchmarking considered! ALL existing tests are passing!)
 - slower performance, compared to `std::shared_ptr` (see benchmarks below)
-- slower performance, compared to `gcpp` (supposed... must validate, yet)
+- comparable performance (?), compared to `gcpp`
+  * funny thing, I expected relation_ptr to be slower, but it's currently faster than gcpp!
+  * large graph benchmarks indicate 280 seconds for gcpp against 70 seconds on relation_ptr... strange!
 - likely thread unsafe (must investigate deeper)
 - does not support copy semantics, only move semantics and a `get_owned` method as helper
 - (planned feature) no support for delegated construction of smart pointer (such as in `std::shared_ptr` two parameter constructor)

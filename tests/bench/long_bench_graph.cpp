@@ -10,6 +10,9 @@
 //
 #include "../TestGraph.hpp"
 //
+//
+#include <hsutter-gcpp/deferred_allocator.h>
+//
 // ================== EXAMPLE ================
 
 using namespace cycles;       // NOLINT
@@ -216,6 +219,56 @@ void test_main_long_rptr(int V, int E, int SEED) {
 
 }  // namespace cycles_example2_arena
 
+namespace gcpp_example1 {
+
+deferred_ptr<Node> init_long_rptr(
+    deferred_heap& my_heap, int v,
+    const std::vector<std::vector<int>>& v_index) {
+  //
+  // std::vector<relation_ptr<Node>> vertex;
+  deferred_vector<deferred_ptr<Node>> vertex{my_heap};
+  for (int i = 0; i < v; i++) {
+    std::string stri = std::to_string(i);
+    // NOLINTNEXTLINE
+    // auto* node = new Node(stri);
+    vertex.push_back(my_heap.make<Node>(stri, my_heap));
+  }
+  // make mirror experiment with v_index
+  for (int i = 0; i < v; i++) {
+    for (int e = 0; e < v_index[i].size(); e++) {
+      int j = v_index[i][e];
+      vertex[i]->edges.push_back(vertex[j]);
+    }
+  }
+  //
+  // pool.getContext()->debug = true;
+  // root is first vertex only... the rest may die automatically. let's see.
+  // return std::pair<relation_pool<>, relation_ptr<Node>>{std::move(pool),
+  //                                                       std::move(vertex[0])};
+  return vertex[0];
+}
+
+void test_main_long_rptr(int V, int E, int SEED) {
+  deferred_heap my_heap;
+  std::vector<std::vector<int>> v_index = gen_experiment(V, E, SEED, false);
+  // DEBUG
+  // print_exp(v_index);
+  //
+  auto root = init_long_rptr(my_heap, V, v_index);
+  // std::cout << "root = " << gpair.second->datum << std::endl;
+  const auto& gref = *(root.get());
+  std::set<std::string> seen;
+  gref.traverse([&](const std::string& d) { std::cout << d; }, seen);
+  if (gref.edges.size() > 0) {
+    Node* f = gref.first();
+    foo(*f);
+  } else {
+    std::cout << "WARNING: no edges to invoke foo()" << std::endl;
+  }
+}
+
+}  // namespace gcpp_example1
+
 int main() {
   int V = 500;
   int E = (int)(V * V * 0.6);  // NOLINT
@@ -276,6 +329,20 @@ int main() {
   // will not leak
   std::cout
       << "cycles example4 "
+      << duration<double, std::milli>(high_resolution_clock::now() - c).count()
+      << "ms" << std::endl;
+
+  // =====================================
+
+  std::cout << "example5 with hsutter-gcpp" << std::endl;
+  c = high_resolution_clock::now();
+  {
+    // many things...
+    gcpp_example1::test_main_long_rptr(V, E, SEED);
+  }
+  // will not leak
+  std::cout
+      << "example5 (hsutter-gcpp) "
       << duration<double, std::milli>(high_resolution_clock::now() - c).count()
       << "ms" << std::endl;
 
