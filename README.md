@@ -199,7 +199,7 @@ This pointer has advantages (mostly inspired by gcpp project):
 - type erased pool type (or context, or arena, or section, etc) that automatically discards all references in same pool (such as gcpp)
 - ability to manually destroy/collect garbage on convenient locations (such as gcpp)
 - deferred destruction by means of stored destructors and not raw memory (such as gcpp)
-- **automatic destruction of objects, regardless of cycles** (not available in gcpp)
+- **automatic/dynamic destruction of objects, regardless of cycles** (in gcpp only manual destruction is allowed through `collect()` method)
 - **relatively simple implementation aiming cross-language support, based on tree ownership data structures** (gcpp is implemented with a completely different strategy focused on C/C++, not yet considered for other languages, as far as I know)
 
 This pointer has disadvantages too:
@@ -212,6 +212,15 @@ This pointer has disadvantages too:
 - likely thread unsafe (must investigate deeper)
 - does not support copy semantics, only move semantics and a `get_owned` method as helper
 - (planned feature) no support for delegated construction of smart pointer (such as in `std::shared_ptr` two parameter constructor)
+
+### Usage of automatic collection on real-time scenarios
+
+`relation_pool` can disable automatic collection with `pool.setAutoCollect(false);`,
+and then go back to automatic collection with `pool.setAutoCollect(true);`.
+When using `setAutoCollect(true)`, it automatically invokes `collect()` method,
+thus allowing real-time sections of the code to execute **fast***, and keep all pending operations to be performed after real-time sections.
+
+(*) this is supposed to be O(1) time... must check this carefully if really needed on practice!
 
 ## Typical use cases
 
