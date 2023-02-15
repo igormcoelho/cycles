@@ -10,8 +10,8 @@
 //
 #include <cycles/relation_ptr.hpp>
 
-#include "TestList.hpp"
-#include "TestTree.hpp"
+#include "../TestList.hpp"
+#include "../TestTree.hpp"
 
 // inspired from random bench for gcpp and tracked_ptr discussions
 

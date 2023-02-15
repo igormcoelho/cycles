@@ -8,7 +8,7 @@
 //
 #include <cycles/relation_ptr.hpp>
 //
-#include "TestGraph.hpp"
+#include "../TestGraph.hpp"
 //
 // ================== EXAMPLE ================
 

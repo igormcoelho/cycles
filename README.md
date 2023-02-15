@@ -16,9 +16,10 @@ These structures have cycle-breaking properties, thus allowing usage when `std::
 Consider node structure (see [src/examples/app_example1.cpp](src/examples/app_example1.cpp)):
 
 ```{.cpp}
+#include <cycles/relation_ptr.hpp>
+
 using cycles::relation_ptr;
 using cycles::relation_pool;
-
 
 class MyNode {
  public:
@@ -86,11 +87,14 @@ It is either **immutable** or **null** (when data is collected or after `.reset(
 - `get() -> T*`: returns raw pointer `T*`
 - `get_owned(const relation_ptr<T>& owner) -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting ownership link to the owner**
 
-One may also need one of the following three extra **get** patterns:
+One may also need one of the following two extra **get** patterns:
 
 - `get_unowned() -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting no ownership link (similar to a "strong pointer")**
 - `get_self_owned() -> relation_ptr<T>`: **returns data pointer as `relation_ptr<T>`, setting self ownership link (similar to a "weak pointer")**
-- `get_shared() -> std::shared_ptr<T>`: returns data pointer as standard shared pointer `std::shared_ptr<T>` (for compatibility reasons)
+
+Finally, special implementations may handle compatibility with typical smart pointers, such as:
+
+- `get_shared() -> std::shared_ptr<T>`: returns data pointer as standard shared pointer `std::shared_ptr<T>` (returns `nullptr` if not compatible with forest implementation)
 
 All `get` functions may return `nullptr` (if no data exists or have been collected).
 

@@ -19,12 +19,12 @@ test_quick_bench: bench_list_tree_build
 bench: bench_sptr bench_list_tree bench_graph
 
 bench_sptr:
-	g++ quick_bench_sptr.cpp -Wfatal-errors   -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_sptr
+	g++ bench/quick_bench_sptr.cpp -Wfatal-errors   -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_sptr
 	../build/bench_sptr
 
 bench_list_tree_build:
-	g++ quick_bench_list_tree.cpp -Wfatal-errors  -DBENCH_LONG_DEFERRED  -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_list_tree
-	g++ quick_bench_list_tree.cpp -Wfatal-errors                         -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_list_tree_nodeferred
+	g++ bench/quick_bench_list_tree.cpp -Wfatal-errors  -DBENCH_LONG_DEFERRED  -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_list_tree
+	g++ bench/quick_bench_list_tree.cpp -Wfatal-errors                         -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/bench_list_tree_nodeferred
 
 bench_list_tree: bench_list_tree_build
 	#
@@ -48,10 +48,10 @@ bench_list_tree: bench_list_tree_build
 
 
 bench_graph:
-	# g++ quick_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/quick_bench_graph
+	# g++ bench/quick_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/quick_bench_graph
 	# valgrind --leak-check=full ../build/quick_bench_graph
 	#
-	g++ long_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/long_bench_graph
+	g++ bench/long_bench_graph.cpp -std=c++17 -g -Ofast -I../include/ -I../src -o ../build/long_bench_graph
 	../build/long_bench_graph
 	valgrind --leak-check=full ../build/long_bench_graph
 	

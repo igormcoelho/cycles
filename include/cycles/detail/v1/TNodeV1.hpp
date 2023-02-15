@@ -272,28 +272,17 @@ class TNode {
     children.push_back(nxt);
   }
 
-  /*
-    auto add_child_weak(wptr<TNode> nxt) {
-      // check if parent is set correctly
-      // assert(this == nxt.lock()->parent.lock().get());
-      std::cout
-          << "IMPORTANT! add_child_weak does not require parent to be REAL "
-             "parent..."
-             "it could be problem! solution: use two lists (for weak or
-    strong)"
-          << std::endl;
-      //
-      children.push_back(VarTNode{._node = nxt});
-      children.at(children.size() - 1).node.reset();
-    }
-    */
-
   // false if not found, OR target is nullptr
   bool remove_child(TNode* target) {
     if (!target) return false;
+    // This should be good, right? If cause problems, remove!
+    assert(target->parent.lock().get() == this);
+    //
     for (unsigned i = 0; i < children.size(); i++) {
       if (target == children[i].get()) {
         children.erase(children.begin() + i);
+        // this should be good, right?
+        target->parent = wptr<TNode>();
         return true;
       }
     }

@@ -198,8 +198,8 @@ class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
       return;
     }
     assert(will_die);
-    // invoke expensive 'setNewOwner' operation
-    will_die = myctx->op4x_setNewOwner(sptr_mynode);
+    // invoke expensive 'trySetNewOwner' operation
+    will_die = myctx->op4x_trySetNewOwner(sptr_mynode);
     //
     // CLEAR!
     if (debug())
@@ -267,7 +267,7 @@ class DynowForestV1 : public IDynowForest<TArrowV1<TNodeData>> {
   }
 
   // OK - helper 2 of op4_remove
-  bool op4x_setNewOwner(sptr<TNode<TNodeData>> sptr_mynode) {
+  bool op4x_trySetNewOwner(sptr<TNode<TNodeData>> sptr_mynode) {
     bool will_die = true;  // default
     // auto myctx = this;
     if (debug())
