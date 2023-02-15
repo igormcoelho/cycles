@@ -10,6 +10,7 @@ class MyNode {
  public:
   double val;
   std::vector<relation_ptr<MyNode>> neighbors;
+  explicit MyNode(double val_) : val{val_} {}
 };
 
 class MyGraph {
@@ -17,11 +18,6 @@ class MyGraph {
   // Example: graph with entry, similar to a root in trees... but may be cyclic
   relation_pool<> pool;        // pool of data, similar to 'deferred_heap'
   relation_ptr<MyNode> entry;  // pointer to data, similar to 'deferred_ptr'
-
-  // helper function to generate new pointers according to same 'pool'
-  auto make_node(double v) -> relation_ptr<MyNode> {
-    return relation_ptr<MyNode>(new MyNode{.val = v}, pool);
-  }
 };
 
 void printFrom(relation_ptr<MyNode> target, const relation_ptr<MyNode>& origin,
@@ -41,10 +37,10 @@ int main() {
     MyGraph G;
 
     // create nodes -1, 1, 2 and 3
-    G.entry = G.make_node(-1.0);
-    relation_ptr<MyNode> ptr1 = G.make_node(1.0);
-    relation_ptr<MyNode> ptr2 = G.make_node(2.0);
-    relation_ptr<MyNode> ptr3 = G.make_node(3.0);
+    G.entry = G.pool.make<MyNode>(-1.0);
+    relation_ptr<MyNode> ptr1 = G.pool.make<MyNode>(1.0);
+    relation_ptr<MyNode> ptr2 = G.pool.make<MyNode>(2.0);
+    relation_ptr<MyNode> ptr3 = G.pool.make<MyNode>(3.0);
 
     // manually generate a cycle: -1 -> 1 -> 2 -> 3 -> -1 -> ...
     // entry node -1 has neighbor node 1

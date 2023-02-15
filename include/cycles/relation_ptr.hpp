@@ -319,15 +319,34 @@ class relation_ptr {
   }
 
  public:
-  // TODO: improve with multiple 'make' methods...
-  // IDEA: 'make', 'make_owned', 'make_unowned' (same as 'make'), etc
+  // these 'make' widgets are safer than just passing raw pointers around
+  // - use make_unowned if pointer is supposed to be "free"
+  // - use make_owned   if pointer is supposed to have "owner"
+
   template <class... Args>
-  static relation_ptr<T> make(sptr<DynowForestV1> ctx, Args&&... args) {
+  static relation_ptr<T> make_unowned(const relation_pool<DOF>& pool,
+                                      Args&&... args) {
     // NOLINTNEXTLINE
     auto* t = new T(std::forward<Args>(args)...);
-    return relation_ptr<T>{t, ctx};
+    return relation_ptr<T>{t, pool};
+  }
+
+  template <class... Args>
+  static relation_ptr<T> make_owned(const relation_ptr<T>& owner,
+                                    Args&&... args) {
+    // NOLINTNEXTLINE
+    auto* t = new T(std::forward<Args>(args)...);
+    return relation_ptr<T>{t, owner};
   }
 };
+
+template <typename DOF>            // this applies to relation_pool
+template <class T, class... Args>  // this applies to method
+relation_ptr<T, DOF> relation_pool<DOF>::make(Args&&... args) {
+  // NOLINTNEXTLINE
+  auto* t = new T(std::forward<Args>(args)...);
+  return relation_ptr<T, DOF>{t, *this};
+}
 
 }  // namespace cycles
 

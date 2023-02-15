@@ -13,6 +13,8 @@ class MyNode {
   double val;
   std::vector<relation_ptr<MyNode>> neighbors;
 
+  explicit MyNode(double val_) : val{val_} {}
+
   void add_neighbor(const relation_ptr<MyNode>& node) {
     self->neighbors.push_back(node.get_owned(self));
   }
@@ -26,7 +28,7 @@ class MyGraph {
 
   // helper function to generate new pointers according to same 'pool'
   auto make_self_node(double v) -> relation_ptr<MyNode> {
-    relation_ptr<MyNode> node{new MyNode{.val = v}, pool};
+    relation_ptr<MyNode> node = pool.make<MyNode>(v);
     node->self = node.get_owned(node);  // self-ownership pattern
     return node;
   }

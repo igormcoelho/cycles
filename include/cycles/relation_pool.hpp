@@ -26,6 +26,12 @@ namespace cycles {
 // NOLINTNEXTLINE
 using namespace detail;
 
+// note that relation_pool is always included before relation_ptr.
+// this is good!
+// forward declaration of 'relation_ptr' for 'make' widget
+template <class T, class DOF>
+class relation_ptr;
+
 // DOF = Dynamic Ownership Forest
 // relation_pool is templated for test only...
 // it could simply adopt the "best" DOF implementation.
@@ -83,6 +89,10 @@ class relation_pool {
     // start again
     ctx = sptr<DynowForestV1>{new DynowForestV1{}};
   }
+
+  // DOF comes from this pool... T comes explicitly
+  template <class T, class... Args>
+  relation_ptr<T, DOF> make(Args&&... args);
 };
 
 }  // namespace cycles
