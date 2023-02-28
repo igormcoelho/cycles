@@ -62,11 +62,12 @@ private:
 //--- Solution 2 (deferred_ptr) -----------------------------------------------
 /*/
 
-static relation_pool<> pool;
+static relation_pool<> pool;  // NOLINT
 
 class MyGraph {
  public:
   class Node : public Counter {
+   private:
     vector<relation_ptr<Node>> children;
 
    public:
@@ -99,7 +100,8 @@ class MyGraph {
   void ShrinkToFit() { pool.getContext()->collect(); }
 
   static auto MakeNode() {
-    return relation_ptr<Node>::make(::pool.getContext());
+    // return relation_ptr<Node>::make(::pool.getContext());
+    return pool.make<Node>();
   }
 
  private:

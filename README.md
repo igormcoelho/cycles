@@ -320,6 +320,8 @@ This project can be used to manage cyclic data structures with memory safe.
 
 See https://github.com/hsutter/gcpp and its video from cppcon 2016 [Leak Freedom in C++... by Default](https://www.youtube.com/watch?v=JfmTagWcqoE).
 
+Other related project is sgcl/tracked_ptr: https://github.com/pebal/sgcl
+
 ## Acknowledgements
 
 We appreciate the interest of all involved in this project.

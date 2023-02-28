@@ -2,7 +2,11 @@
 // #define CATCH_CONFIG_MAIN // This tells Catch to provide a main()
 #include <iostream>
 //
+#ifdef HEADER_ONLY
 #include <catch2/catch_amalgamated.hpp>
+#else
+#include <catch2/catch_all.hpp>
+#endif
 //
 // #include <cycles/detail/IDynowForest.hpp>
 #include <cycles/relation_ptr.hpp>

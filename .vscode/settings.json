@@ -7,12 +7,14 @@
         "-log=verbose",
         "-pretty",
         "--background-index",
-        "--compile-commands-dir=/workspaces/cycles/",
+        "--compile-commands-dir=/workspaces/cycles/build/",
+        // "--compile-commands-dir=/workspaces/cycles/",
     ],
     "C_Cpp.intelliSenseEngine": "Disabled",
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "{bazel-bin}/**/*{test}*"
+            //"pattern": "{bazel-bin}/**/*{test}*"
+            "pattern": "{build}/**/*{test}*"
         }
     ],
     "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
@@ -70,5 +72,6 @@
         "iterator": "cpp",
         "queue": "cpp",
         "random": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/."
 }

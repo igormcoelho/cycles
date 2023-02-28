@@ -1,13 +1,13 @@
 all:  app_example1 app_example2 app_example3
 
 app_example1: app_example1.cpp
-	g++ app_example1.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example1
+	g++ app_example1.cpp -I../../include/ -I../../examples/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example1
 
 app_example2: app_example2.cpp
-	g++ app_example2.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example2
+	g++ app_example2.cpp -I../../include/ -I../../examples/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example2
 
 app_example3: app_example3.cpp
-	g++ app_example3.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example3
+	g++ app_example3.cpp -I../../include/ -I../../examples/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example3
 
 
 

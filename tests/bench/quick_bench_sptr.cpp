@@ -13,28 +13,29 @@ int main() {
   auto c = high_resolution_clock::now();
   {
     // auto data = make_tracked<tracked_ptr<void>[]>(10000000);
-    sptr<DynowForestV1> ctx{new DynowForestV1{}};
+    // sptr<DynowForestV1> ctx{new DynowForestV1{}};
+    relation_pool<> pool;
     std::vector<relation_ptr<void>> data(10000000);
     for (int i = 0; i < 10000000; ++i) {
       // if (i % 1000) std::cout << "i=" << i << std::endl;
       switch (i % 6) {
         case 0:
-          data[i] = relation_ptr<char>::make(ctx);
+          data[i] = pool.make<char>();
           break;
         case 1:
-          data[i] = relation_ptr<int16_t>::make(ctx);
+          data[i] = pool.make<int16_t>();
           break;
         case 2:
-          data[i] = relation_ptr<int>::make(ctx);
+          data[i] = pool.make<int>();
           break;
         case 3:
-          data[i] = relation_ptr<int64_t>::make(ctx);
+          data[i] = pool.make<int64_t>();
           break;
         case 4:
-          data[i] = relation_ptr<float>::make(ctx);
+          data[i] = pool.make<float>();
           break;
         case 5:
-          data[i] = relation_ptr<double>::make(ctx);
+          data[i] = pool.make<double>();
           break;
       }
     }
