@@ -18,7 +18,7 @@ that returns an unowned `relation_ptr<T>` object.
 
 Consider node structure (see [src/examples/app_example1.cpp](src/examples/app_example1.cpp)):
 
-```{.cpp}
+```cpp
 #include <cycles/relation_ptr.hpp>
 
 using cycles::relation_ptr;
@@ -43,7 +43,7 @@ This example shows that, even for a cyclic graph, no leaks happen!
 Graph stores a `relation_pool` while all `relation_ptr` ensure that no real cycle dependencies exist. The `relation_ptr` has move-only semantics, but it is possible to
 create new relations pointing to the same objects by using helper method `get_owned`.
 
-```{.cpp}
+```cpp
   {
     MyGraph G;
 
@@ -102,7 +102,7 @@ We believe this could change in the future, with more advances, but for now, **u
 supposed to be **unique**.
 *Example:*
 
-```
+```cpp
 relation_ptr<T> unowned{my_pool, new MyData{}};
 relation_ptr<T> unowned2 = unowned.get_unowned();
 assert(unowned);    // exists
@@ -121,7 +121,7 @@ Regarding `make` widgets, `relation_ptr` provides two important widgets:
 
 Consider node structure (see [src/examples/app_example2.cpp](src/examples/app_example2.cpp)):
 
-```{.cpp}
+```cpp
 using cycles::relation_ptr;
 using cycles::relation_pool;
 
@@ -155,7 +155,7 @@ class MyGraph {
 This example demonstrates how **self-ownership** can be a useful pattern to create helpers, such as `add_neighbor`.
 This way, each node has some sort of "weak reference to itself", that makes everything easier!
 
-```{.cpp}
+```cpp
   {
     MyGraph G;
 
@@ -251,12 +251,12 @@ Around 5x slower just to construct 10 million smart pointers.
 
 Considering 100k elements:
 
-```
-UList unique_ptr: 4.62166ms
-SList shared_ptr: 9.85481ms
-CList relation_ptr: 68.9792ms (15x uptr, 7x sptr)
-CList no auto_collect relation_ptr: 126.484ms
-```
+| List Type | Pointer                      | Time (ms) | Relative Time        |
+|---------|------------------------------|-----------|----------------------|
+| UList   | unique_ptr                   | 4.62166   |                      |
+| SList   | shared_ptr                   | 9.85481   | 2x uptr              |
+| CList   | relation_ptr                 | 68.9792   | (15x uptr, 7x sptr)  |
+| CList   | no auto_collect relation_ptr | 126.484   | (27x uptr, 13x sptr) |
 
 - Around 13x slower than `std::unique_ptr`
 - Around 7x slower than `std::shared_ptr`
@@ -264,24 +264,27 @@ CList no auto_collect relation_ptr: 126.484ms
 
 
 Considering 10M elements (`std::unique_ptr` destructor adapted to prevent stack overflow):
-```
-UList unique_ptr: 406.094ms
-SList shared_ptr: 576.623ms
-CList relation_ptr: 5702.24ms (14x uptr, 10x sptr)
-CList no auto_collect relation_ptr: 9502.88ms
-```
+
+| List Type | Pointer                      | Time (ms) | Relative Time        |
+|---------|------------------------------|-----------|--------------------------|
+| UList   | unique_ptr                   | 406.094   |                          |
+| SList   | shared_ptr                   | 576.623   | 1,4x uptr                |
+| CList   | relation_ptr                 | 5702.24   | (14x uptr, 10x sptr)     |
+| CList   | no auto_collect relation_ptr | 9502.88   | (23.4x uptr, 16,5x sptr) |
 
 - Around 14x slower than `std::unique_ptr`
 - Around 10x slower than `std::shared_ptr`
 - Worse behavior disabling automatic garbage collection
 
 Tests with trees with 2^15 ~ 32k elements
-```
-UTree with unique_ptr: 1.9145ms
-STree with shared_ptr: 4.38139ms
-CTree with relation_ptr: 285.272ms (150x uptr, 65x sptr)
-CTree with relation_ptr - no auto_collect: 251.257ms (132x uptr, 57x sptr)
-```
+
+| Tree type | Pointer                        | Time (ms) | Relative Time         |
+|---------|--------------------------------|-----------|-----------------------|
+| UTree   | unique_ptr                     | 1.9145    |                       |
+| STree   | shared_ptr                     | 4.38139   |                       |
+| CTree   | relation_ptr                   | 285.272   | (150x uptr, 65x sptr) |
+| CTree   | no auto_collect relation_ptr | 251.257   | (132x uptr, 57x sptr) |
+
 
 - Around 57x slower over `std::shared_ptr`
 - Better behavior when garbage is not collected during operations (only in the end)
