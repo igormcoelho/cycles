@@ -1,52 +1,52 @@
-FROM mcr.microsoft.com/devcontainers/cpp:0-ubuntu-22.04
-# LIST: https://mcr.microsoft.com/v2/vscode/devcontainers/cpp/tags/list
+# Ambiente C++ para o projeto cycles
+#   Prioridade: CMake + Ninja (pip) + Clang 23 com libc++ e suporte a módulos C++
+#   Mantido:    Bazel via bazelisk (respeita o .bazelversion)
+# Espelha o ambiente onde o Claude (claude.ai) testou: Ubuntu 24.04, x86_64.
+FROM ubuntu:24.04
 
-# command 'add-apt-repository'
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-     && apt-get -y install --no-install-recommends software-properties-common
+ARG LLVM_VERSION=23.1.3
+ARG CMAKE_VERSION=4.4.4
+ARG NINJA_VERSION=1.13.2
+ARG BAZELISK_VERSION=v1.29.0
+ENV DEBIAN_FRONTEND=noninteractive
 
-# see: https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test
-# RUN sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+# Base: gcc 13 (para comparação), depuração, GSL (gcpp nos benchmarks), pipx
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential gdb valgrind git curl ca-certificates xz-utils \
+      python3 pipx libmsgsl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# ===========
+# LLVM/Clang oficial do GitHub, extraindo só o necessário (~1 GB):
+# compilador, clang-scan-deps (módulos), ferramentas, libc++ e os std.cppm
+RUN mkdir -p /opt/llvm \
+    && curl -fsSL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-Linux-X64.tar.xz" \
+     | tar -xJ -C /opt/llvm --strip-components=1 --wildcards \
+         '*/bin/clang' '*/bin/clang++' '*/bin/clang-[0-9]*' '*/bin/clang-scan-deps' \
+         '*/bin/clangd' '*/bin/clang-format' '*/bin/clang-tidy' \
+         '*/bin/lld' '*/bin/ld.lld' '*/bin/llvm-symbolizer' '*/bin/llvm-ar' '*/bin/llvm-ranlib' \
+         '*/lib/clang/*' '*/include/c++/*' '*/include/x86_64-unknown-linux-gnu/*' \
+         '*/lib/x86_64-unknown-linux-gnu/*' '*/share/libc++/*' \
+    && echo /opt/llvm/lib/x86_64-unknown-linux-gnu > /etc/ld.so.conf.d/llvm.conf \
+    && ldconfig
 
-ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
+# Importante: PATH, não symlinks. Com symlinks em /usr/local/bin o
+# clang-scan-deps não acha os headers da libc++ e o 'import std' quebra.
+ENV PATH=/opt/llvm/bin:$PATH CC=clang CXX=clang++
 
-# Optionally install the cmake for vcpkg
-COPY ./reinstall-cmake.sh /tmp/
+# CMake, Ninja e cpplint via pip (pipx), versões fixadas
+ENV PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin
+RUN pipx install "cmake==${CMAKE_VERSION}" \
+    && pipx install "ninja==${NINJA_VERSION}" \
+    && pipx install cpplint
+ENV CMAKE_GENERATOR=Ninja
 
-RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
-     chmod +x /tmp/reinstall-cmake.sh && /tmp/reinstall-cmake.sh ${REINSTALL_CMAKE_VERSION_FROM_SOURCE}; \
-     fi \
-     && rm -f /tmp/reinstall-cmake.sh
+# Bazel via bazelisk
+RUN curl -fsSL -o /usr/local/bin/bazel \
+      "https://github.com/bazelbuild/bazelisk/releases/download/${BAZELISK_VERSION}/bazelisk-linux-amd64" \
+    && chmod +x /usr/local/bin/bazel
 
-# [Optional] Uncomment this section to install additional vcpkg ports.
-# RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
-
-# [Optional] Uncomment this section to install additional packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
-
-#RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends nodejs npm 
-
-# clang-tidy
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-     && apt-get -y install --no-install-recommends clang-tidy clang-format clangd
-
-# bazel
-RUN curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-     && apt-get -y install --no-install-recommends nodejs 
-
-RUN npm install -g @bazel/bazelisk
-
-# install pip and cpplint
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-     && apt-get -y install --no-install-recommends python3-pip
-# install cpplint into /usr/local/bin/cpplint
-RUN pip install cpplint 
-
-# bumpver
-RUN python3 -m pip install bumpver
+# Usuário 'ubuntu' (UID 1000, já existe na imagem) e diretórios dos volumes
+RUN mkdir -p /home/ubuntu/.claude /home/ubuntu/.cache \
+    && chown -R ubuntu:ubuntu /home/ubuntu/.claude /home/ubuntu/.cache
+USER ubuntu
+RUN clang++ --version && cmake --version && ninja --version

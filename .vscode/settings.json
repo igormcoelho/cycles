@@ -1,4 +1,5 @@
 {
+    "dev.containers.dockerPath": "podman",
     "editor.formatOnSave": true,
     "cpplint.cpplintPath": "/usr/local/bin/cpplint",
     "cpplint.root": "${workspaceFolder}/include",

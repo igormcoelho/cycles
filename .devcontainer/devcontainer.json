@@ -1,26 +1,44 @@
 {
-	"name": "C++",
+	"name": "cycles (CMake + Bazel / clang-23)",
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "gcc -v",
-	// Configure tool-specific properties.
-	// "customizations": {},
-	"extensions": [
-		"mine.cpplint",
-		"DevonDCarew.bazel-code",
-		"llvm-vs-code-extensions.vscode-clangd",
-		"matepek.vscode-catch2-test-adapter"
+	// Só o Claude Code vem de fora do Dockerfile (instala CLI + extensão do VS Code)
+	"features": {
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+	},
+	// Podman rootless: seu UID do host vira o 1000 ('ubuntu') no container
+	"updateRemoteUserUID": false,
+	"remoteUser": "ubuntu",
+	"containerUser": "ubuntu",
+	"runArgs": [
+		"--userns=keep-id:uid=1000,gid=1000",
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined"
 	],
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	"remoteUser": "root",
-	"postCreateCommand": "bazel --version && test -e .clang-format && cp .clang-format ~/.cache"
-	//"runArgs": ["--userns=keep-id"],
-	//"postCreateCommand": "su imcoelho",
-	//"containerUser": "vscode",
+	"containerEnv": {
+		"HOME": "/home/ubuntu",
+		// "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}",
+		"CLAUDE_CONFIG_DIR": "/home/ubuntu/.claude"
+	},
+	"mounts": [
+		"source=claude-code-config-${devcontainerId},target=/home/ubuntu/.claude,type=volume",
+		"source=cycles-cache-${devcontainerId},target=/home/ubuntu/.cache,type=volume"
+	],
+	"postCreateCommand": "git submodule update --init",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"cmake.generator": "Ninja"
+			},
+			"extensions": [
+				"ms-vscode.cmake-tools",
+				"llvm-vs-code-extensions.vscode-clangd",
+				"matepek.vscode-catch2-test-adapter",
+				"mine.cpplint",
+				"DevonDCarew.bazel-code"
+			]
+		}
+	}
 }
