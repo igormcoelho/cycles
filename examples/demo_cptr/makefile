@@ -1,21 +1,21 @@
 all:  app_demo_sizeof app_demo_list app_demo_tree app_demo_graph1 app_demo app_demo0_cycles_test_graph
 
-app_demo: demo.cpp
+app_demo: demo.cpp | ../../build
 	g++ demo.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo
 
-app_demo_graph1: demo_graph1.cpp
+app_demo_graph1: demo_graph1.cpp | ../../build
 	g++ demo_graph1.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo_graph1
 
-app_demo_list: demo_list.cpp
+app_demo_list: demo_list.cpp | ../../build
 	g++ demo_list.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo_list
 
-app_demo_tree: demo_tree.cpp
+app_demo_tree: demo_tree.cpp | ../../build
 	g++ demo_tree.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo_tree
 
-app_demo_sizeof: demo_sizeof.cpp
+app_demo_sizeof: demo_sizeof.cpp | ../../build
 	g++ demo_sizeof.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++17 -o ../../build/app_demo_sizeof
 
-app_demo0_cycles_test_graph: demo0_cycles_test_graph.cpp
+app_demo0_cycles_test_graph: demo0_cycles_test_graph.cpp | ../../build
 	g++ demo0_cycles_test_graph.cpp -I../../include/ -I../../src/ -Wfatal-errors -g -std=c++20 -o ../../build/app_demo0_cycles_test_graph
 
 
@@ -43,3 +43,7 @@ run_all:
 
 clean:
 	rm -f build/app_*
+
+# build/ is gitignored, so it doesn't exist in a fresh clone (e.g., CI)
+../../build:
+	mkdir -p $@

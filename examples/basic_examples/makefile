@@ -1,12 +1,12 @@
 all:  app_example1 app_example2 app_example3
 
-app_example1: app_example1.cpp
+app_example1: app_example1.cpp | ../../build
 	g++ app_example1.cpp -I../../include/ -I../../examples/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example1
 
-app_example2: app_example2.cpp
+app_example2: app_example2.cpp | ../../build
 	g++ app_example2.cpp -I../../include/ -I../../examples/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example2
 
-app_example3: app_example3.cpp
+app_example3: app_example3.cpp | ../../build
 	g++ app_example3.cpp -I../../include/ -I../../examples/ -Wfatal-errors -g -std=c++17 -o ../../build/app_example3
 
 
@@ -29,3 +29,7 @@ svg:
 
 clean:
 	rm -f ../../build/app_*
+
+# build/ is gitignored, so it doesn't exist in a fresh clone (e.g., CI)
+../../build:
+	mkdir -p $@

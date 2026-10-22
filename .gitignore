@@ -5,6 +5,7 @@ app_*
 !app_*.md
 a.out
 build/*
+tests/build/
 compile_commands.*
 tmp*
 .vscode/
