@@ -16,6 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 pipx libmsgsl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Other tools:
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    graphviz \
+    && rm -rf /var/lib/apt/lists/*
+
 # LLVM/Clang oficial do GitHub, extraindo só o necessário (~1 GB):
 # compilador, clang-scan-deps (módulos), ferramentas, libc++ e os std.cppm
 RUN mkdir -p /opt/llvm \

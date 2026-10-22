@@ -1,0 +1,18 @@
+// Example 1, traversal: deepest point of printFrom (5 nested calls alive).
+// Each self-loop is the weak self-link of one call's 'target' (get_self_owned);
+// #k = k-th nested call. The tree itself is the same as in step C3.
+digraph ex1_dof_4 {
+  bgcolor=transparent; forcelabels=true;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=10, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  m1 [label="-1", xlabel=<<font color="#888888">G.entry</font>>]; n1 [label="1"]; n2 [label="2"]; n3 [label="3"];
+  f -> m1;
+  m1 -> n1; n1 -> n2; n2 -> n3;
+  n3 -> m1 [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false];
+  m1:w -> m1:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="#1"];
+  m1:e -> m1:e [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="#5"];
+  n1:w -> n1:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="#2"];
+  n2:w -> n2:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="#3"];
+  n3:w -> n3:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="#4"];
+}

@@ -16,7 +16,7 @@ that returns an unowned `relation_ptr<T>` object.
 
 ### Example 1
 
-Consider node structure (see [src/examples/app_example1.cpp](src/examples/app_example1.cpp)):
+Consider node structure (see code [examples/basic_examples/app_example1.cpp](examples/basic_examples/app_example1.cpp) and detailed explaination [examples/basic_examples/app_example1.md](examples/basic_examples/app_example1.md)):
 
 ```cpp
 #include <cycles/relation_ptr.hpp>
@@ -119,7 +119,7 @@ Regarding `make` widgets, `relation_ptr` provides two important widgets:
 
 ### Example 2
 
-Consider node structure (see [src/examples/app_example2.cpp](src/examples/app_example2.cpp)):
+Consider node structure (see code [examples/basic_examples/app_example2.cpp](examples/basic_examples/app_example2.cpp) and detailed explaination [examples/basic_examples/app_example2.md](examples/basic_examples/app_example2.md)):
 
 ```cpp
 using cycles::relation_ptr;
@@ -188,6 +188,12 @@ This way, each node has some sort of "weak reference to itself", that makes ever
   }
   // This will not leak! Even when a cycle exists from 'G.entry'
 ```
+
+### Example 3
+
+This shows how a double linked list would be easily done with relation_ptr without any pool.
+
+See code [examples/basic_examples/app_example3.cpp](examples/basic_examples/app_example3.cpp) and detailed explaination [examples/basic_examples/app_example3.md](examples/basic_examples/app_example3.md).
 
 ## features
 
@@ -336,8 +342,10 @@ Special thanks to Wang Yong Qiang for early revisions of the ideas behind this p
 Thanks to Fellipe Pessanha e Mateus Nazário for fruitful discussions on design, applications and
 possible extensions of this project to other programming languages.
 
+See note on [AI_USAGE.md](./AI_USAGE.md) for this project.
+
 ## License
 
 MIT License
 
-Copyleft 2022-2023, Igor Machado Coelho
+Copyleft 2022-2026, Igor Machado Coelho

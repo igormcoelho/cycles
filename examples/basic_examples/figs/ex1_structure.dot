@@ -1,0 +1,16 @@
+// Example 1: cyclic graph as the user sees it (after the reset() calls)
+digraph ex1_structure {
+  rankdir=LR; bgcolor=transparent; nodesep=0.4;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=record];
+  edge [fontname="Helvetica", fontsize=10, color="#9b59b6", fontcolor="#9b59b6"];
+  entry [label="G.entry", shape=box, style="rounded,filled", fillcolor="#efe3f7"];
+  m1 [label="<v> val = -1 | <n> neighbors[0]"];
+  n1 [label="<v> val = 1 | <n> neighbors[0]"];
+  n2 [label="<v> val = 2 | <n> neighbors[0]"];
+  n3 [label="<v> val = 3 | <n> neighbors[0]"];
+  entry -> m1:v;
+  m1:n -> n1:v;
+  n1:n -> n2:v;
+  n2:n -> n3:v;
+  n3:n -> m1:v [constraint=false];
+}

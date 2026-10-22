@@ -1,0 +1,13 @@
+// Example 2, step C: after ptr1/2/3.reset(), a single tree
+digraph ex2_dof_2 {
+  bgcolor=transparent; forcelabels=true;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=10, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  m1 [label="-1", xlabel=<<font color="#888888">G.entry</font>>]; n1 [label="1"]; n2 [label="2"]; n3 [label="3"];
+  f -> m1;
+  m1 -> n1; n1 -> n2; n2 -> n3;
+  m1:w -> m1:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c"]; n1:w -> n1:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c"];
+  n2:w -> n2:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c"]; n3:w -> n3:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c"];
+  n3 -> m1 [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false];
+}

@@ -1,0 +1,13 @@
+// Example 1: the abstract graph (a directed cycle), before any code
+digraph ex1_graph {
+  layout=neato; bgcolor=transparent;
+  node [fontname="Helvetica", fontsize=13, style=filled, fillcolor=white, shape=circle, width=0.6, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=10, color="#2f80ed", fontcolor="#2f80ed", penwidth=1.5];
+  entry [label="entry", shape=plaintext, style="", fontcolor="#2f80ed", pos="-1.1,1.6!"];
+  m1 [label="-1", pos="0,1.6!"];
+  n1 [label="1",  pos="1.6,1.6!"];
+  n2 [label="2",  pos="1.6,0!"];
+  n3 [label="3",  pos="0,0!"];
+  entry -> m1;
+  m1 -> n1; n1 -> n2; n2 -> n3; n3 -> m1;
+}

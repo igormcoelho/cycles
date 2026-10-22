@@ -1,0 +1,13 @@
+// Example 2, step A: after make_self_node x4 (four one-node trees, each with a weak self-link)
+digraph ex2_dof_0 {
+  bgcolor=transparent; nodesep=0.7; forcelabels=true;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=10, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  m1 [label="-1", xlabel=<<font color="#888888">G.entry</font>>]; n1 [label="1", xlabel=<<font color="#888888">ptr1</font>>];
+  n2 [label="2", xlabel=<<font color="#888888">ptr2</font>>]; n3 [label="3", xlabel=<<font color="#888888">ptr3</font>>];
+  f -> m1; f -> n1;
+  f -> n2; f -> n3;
+  m1:s -> m1:s [style=dashed, color="#2ca02c", fontcolor="#2ca02c"]; n1:s -> n1:s [style=dashed, color="#2ca02c", fontcolor="#2ca02c"];
+  n2:s -> n2:s [style=dashed, color="#2ca02c", fontcolor="#2ca02c"]; n3:s -> n3:s [style=dashed, color="#2ca02c", fontcolor="#2ca02c"];
+}

@@ -1,6 +1,8 @@
 vgcore.*
 bugreport.*
 app_*
+!app_*.cpp
+!app_*.md
 a.out
 build/*
 compile_commands.*
@@ -16,3 +18,4 @@ tmp*
 # Ignore the directory in which `clangd` stores its local index.
 /.cache/
 devcontainer-lock.json
+CLAUDE.md

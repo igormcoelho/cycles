@@ -1,0 +1,12 @@
+// Example 3: during add_next(make_self_node(1)), temporary still alive
+digraph ex3_dof_1 {
+  bgcolor=transparent; nodesep=1.0; forcelabels=true;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=9, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  m1 [label="-1", xlabel=<<font color="#888888">L._entry</font>>]; n1 [label="1", xlabel=<<font color="#888888">temporary</font>>];
+  f -> m1; f -> n1;
+  m1:s -> m1:s [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="self"]; n1:s -> n1:s [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="self"];
+  m1 -> n1 [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label="_next"];
+  n1:sw -> m1:se [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label="_prev"];
+}

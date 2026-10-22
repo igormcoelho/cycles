@@ -1,0 +1,12 @@
+// Legend shared by all Dynow forest figures
+digraph legend {
+  rankdir=LR; bgcolor=transparent; nodesep=0.3;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=10, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  a [label="A"]; b [label="B"]; c [label="C"]; d [label="D"];
+  { rank=same; f -> c [style=invis]; }
+  f -> a [label="  root  "];
+  a -> b [label="  ownership (strong)  "];
+  c -> d [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="  weak  "];
+}

@@ -1,0 +1,16 @@
+// Example 2: cyclic graph with self-ownership (self) on every node
+digraph ex2_structure {
+  rankdir=LR; bgcolor=transparent; nodesep=0.5; ranksep=0.6;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=record];
+  edge [fontname="Helvetica", fontsize=10, color="#9b59b6", fontcolor="#9b59b6"];
+  entry [label="G.entry", shape=box, style="rounded,filled", fillcolor="#efe3f7"];
+  m1 [label="{<v> val = -1 | <s> self | <n> neighbors[0]}"];
+  n1 [label="{<v> val = 1 | <s> self | <n> neighbors[0]}"];
+  n2 [label="{<v> val = 2 | <s> self | <n> neighbors[0]}"];
+  n3 [label="{<v> val = 3 | <s> self | <n> neighbors[0]}"];
+  entry -> m1:v:w;
+  m1:s:n -> m1:v:n; n1:s:n -> n1:v:n;
+  n2:s:n -> n2:v:n; n3:s:n -> n3:v:n;
+  m1:n:e -> n1:v:w; n1:n:e -> n2:v:w; n2:n:e -> n3:v:w;
+  n3:n:s -> m1:v:s [constraint=false];
+}

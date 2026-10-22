@@ -1,0 +1,17 @@
+// Example 3, step C: cycle closed; the tree is the _next chain
+digraph ex3_dof_3 {
+  bgcolor=transparent; forcelabels=true; ranksep=0.6;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=9, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  m1 [label="-1", xlabel=<<font color="#888888">L._entry</font>>]; n1 [label="1"]; n2 [label="2"]; n3 [label="3"];
+  f -> m1;
+  m1 -> n1 [label=" _next"]; n1 -> n2 [label=" _next"]; n2 -> n3 [label=" _next"];
+  m1:w -> m1:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="self"]; n1:w -> n1:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="self"];
+  n2:w -> n2:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="self"]; n3:w -> n3:w [style=dashed, color="#2ca02c", fontcolor="#2ca02c", label="self"];
+  n1:ne -> m1:se [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label=" _prev"];
+  n2:ne -> n1:se [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label=" _prev"];
+  n3:ne -> n2:se [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label=" _prev"];
+  n3:e -> m1:e [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label=" _next"];
+  m1:ne -> n3:se [style=dashed, color="#2ca02c", fontcolor="#2ca02c", constraint=false, label="_prev"];
+}

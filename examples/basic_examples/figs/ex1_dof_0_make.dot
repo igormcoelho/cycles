@@ -1,0 +1,11 @@
+// Example 1, step A: after the four pool.make (four one-node trees, no links yet)
+digraph ex1_dof_0 {
+  bgcolor=transparent; nodesep=0.6; forcelabels=true;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=circle, width=0.45, fixedsize=true];
+  edge [fontname="Helvetica", fontsize=10, color="#d62728", fontcolor="#d62728"];
+  f [label="forest", shape=box, style="rounded,filled", fillcolor="#eeeeee", fixedsize=false];
+  m1 [label="-1", xlabel=<<font color="#888888">G.entry</font>>]; n1 [label="1", xlabel=<<font color="#888888">ptr1</font>>];
+  n2 [label="2", xlabel=<<font color="#888888">ptr2</font>>]; n3 [label="3", xlabel=<<font color="#888888">ptr3</font>>];
+  f -> m1; f -> n1;
+  f -> n2; f -> n3;
+}

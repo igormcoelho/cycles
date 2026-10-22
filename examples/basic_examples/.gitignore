@@ -1,1 +1,3 @@
 app_*
+!app_*.cpp
+!app_*.md

@@ -1,0 +1,21 @@
+// Example 3: circular doubly linked list (after closing the cycle)
+// _next arrows above (purple), _prev back links below (gray).
+// Dashed boxes at both ends show where the cycle wraps around.
+digraph ex3_structure {
+  rankdir=LR; bgcolor=transparent; nodesep=0.4; ranksep=0.5;
+  node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white, shape=record];
+  edge [fontname="Helvetica", fontsize=10, color="#9b59b6", fontcolor="#9b59b6"];
+  entry [label="L._entry", shape=box, style="rounded,filled", fillcolor="#efe3f7"];
+  gp [label="(back to 3)", shape=box, style="dashed,filled", fillcolor=white, fontcolor="#666666"];
+  gn [label="(back to -1)", shape=box, style="dashed,filled", fillcolor=white, fontcolor="#666666"];
+  m1 [label="{<p> _prev | <v> val = -1 | <n> _next}"];
+  n1 [label="{<p> _prev | <v> val = 1 | <n> _next}"];
+  n2 [label="{<p> _prev | <v> val = 2 | <n> _next}"];
+  n3 [label="{<p> _prev | <v> val = 3 | <n> _next}"];
+  entry -> m1:v:n;
+  gp -> m1 [style=invis];
+  m1:n:n -> n1:v:n; n1:n:n -> n2:v:n; n2:n:n -> n3:v:n;
+  n3:n:n -> gn:n;
+  n1:p:s -> m1:v:s [color="#888888"]; n2:p:s -> n1:v:s [color="#888888"]; n3:p:s -> n2:v:s [color="#888888"];
+  m1:p:s -> gp:s [color="#888888", constraint=false];
+}
